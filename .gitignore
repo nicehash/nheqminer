@@ -411,12 +411,11 @@ CMakeLists.txt.user*
 0
 
 ####
-build-ASP-Desktop_Qt_5_7_0_GCC_64bit-Release/
-ASP.pro.user
-
 intermediate/**
 
 ## ignore exceptions
 !lib/**
 !inc/**
 build
+
+!nheqminer/libs/**
