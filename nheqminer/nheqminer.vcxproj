@@ -47,7 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)libs\win64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>E:\git\nheqminer\trompequihash\pthreads\x64;$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)libs\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -75,7 +75,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <AdditionalOptions>-D_WIN32_WINNT=0x0601 %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4068;4996;4503;4267;4180;4290;4244;4800;4334</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -85,7 +85,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>logsetuplib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>logsetuplib.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -118,6 +118,17 @@
     <ClInclude Include="streams.h" />
     <ClInclude Include="support\allocators\zeroafterfree.h" />
     <ClInclude Include="tinyformat.h" />
+    <ClInclude Include="trompequihash\blake2\blake2-config.h" />
+    <ClInclude Include="trompequihash\blake2\blake2-impl.h" />
+    <ClInclude Include="trompequihash\blake2\blake2-round.h" />
+    <ClInclude Include="trompequihash\blake2\blake2.h" />
+    <ClInclude Include="trompequihash\blake2\blake2b-load-sse2.h" />
+    <ClInclude Include="trompequihash\blake2\blake2b-load-sse41.h" />
+    <ClInclude Include="trompequihash\blake2\blake2b-round.h" />
+    <ClInclude Include="trompequihash\equi.h" />
+    <ClInclude Include="trompequihash\equi_miner.h" />
+    <ClInclude Include="trompequihash\equi_miner2.h" />
+    <ClInclude Include="trompequihash\pthreads\pthread.h" />
     <ClInclude Include="uint252.h" />
     <ClInclude Include="uint256.h" />
     <ClInclude Include="utilstrencodings.h" />
@@ -146,6 +157,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="primitives\block.cpp" />
     <ClCompile Include="speed.cpp" />
+    <ClCompile Include="trompequihash\blake2\blake2bx.cpp" />
     <ClCompile Include="uint256.cpp" />
     <ClCompile Include="utilstrencodings.cpp" />
   </ItemGroup>

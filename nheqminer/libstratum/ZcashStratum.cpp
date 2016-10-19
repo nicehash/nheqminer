@@ -2,9 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "version.h"
 #include "ZcashStratum.h"
 
-//#include "chainparams.h"
+#include "trompequihash/equi_miner.h"
 #include "crypto/equihash.h"
 #include "streams.h"
 #include "version.h"
@@ -28,7 +29,7 @@
 
 void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 {
-	BOOST_LOG_CUSTOM(info, pos) << "Starting thread";
+	BOOST_LOG_CUSTOM(info, pos) << "Starting thread #" << pos;
 
 	unsigned int n = PARAMETER_N;
 	unsigned int k = PARAMETER_K;
@@ -41,24 +42,28 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
     arith_uint256 target;
     std::atomic_bool workReady {false};
     std::atomic_bool cancelSolver {false};
+	std::atomic_bool pauseMining {false};
 
     miner->NewJob.connect(NewJob_t::slot_type(
-        [&m_zmt, &header, &space, &offset, &inc, &target, &workReady, &cancelSolver]
+		[&m_zmt, &header, &space, &offset, &inc, &target, &workReady, &cancelSolver, pos, &pauseMining]
         (const ZcashJob* job) mutable {
             std::lock_guard<std::mutex> lock{*m_zmt.get()};
             if (job) {
+				BOOST_LOG_CUSTOM(debug, pos) << "Loading new job #" << job->jobId();
                 header = job->header;
                 space = job->nonce2Space;
                 offset = job->nonce1Size * 4; // Hex length to bit length
                 inc = job->nonce2Inc;
                 target = job->serverTarget;
+				pauseMining.store(false);
                 workReady.store(true);
-                if (job->clean) {
+                /*if (job->clean) {
                     cancelSolver.store(true);
-                }
+                }*/
             } else {
                 workReady.store(false);
                 cancelSolver.store(true);
+				pauseMining.store(true);
             }
         }
     ).track_foreign(m_zmt)); // So the signal disconnects when the mining thread exits
@@ -83,52 +88,51 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
             {
                 std::lock_guard<std::mutex> lock{*m_zmt.get()};
                 arith_uint256 baseNonce = UintToArith256(header.nNonce);
-                nonce = baseNonce + ((space/size)*pos << offset);
-                nonceEnd = baseNonce + ((space/size)*(pos+1) << offset);
+				arith_uint256 add(pos);
+				nonce = baseNonce | (add << (8 * 31));
+				nonceEnd = baseNonce | ((add + 1) << (8 * 31));
+                //nonce = baseNonce + ((space/size)*pos << offset);
+                //nonceEnd = baseNonce + ((space/size)*(pos+1) << offset);
             }
 
+			// I = the block header minus nonce and solution.
+			CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+			{
+				std::lock_guard<std::mutex> lock{ *m_zmt.get() };
+				CEquihashInput I{ header };
+				ss << I;
+			}
+
+#ifdef  USE_TROMP_EQUIHASH
+			const char *tequihash_header = (char *)&ss[0];
+			unsigned int tequihash_header_len = ss.size();
+#else
             // Hash state
             blake2b_state state;
             EhInitialiseState(n, k, state);
 
-            // I = the block header minus nonce and solution.
-            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-            {
-                std::lock_guard<std::mutex> lock{*m_zmt.get()};
-                CEquihashInput I{header};
-                ss << I;
-            }
-
             // H(I||...
             blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
+#endif
 
             // Start working
             while (true) {
-                // H(I||V||...
-                blake2b_state curr_state;
-                curr_state = state;
-				//nonce = arith_uint256("1e11003000000000000000003000111ffcffffffffffffffffffffffffffff3f");
-				//nonce = arith_uint256("3ffffffffffffffffffffffffffffffc1f11003000000000000000003000111e");
-				auto bNonce = ArithToUint256(nonce);
-                blake2b_update(&curr_state,
-                        bNonce.begin(),
-                        bNonce.size());
-
-                // (x_1, x_2, ...) = A(I, V, n, k)
 				BOOST_LOG_CUSTOM(debug, pos) << "Running Equihash solver with nNonce = " << nonce.ToString();
 
+				auto bNonce = ArithToUint256(nonce);
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&m_zmt, &header, &bNonce, &target, &miner, pos]
                         (std::vector<unsigned char> soln) {
                     std::lock_guard<std::mutex> lock{*m_zmt.get()};
                     // Write the solution to the hash and compute the result.
 					BOOST_LOG_CUSTOM(debug, pos) << "Checking solution against target...";
-                    header.nNonce = bNonce;
-                    header.nSolution = soln;
+					CBlockHeader newHeader(header);
+					newHeader.nNonce = bNonce;
+					newHeader.nSolution = soln;
 
 					speed.AddSolution();
 
-					uint256 headerhash = header.GetHash();
+					uint256 headerhash = newHeader.GetHash();
 					if (UintToArith256(headerhash) > target) {
 						BOOST_LOG_CUSTOM(debug, pos) << "Too large: " << headerhash.ToString();
                         return false;
@@ -143,14 +147,70 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
                     return false;
                 };
 
-                std::function<bool(EhSolverCancelCheck)> cancelled =
-                        [&cancelSolver, &miner, pos](EhSolverCancelCheck pos1) 
+#ifdef USE_TROMP_EQUIHASH
+				//////////////////////////////////////////////////////////////////////////
+				// TROMP EQ SOLVER START
+				// I = the block header minus nonce and solution.
+				// Nonce
+				// Create solver and initialize it with header and nonce.
+				equi eq(1);
+				eq.setnonce(tequihash_header, tequihash_header_len, (const char*)bNonce.begin(), bNonce.size());
+				eq.digit0(0);
+				eq.xfull = eq.bfull = eq.hfull = 0;
+				eq.showbsizes(0);
+				u32 r = 1;
+				for ( ; r < WK; r++) {
+					if (cancelSolver.load()) break;
+					r & 1 ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
+					eq.xfull = eq.bfull = eq.hfull = 0;
+					eq.showbsizes(r);
+				}
+				if (r == WK && !cancelSolver.load())
+				{
+					eq.digitK(0);
+
+					// Convert solution indices to charactar array(decompress) and pass it to validBlock method.
+					u32 nsols = 0;
+					unsigned s = 0;
+					for (; s < eq.nsols; s++)
+					{
+						if (cancelSolver.load()) break;
+						nsols++;
+						std::vector<eh_index> index_vector(PROOFSIZE);
+						for (u32 i = 0; i < PROOFSIZE; i++) {
+							index_vector[i] = eq.sols[s][i];
+						}
+						std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
+
+						if (validBlock(sol_char))
+						{
+							// If we find a POW solution, do not try other solutions
+							// because they become invalid as we created a new block in blockchain.
+							//break;
+						}
+					}
+					if (s == eq.nsols)
+						speed.AddHash();
+				}
+				//////////////////////////////////////////////////////////////////////
+				// TROMP EQ SOLVER END
+				//////////////////////////////////////////////////////////////////////
+#else
+				std::function<bool(EhSolverCancelCheck)> cancelled =
+					[&cancelSolver, &miner, pos](EhSolverCancelCheck pos1)
 				{
 					if (!miner->minerThreadActive[pos])
 						throw boost::thread_interrupted();
-                    //boost::this_thread::interruption_point();
-                    return cancelSolver.load();
-                };
+					//boost::this_thread::interruption_point();
+					return cancelSolver.load();
+				};
+
+				// H(I||V||...
+				blake2b_state curr_state;
+				curr_state = state;
+				blake2b_update(&curr_state,
+					bNonce.begin(),
+					bNonce.size());
 
                 try 
 				{
@@ -170,10 +230,15 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
                     break;
                 }
 
+#endif
                 // Check for stop
 				if (!miner->minerThreadActive[pos])
 					throw boost::thread_interrupted();
                 //boost::this_thread::interruption_point();
+
+				// Update nonce
+				nonce += inc;
+
                 if (nonce == nonceEnd) {
                     break;
                 }
@@ -184,8 +249,11 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
                     break;
                 }
 
-                // Update nonce
-                nonce += inc;
+				if (pauseMining.load())
+				{
+					BOOST_LOG_CUSTOM(debug, pos) << "Mining paused";
+					break;
+				}
             }
         }
     }
@@ -232,7 +300,7 @@ bool ZcashJob::evalSolution(const EquihashSolution* solution)
 	unsigned int k = PARAMETER_K;
 
     // Hash state
-    blake2b_state state;
+    blake2b_state_old state;
     EhInitialiseState(n, k, state);
 
     // I = the block header minus nonce and solution.
@@ -243,7 +311,7 @@ bool ZcashJob::evalSolution(const EquihashSolution* solution)
     ss << solution->nonce;
 
     // H(I||V||...
-    blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
+    blake2b_update_old(&state, (unsigned char*)&ss[0], ss.size());
 
     bool isValid;
     EhIsValidSolution(n, k, state, solution->solution, isValid);
@@ -277,7 +345,7 @@ ZcashMiner::ZcashMiner(int threads)
 
 std::string ZcashMiner::userAgent()
 {
-	return "equihashminer/0." STANDALONE_MINER_VERSION;
+	return "equihashminer/" STANDALONE_MINER_VERSION;
 }
 
 void ZcashMiner::start()
@@ -346,6 +414,8 @@ void ZcashMiner::setServerNonce(const std::string& n1str)
     }
     CDataStream ss(nonceData, SER_NETWORK, PROTOCOL_VERSION);
     ss >> nonce1;
+
+	BOOST_LOG_TRIVIAL(info) << "miner | Full nonce " << nonce1.ToString();
 
     nonce1Size = n1str.size();
     size_t nonce1Bits = nonce1Size * 4; // Hex length to bit length
@@ -439,4 +509,155 @@ void ZcashMiner::rejectedSolution(bool stale)
 
 void ZcashMiner::failedSolution()
 {
+}
+
+
+std::mutex benchmark_work;
+std::vector<uint256*> benchmark_nonces;
+std::atomic_int benchmark_solutions;
+
+bool benchmark_solve_equihash()
+{
+	CBlock pblock;
+	CEquihashInput I{ pblock };
+	CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+	ss << I;
+
+	unsigned int n = PARAMETER_N;
+	unsigned int k = PARAMETER_K;
+
+#ifdef USE_TROMP_EQUIHASH
+	const char *tequihash_header = (char *)&ss[0];
+	unsigned int tequihash_header_len = ss.size();
+#else
+	blake2b_state_old eh_state;
+
+	EhInitialiseState(n, k, eh_state);
+	blake2b_update_old(&eh_state, (unsigned char*)&ss[0], ss.size());
+#endif
+
+	benchmark_work.lock();
+	if (benchmark_nonces.empty())
+	{
+		benchmark_work.unlock();
+		return false;
+	}
+	uint256* nonce = benchmark_nonces.front();
+	benchmark_nonces.erase(benchmark_nonces.begin());
+	benchmark_work.unlock();
+
+	BOOST_LOG_TRIVIAL(debug) << "Testing, nonce = " << nonce->ToString();
+
+#ifdef USE_TROMP_EQUIHASH
+	equi eq(1);
+	eq.setnonce(tequihash_header, tequihash_header_len, (const char*)nonce->begin(), nonce->size());
+	eq.digit0(0);
+	eq.xfull = eq.bfull = eq.hfull = 0;
+	eq.showbsizes(0);
+	u32 r = 1;
+	for ( ; r < WK; r++) {
+		r & 1 ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
+		eq.xfull = eq.bfull = eq.hfull = 0;
+		eq.showbsizes(r);
+	}
+
+	eq.digitK(0);
+
+	u32 nsols = 0;
+	unsigned s = 0;
+	for (; s < eq.nsols; s++)
+	{
+		nsols++;
+		std::vector<eh_index> index_vector(PROOFSIZE);
+		for (u32 i = 0; i < PROOFSIZE; i++) {
+			index_vector[i] = eq.sols[s][i];
+		}
+		std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
+		
+		CBlockHeader hdr = pblock.GetBlockHeader();
+		hdr.nNonce = *nonce;
+		hdr.nSolution = sol_char;
+
+		BOOST_LOG_TRIVIAL(debug) << "Solution found, header = " << hdr.GetHash().ToString();
+
+		++benchmark_solutions;
+	}
+
+#else
+	blake2b_update_old(&eh_state,
+		nonce->begin(),
+		nonce->size());
+
+	std::set<std::vector<unsigned int>> solns;
+	EhOptimisedSolveUncancellable(n, k, eh_state, [nonce, &pblock](std::vector<unsigned char> soln)
+	{
+		CBlockHeader hdr = pblock.GetBlockHeader();
+		hdr.nNonce = *nonce;
+		hdr.nSolution = soln;
+
+		BOOST_LOG_TRIVIAL(debug) << "Solution found, header = " << hdr.GetHash().ToString();
+
+		++benchmark_solutions;
+
+		return false;
+	});
+#endif
+
+	delete nonce;
+
+	return true;
+}
+
+
+int benchmark_thread(int tid)
+{
+	BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " started";
+
+	while (benchmark_solve_equihash()) {}
+
+	BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " ended";
+
+	return 0;
+}
+
+
+void do_benchmark(int nThreads, int hashes)
+{
+	// generate array of various nonces
+	std::srand(std::time(0));
+	for (int i = 0; i < hashes; ++i)
+	{
+		benchmark_nonces.push_back(new uint256());
+		for (unsigned int i = 0; i < 32; ++i)
+			benchmark_nonces.back()->begin()[i] = std::rand() % 256;
+	}
+	benchmark_solutions = 0;
+
+	size_t total_hashes = benchmark_nonces.size();
+
+	std::cout << "Benchmark starting... this may take several minutes, please wait..." << std::endl;
+
+	if (nThreads < 1) nThreads = std::thread::hardware_concurrency();
+	std::thread* bthreads = new std::thread[nThreads];
+
+	auto start = std::chrono::high_resolution_clock::now();
+
+	for (int i = 0; i < nThreads; ++i)
+		bthreads[i] = std::thread(boost::bind(&benchmark_thread, i));
+
+	for (int i = 0; i < nThreads; ++i)
+		bthreads[i].join();
+
+	auto end = std::chrono::high_resolution_clock::now();
+
+	uint64_t msec = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+	size_t hashes_done = total_hashes - benchmark_nonces.size();
+
+	std::cout << "Benchmark done!" << std::endl;
+	std::cout << "Total time : " << msec << " ms" << std::endl;
+	std::cout << "Total hashes: " << hashes_done << std::endl;
+	std::cout << "Total solutions found: " << benchmark_solutions << std::endl;
+	std::cout << "Speed: " << ((double)hashes_done * 1000 / (double)msec) << " H/s" << std::endl;
+	std::cout << "Speed: " << ((double)benchmark_solutions * 1000 / (double)msec) << " S/s" << std::endl;
 }

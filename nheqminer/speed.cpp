@@ -50,16 +50,6 @@ double Speed::GetHashSpeed()
 	return Get(m_buffer_hashes, m_mutex_hashes);
 }
 
-void Speed::AddHashInterrupted()
-{
-	Add(m_buffer_hashes_interrupted, m_mutex_hashes_interrupted);
-}
-
-double Speed::GetHashInterruptedSpeed()
-{
-	return Get(m_buffer_hashes_interrupted, m_mutex_hashes_interrupted);
-}
-
 void Speed::AddSolution()
 {
 	Add(m_buffer_solutions, m_mutex_solutions);
@@ -96,10 +86,6 @@ void Speed::Reset()
 	m_mutex_hashes.lock();
 	m_buffer_hashes.clear();
 	m_mutex_hashes.unlock();
-
-	m_mutex_hashes_interrupted.lock();
-	m_buffer_hashes_interrupted.clear();
-	m_mutex_hashes_interrupted.unlock();
 
 	m_mutex_solutions.lock();
 	m_buffer_solutions.clear();

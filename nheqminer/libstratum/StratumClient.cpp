@@ -9,12 +9,10 @@
 #include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_utils.h"
 
-#include <boost/log/trivial.hpp>
-
 using boost::asio::ip::tcp;
 using namespace json_spirit;
 
-
+#include <boost/log/trivial.hpp>
 
 #define BOOST_LOG_CUSTOM(sev) BOOST_LOG_TRIVIAL(sev) << "stratum | "
 
@@ -144,9 +142,9 @@ void StratumClient<Miner, Job, Solution>::connect()
         }
 		std::stringstream ss;
 		ss << "{\"id\":1,\"method\":\"mining.subscribe\",\"params\":[\""
+			<< p_miner->userAgent() << "\", null,\""
 			<< p_active->host << "\",\""
-			<< p_active->port << "\",\""
-			<< p_miner->userAgent() << "\",null]}\n";
+			<< p_active->port << "\"]}\n";
 		std::string sss = ss.str();
         std::ostream os(&m_requestBuffer);
 		os << sss;
@@ -158,6 +156,12 @@ void StratumClient<Miner, Job, Solution>::connect()
 template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::reconnect()
 {
+	/*if (p_miner->isMining()) {
+		BOOST_LOG_CUSTOM(info) << "Stopping miner";
+		p_miner->stop();
+	}*/
+	p_miner->setJob(nullptr);
+
     if (p_worktimer) {
         p_worktimer->cancel();
         p_worktimer = nullptr;
@@ -261,7 +265,7 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
 		}
 		BOOST_LOG_CUSTOM(info) << "Authorized worker " << p_active->user;
 
-		ss << "{\"id\":3,\"method\":\"mining.subscribe.extranonce\",\"params\":[]}\n";
+		ss << "{\"id\":3,\"method\":\"mining.extranonce.subscribe\",\"params\":[]}\n";
 		std::string sss = ss.str();
 		os << sss;
 		BOOST_LOG_CUSTOM(trace) << "Sending: " << sss;
@@ -306,7 +310,14 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
                 const Array& params = valParams.get_array();
                 Job* workOrder = p_miner->parseJob(params);
 
-                if (workOrder) {
+                if (workOrder)
+				{
+					if (!workOrder->clean)
+					{
+						BOOST_LOG_CUSTOM(info) << CL_CYN "Ignoring non-clean job #" << workOrder->jobId() << CL_N;;
+						break;
+					}
+
 					BOOST_LOG_CUSTOM(info) << CL_CYN "Received new job #" << workOrder->jobId() << CL_N;
                     workOrder->setTarget(m_nextJobTarget);
 
@@ -346,8 +357,10 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
             const Value& valParams = find_value(responseObject, "params");
             if (valParams.type() == array_type) {
                 const Array& params = valParams.get_array();
-                m_primary.host = params[0].get_str();
-                m_primary.port = params[1].get_str();
+				if (params.size() > 1) {
+					p_active->host = params[0].get_str();
+					p_active->port = params[1].get_str();
+				}
                 // TODO: Handle wait time
 				BOOST_LOG_CUSTOM(info) << "Reconnection requested";
                 reconnect();

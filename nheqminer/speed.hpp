@@ -9,13 +9,11 @@ class Speed
 	using time_point = std::chrono::high_resolution_clock::time_point;
 
 	std::vector<time_point> m_buffer_hashes;
-	std::vector<time_point> m_buffer_hashes_interrupted;
 	std::vector<time_point> m_buffer_solutions;
 	std::vector<time_point> m_buffer_shares;
 	std::vector<time_point> m_buffer_shares_ok;
 
 	std::mutex m_mutex_hashes;
-	std::mutex m_mutex_hashes_interrupted;
 	std::mutex m_mutex_solutions;
 	std::mutex m_mutex_shares;
 	std::mutex m_mutex_shares_ok;
@@ -28,12 +26,10 @@ public:
 	virtual ~Speed();
 
 	void AddHash();
-	void AddHashInterrupted();
 	void AddSolution();
 	void AddShare();
 	void AddShareOK();
 	double GetHashSpeed();
-	double GetHashInterruptedSpeed();
 	double GetSolutionSpeed();
 	double GetShareSpeed();
 	double GetShareOKSpeed();

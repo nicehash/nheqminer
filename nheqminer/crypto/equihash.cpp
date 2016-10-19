@@ -39,11 +39,11 @@ int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
 {
     uint32_t le_N = htole32(N);
     uint32_t le_K = htole32(K);
-	unsigned char personalization[BLAKE2B_PERSONALBYTES] = {};
+	unsigned char personalization[BLAKE2B_PERSONALBYTES_OLD] = {};
     memcpy(personalization, "ZcashPoW", 8);
     memcpy(personalization+8,  &le_N, 4);
     memcpy(personalization+12, &le_K, 4);
-    return blake2b_init_salt_personal(&base_state,
+	return blake2b_init_salt_personal_old(&base_state,
                                     //NULL, 0, // No key.
                                     (512/N)*N/8,
                                     NULL,    // No salt.
@@ -56,9 +56,9 @@ void GenerateHash(const eh_HashState& base_state, eh_index g,
     eh_HashState state;
     state = base_state;
     eh_index lei = htole32(g);
-    blake2b_update(&state, (const unsigned char*) &lei,
+	blake2b_update_old(&state, (const unsigned char*)&lei,
                                       sizeof(eh_index));
-    blake2b_final(&state, hash, hLen);
+	blake2b_final_old(&state, hash, hLen);
 }
 
 void ExpandArray(const unsigned char* in, size_t in_len,

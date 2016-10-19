@@ -27,6 +27,18 @@
     <Filter Include="Source Files\json">
       <UniqueIdentifier>{b1105506-3545-4176-ba36-6172e1941389}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\trompequihash">
+      <UniqueIdentifier>{b5f18094-4b56-47ca-98aa-edd316f56973}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\trompequihash\blake2">
+      <UniqueIdentifier>{790fb8f7-1fdd-4231-b42c-c6f11936e90c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\trompblake">
+      <UniqueIdentifier>{1b527c9c-492d-434c-87c8-30b566cfff9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\trompequihash\pthreads">
+      <UniqueIdentifier>{672eb60d-9543-46a0-ac15-dab65dc4bd5d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="primitives\block.h">
@@ -140,6 +152,39 @@
     <ClInclude Include="api.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="trompequihash\equi.h">
+      <Filter>Header Files\trompequihash</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\blake2\blake2.h">
+      <Filter>Header Files\trompequihash\blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\blake2\blake2b-load-sse2.h">
+      <Filter>Header Files\trompequihash\blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\blake2\blake2b-load-sse41.h">
+      <Filter>Header Files\trompequihash\blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\blake2\blake2b-round.h">
+      <Filter>Header Files\trompequihash\blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\blake2\blake2-config.h">
+      <Filter>Header Files\trompequihash\blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\blake2\blake2-impl.h">
+      <Filter>Header Files\trompequihash\blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\blake2\blake2-round.h">
+      <Filter>Header Files\trompequihash\blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\pthreads\pthread.h">
+      <Filter>Header Files\trompequihash\pthreads</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\equi_miner2.h">
+      <Filter>Header Files\trompequihash</Filter>
+    </ClInclude>
+    <ClInclude Include="trompequihash\equi_miner.h">
+      <Filter>Header Files\trompequihash</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -192,6 +237,9 @@
     </ClCompile>
     <ClCompile Include="api.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="trompequihash\blake2\blake2bx.cpp">
+      <Filter>Source Files\trompblake</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

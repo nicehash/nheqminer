@@ -142,7 +142,6 @@ bool Client::Parse(const std::string& request)
 
 		ss << "{\"interval_seconds\":" << INTERVAL_SECONDS << ",";
 		ss << "\"speed_hps\":" << speed.GetHashSpeed() << ",";
-		ss << "\"speed_ihps\":" << speed.GetHashInterruptedSpeed() << ",";
 		ss << "\"speed_sps\":" << speed.GetSolutionSpeed() << ",";
 		ss << "\"accepted_per_minute\":" << accepted << ",";
 		ss << "\"rejected_per_minute\":" << (allshares - accepted);

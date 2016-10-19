@@ -99,3 +99,6 @@ public:
     void rejectedSolution(bool stale);
     void failedSolution();
 };
+
+
+void do_benchmark(int nThreads, int hashes);
