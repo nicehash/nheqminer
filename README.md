@@ -6,7 +6,7 @@ In order to build project make sure you have  [**Visual C++ Compiler November 20
 Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build. 
 
 ## Linux (Ubuntu/Debian based, Tested on Ubuntu 16.04):
-To build under Ubuntu Linux make sure you have Qt5 installed. You can isntall it manually from Qt website or install it from the command line: `sudo apt-get install qt5-default`.
+To build under Ubuntu Linux make sure you have Qt5 installed. You can install it manually from [Qt website](https://www.qt.io/) or install it from the command line: `sudo apt-get install qt5-default`.
 Open a terminal and cd to nheqminer root folder and run the following commands (make sure you have qmake in your PATH, if installed manually from Qt website you will have to export it to your PATH):
   - `mkdir build`
   - `cd build`
