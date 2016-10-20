@@ -95,16 +95,10 @@
     <ClInclude Include="support\allocators\zeroafterfree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\equihash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="crypto\sha256.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="utilstrencodings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="blake2\blake2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="arith_uint256.h">
@@ -192,15 +186,6 @@
     </ClCompile>
     <ClCompile Include="amount.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="blake2\blake2b.c">
-      <Filter>Source Files\blake</Filter>
-    </ClCompile>
-    <ClCompile Include="blake2\core.c">
-      <Filter>Source Files\blake</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\equihash.cpp">
-      <Filter>Source Files\crypto</Filter>
     </ClCompile>
     <ClCompile Include="uint256.cpp">
       <Filter>Source Files</Filter>

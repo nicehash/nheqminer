@@ -75,7 +75,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <AdditionalOptions>-D_WIN32_WINNT=0x0601 %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4068;4996;4503;4267;4180;4290;4244;4800;4334</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -86,17 +86,16 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>logsetuplib.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\trompequihash\pthreads\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="amount.h" />
     <ClInclude Include="api.hpp" />
     <ClInclude Include="arith_uint256.h" />
-    <ClInclude Include="blake2\blake2.h" />
     <ClInclude Include="compat\byteswap.h" />
     <ClInclude Include="compat\endian.h" />
     <ClInclude Include="crypto\common.h" />
-    <ClInclude Include="crypto\equihash.h" />
     <ClInclude Include="crypto\sha256.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="json\json_spirit.h" />
@@ -142,9 +141,6 @@
     <ClCompile Include="amount.cpp" />
     <ClCompile Include="api.cpp" />
     <ClCompile Include="arith_uint256.cpp" />
-    <ClCompile Include="blake2\blake2b.c" />
-    <ClCompile Include="blake2\core.c" />
-    <ClCompile Include="crypto\equihash.cpp" />
     <ClCompile Include="crypto\sha256.cpp" />
     <ClCompile Include="json\json_spirit_reader.cpp">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -157,7 +153,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="primitives\block.cpp" />
     <ClCompile Include="speed.cpp" />
-    <ClCompile Include="trompequihash\blake2\blake2bx.cpp" />
+    <ClCompile Include="trompequihash\blake2\blake2bx.cpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Default</CompileAs>
+    </ClCompile>
     <ClCompile Include="uint256.cpp" />
     <ClCompile Include="utilstrencodings.cpp" />
   </ItemGroup>
