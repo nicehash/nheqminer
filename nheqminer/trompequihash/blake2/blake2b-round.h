@@ -51,8 +51,8 @@
   row4l = _mm_xor_si128(row4l, row1l); \
   row4h = _mm_xor_si128(row4h, row1h); \
   \
-  row4l = _mm_roti_epi64(row4l, -32); \
-  row4h = _mm_roti_epi64(row4h, -32); \
+  row4l = _mm_roti_epi64(row4l, (-32)); \
+  row4h = _mm_roti_epi64(row4h, (-32)); \
   \
   row3l = _mm_add_epi64(row3l, row4l); \
   row3h = _mm_add_epi64(row3h, row4h); \
@@ -60,8 +60,8 @@
   row2l = _mm_xor_si128(row2l, row3l); \
   row2h = _mm_xor_si128(row2h, row3h); \
   \
-  row2l = _mm_roti_epi64(row2l, -24); \
-  row2h = _mm_roti_epi64(row2h, -24); \
+  row2l = _mm_roti_epi64(row2l, (-24)); \
+  row2h = _mm_roti_epi64(row2h, (-24)); \
  
 #define G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1) \
   row1l = _mm_add_epi64(_mm_add_epi64(row1l, b0), row2l); \
@@ -70,8 +70,8 @@
   row4l = _mm_xor_si128(row4l, row1l); \
   row4h = _mm_xor_si128(row4h, row1h); \
   \
-  row4l = _mm_roti_epi64(row4l, -16); \
-  row4h = _mm_roti_epi64(row4h, -16); \
+  row4l = _mm_roti_epi64(row4l, (-16)); \
+  row4h = _mm_roti_epi64(row4h, (-16)); \
   \
   row3l = _mm_add_epi64(row3l, row4l); \
   row3h = _mm_add_epi64(row3h, row4h); \
@@ -79,8 +79,8 @@
   row2l = _mm_xor_si128(row2l, row3l); \
   row2h = _mm_xor_si128(row2h, row3h); \
   \
-  row2l = _mm_roti_epi64(row2l, -63); \
-  row2h = _mm_roti_epi64(row2h, -63); \
+  row2l = _mm_roti_epi64(row2l, (-63)); \
+  row2h = _mm_roti_epi64(row2h, (-63)); \
  
 #if defined(HAVE_SSSE3)
 #define DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h) \

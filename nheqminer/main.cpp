@@ -21,7 +21,6 @@
 // fix compiler issues with standard vs2013 compiler
 // file logging
 // mingw compilation for windows (faster?)
-// fix SSE2 VS2013 compiler error (error C2105: '--' needs l-value)
 
 
 static ZcashStratumClient* scSig;
