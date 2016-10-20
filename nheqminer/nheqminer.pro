@@ -1,5 +1,5 @@
 TEMPLATE = app
-CONFIG += console c++11
+CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
 
@@ -27,6 +27,9 @@ QMAKE_CXXFLAGS_RELEASE *= -O3
 
 #QMAKE_CFLAGS_RELEASE += -msse2
 #QMAKE_CXXFLAGS_RELEASE += -msse2
+
+# use this instead of CONFIG c++11 since some qmake versions use experimental flag
+QMAKE_CXXFLAGS += -std=gnu++11
 
 # Linux
 DEFINES +=  HAVE_DECL_HTOBE16
