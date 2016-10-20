@@ -47,7 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>E:\git\nheqminer\trompequihash\pthreads\x64;$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)libs\win64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)libs\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -59,11 +59,12 @@
       <AdditionalOptions>-D_WIN32_WINNT=0x0601 %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4068;4996;4503;4267;4180;4290;4244;4800;4334</DisableSpecificWarnings>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>logsetuplib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>logsetuplib.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
