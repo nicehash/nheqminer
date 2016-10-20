@@ -420,3 +420,4 @@ build
 
 !nheqminer/libs/**
 !trompequihash/pthreads**
+!nheqminer/boost/**
