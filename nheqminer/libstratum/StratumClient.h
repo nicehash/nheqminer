@@ -3,7 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "crypto/equihash.h"
 #include "libstratum/ZcashStratum.h"
 
 #include <iostream>
@@ -20,7 +19,40 @@ using namespace boost::asio;
 using boost::asio::ip::tcp;
 using namespace json_spirit;
 
+#define CONSOLE_COLORS
 
+#ifndef CONSOLE_COLORS
+#define CL_N    ""
+#define CL_RED  ""
+#define CL_GRN  ""
+#define CL_YLW  ""
+#define CL_BLU  ""
+#define CL_MAG  ""
+#define CL_CYN  ""
+
+#define CL_BLK  "" /* black */
+#define CL_RD2  "" /* red */
+#define CL_GR2  "" /* green */
+#define CL_YL2  "" /* dark yellow */
+#define CL_BL2  "" /* blue */
+#define CL_MA2  "" /* magenta */
+#define CL_CY2  "" /* cyan */
+#define CL_SIL  "" /* gray */
+
+#ifdef WIN32
+#define CL_GRY  "" /* dark gray */
+#else
+#define CL_GRY  ""    /* dark gray selectable in putty */
+#endif
+#define CL_LRD  "" /* light red */
+#define CL_LGR  "" /* light green */
+#define CL_LYL  "" /* tooltips */
+#define CL_LBL  "" /* light blue */
+#define CL_LMA  "" /* light magenta */
+#define CL_LCY  "" /* light cyan */
+
+#define CL_WHT  "" /* white */
+#else
 #define CL_N    "\x1B[0m"
 #define CL_RED  "\x1B[31m"
 #define CL_GRN  "\x1B[32m"
@@ -51,6 +83,7 @@ using namespace json_spirit;
 #define CL_LCY  "\x1B[01;36m" /* light cyan */
 
 #define CL_WHT  "\x1B[01;37m" /* white */
+#endif
 
 
 typedef struct {
@@ -77,7 +110,7 @@ public:
     bool isRunning() { return m_running; }
     bool isConnected() { return m_connected && m_authorized; }
     bool current() { return p_current; }
-    bool submit(const Solution* solution);
+    bool submit(const Solution* solution, const std::string& jobid);
     void reconnect();
     void disconnect();
 

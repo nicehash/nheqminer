@@ -10,6 +10,8 @@
 #include "crypto/sha256.h"
 #include "utilstrencodings.h"
 
+//#include "sodium.h"
+
 #include <cstring>
 #include <exception>
 #include <functional>
@@ -19,12 +21,8 @@
 
 #include <boost/static_assert.hpp>
 
-#ifndef PARAMETER_N
 #define PARAMETER_N 200
-#endif
-#ifndef PARAMETER_K
 #define PARAMETER_K 9
-#endif
 
 #ifdef _DEBUG
 #define LogPrint(x, ...) printf(x " | " __VA_ARGS__);
@@ -33,7 +31,7 @@
 #endif
 
 //typedef crypto_generichash_blake2b_state eh_HashState;
-typedef blake2b_state_old eh_HashState;
+typedef blake2b_state eh_HashState;
 typedef uint32_t eh_index;
 typedef uint8_t eh_trunc;
 

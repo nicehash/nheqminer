@@ -21,10 +21,12 @@ using namespace json_spirit;
 struct EquihashSolution
 {
     uint256 nonce;
+	std::string time;
+	size_t nonce1size;
     std::vector<unsigned char> solution;
 
-    EquihashSolution(uint256 n, std::vector<unsigned char> s)
-            : nonce {n}, solution {s} { }
+    EquihashSolution(uint256 n, std::vector<unsigned char> s, std::string t, size_t n1s)
+		: nonce{ n }, solution{ s }, time{ t }, nonce1size{ n1s } { }
 
     std::string toString() const { return nonce.GetHex(); }
 };
@@ -77,7 +79,7 @@ class ZcashMiner
     size_t nonce1Size;
     arith_uint256 nonce2Space;
     arith_uint256 nonce2Inc;
-    std::function<bool(const EquihashSolution&)> solutionFoundCallback;
+    std::function<bool(const EquihashSolution&, const std::string&)> solutionFoundCallback;
 	bool m_isActive;
 
 public:
@@ -93,8 +95,8 @@ public:
 	void setServerNonce(const std::string& n1str);
     ZcashJob* parseJob(const Array& params);
     void setJob(ZcashJob* job);
-    void onSolutionFound(const std::function<bool(const EquihashSolution&)> callback);
-    void submitSolution(const EquihashSolution& solution);
+	void onSolutionFound(const std::function<bool(const EquihashSolution&, const std::string&)> callback);
+	void submitSolution(const EquihashSolution& solution, const std::string& jobid);
     void acceptedSolution(bool stale);
     void rejectedSolution(bool stale);
     void failedSolution();

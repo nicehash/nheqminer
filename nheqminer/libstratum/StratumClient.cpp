@@ -4,7 +4,11 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "StratumClient.h"
+#include "version.h"
+#include "streams.h"
 //#include "util.h"
+
+#include "utilstrencodings.h"
 
 #include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_utils.h"
@@ -381,9 +385,32 @@ void StratumClient<Miner, Job, Solution>::work_timeout_handler(
 }
 
 template <typename Miner, typename Job, typename Solution>
-bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution)
+bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const std::string& jobid)
 {
-    x_current.lock();
+	BOOST_LOG_CUSTOM(info) << "Submitting, nonce " << solution->toString();
+
+	CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+	ss << solution->nonce;
+	ss << solution->solution;
+	std::string strHex = HexStr(ss.begin(), ss.end());
+
+	std::stringstream stream;
+	stream << "{\"id\":4,\"method\":\"mining.submit\",\"params\":[\"";
+	stream << p_active->user;
+	stream << "\",\"" << jobid;
+	stream << "\",\"" << solution->time;
+	stream << "\",\"" << strHex.substr(solution->nonce1size, 64 - solution->nonce1size);
+	stream << "\",\"" << strHex.substr(64);
+	stream << "\"]}\n";
+	std::string json = stream.str();
+	std::ostream os(&m_requestBuffer);
+	os << json;
+	BOOST_LOG_CUSTOM(trace) << "Sending: " << json;
+	write(m_socket, m_requestBuffer);
+
+	return true;
+
+    /*x_current.lock();
     Job* tempJob = p_current->clone();
     Job* tempPreviousJob;
     if (p_previous) {
@@ -420,7 +447,7 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution)
         p_miner->failedSolution();
     }
 
-    return false;
+    return false;*/
 }
 
 template class StratumClient<ZcashMiner, ZcashJob, EquihashSolution>;

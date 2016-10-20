@@ -18,7 +18,7 @@
 
 
 // TODO:
-// bug: share above target right after new job arrival
+// fix compiler issues with standard vs2013 compiler
 // file logging
 // mingw compilation for windows (faster?)
 // fix SSE2 VS2013 compiler error (error C2105: '--' needs l-value)
@@ -44,12 +44,37 @@ void print_help()
 	std::cout << std::endl;
 }
 
-
+#ifdef WIN32
 void init_logging(boost::log::core_ptr cptr, int level);
+#else
+#include <iostream>
+
+#include <boost/log/core/core.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/support/date_time.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+
+//namespace logging = boost::log;
+//namespace keywords = boost::log::keywords;
+namespace logging = boost::log;
+namespace sinks = boost::log::sinks;
+namespace src = boost::log::sources;
+//namespace fmt = boost::log::formatters;
+//namespace flt = boost::log::filters;
+namespace attrs = boost::log::attributes;
+namespace keywords = boost::log::keywords;
+#endif
 
 
 int main(int argc, char* argv[])
 {
+#ifdef WIN32
+	system("");
+#endif
 	std::cout << "Equihash CPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "Thanks to Zcash developers for providing most of the code" << std::endl;
 	std::cout << "Special thanks to tromp for providing optimized CPU equihash solver" << std::endl;
@@ -99,7 +124,26 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	init_logging(boost::log::core::get(), log_level);
+#ifdef WIN32
+    init_logging(boost::log::core::get(), log_level);
+#else
+    std::cout << "Setting log level to " << log_level << std::endl;
+    boost::log::add_console_log(
+        std::clog,
+        boost::log::keywords::auto_flush = true,
+        boost::log::keywords::filter = boost::log::trivial::severity >= log_level,
+        boost::log::keywords::format = (
+        boost::log::expressions::stream
+            << "[" << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp", "%H:%M:%S")
+            << "][" << boost::log::expressions::attr<boost::log::attributes::current_thread_id::value_type>("ThreadID")
+            << "] "  << boost::log::expressions::smessage
+        )
+    );
+    boost::log::core::get()->add_global_attribute("TimeStamp", boost::log::attributes::local_clock());
+    boost::log::core::get()->add_global_attribute("ThreadID", boost::log::attributes::current_thread_id());
+#endif
+
+
 
 	if (!benchmark)
 	{
@@ -124,8 +168,8 @@ int main(int argc, char* argv[])
 			io_service, &miner, host, port, user, password, 0, 0
 		};
 
-		miner.onSolutionFound([&](const EquihashSolution& solution) {
-			return sc.submit(&solution);
+		miner.onSolutionFound([&](const EquihashSolution& solution, const std::string& jobid) {
+			return sc.submit(&solution, jobid);
 		});
 
 		scSig = &sc;
@@ -140,9 +184,10 @@ int main(int argc, char* argv[])
 				double accepted = speed.GetShareOKSpeed() * 60;
 				BOOST_LOG_TRIVIAL(info) << CL_YLW "Speed [" << INTERVAL_SECONDS << " sec]: " << 
 					speed.GetHashSpeed() << " H/s, " <<
-					speed.GetSolutionSpeed() << " S/s, " << 
-					accepted << " AS/min, " << 
-					(allshares - accepted) << " RS/min" CL_N;
+					speed.GetSolutionSpeed() << " Sol/s" << 
+					//accepted << " AS/min, " << 
+					//(allshares - accepted) << " RS/min" 
+					CL_N;
 			}
 			if (api) while (api->poll()) { }
 		}
@@ -158,3 +203,4 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
+

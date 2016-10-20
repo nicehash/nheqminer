@@ -5,10 +5,9 @@
 #include "version.h"
 #include "ZcashStratum.h"
 
+#include "utilstrencodings.h"
 #include "trompequihash/equi_miner.h"
-#include "crypto/equihash.h"
 #include "streams.h"
-#include "version.h"
 
 #include <iostream>
 #include <atomic>
@@ -23,8 +22,79 @@
 #include <Windows.h>
 #endif
 
+#include <boost/static_assert.hpp>
+
+
+typedef uint32_t eh_index;
+
 
 #define BOOST_LOG_CUSTOM(sev, pos) BOOST_LOG_TRIVIAL(sev) << "miner#" << pos << " | "
+
+
+void CompressArray(const unsigned char* in, size_t in_len,
+	unsigned char* out, size_t out_len,
+	size_t bit_len, size_t byte_pad)
+{
+	assert(bit_len >= 8);
+	assert(8 * sizeof(uint32_t) >= 7 + bit_len);
+
+	size_t in_width{ (bit_len + 7) / 8 + byte_pad };
+	assert(out_len == bit_len*in_len / (8 * in_width));
+
+	uint32_t bit_len_mask{ ((uint32_t)1 << bit_len) - 1 };
+
+	// The acc_bits least-significant bits of acc_value represent a bit sequence
+	// in big-endian order.
+	size_t acc_bits = 0;
+	uint32_t acc_value = 0;
+
+	size_t j = 0;
+	for (size_t i = 0; i < out_len; i++) {
+		// When we have fewer than 8 bits left in the accumulator, read the next
+		// input element.
+		if (acc_bits < 8) {
+			acc_value = acc_value << bit_len;
+			for (size_t x = byte_pad; x < in_width; x++) {
+				acc_value = acc_value | (
+					(
+					// Apply bit_len_mask across byte boundaries
+					in[j + x] & ((bit_len_mask >> (8 * (in_width - x - 1))) & 0xFF)
+					) << (8 * (in_width - x - 1))); // Big-endian
+			}
+			j += in_width;
+			acc_bits += bit_len;
+		}
+
+		acc_bits -= 8;
+		out[i] = (acc_value >> acc_bits) & 0xFF;
+	}
+}
+
+
+void EhIndexToArray(const eh_index i, unsigned char* array)
+{
+	BOOST_STATIC_ASSERT(sizeof(eh_index) == 4);
+	eh_index bei = htobe32(i);
+	memcpy(array, &bei, sizeof(eh_index));
+}
+
+
+std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
+	size_t cBitLen)
+{
+	assert(((cBitLen + 1) + 7) / 8 <= sizeof(eh_index));
+	size_t lenIndices{ indices.size()*sizeof(eh_index) };
+	size_t minLen{ (cBitLen + 1)*lenIndices / (8 * sizeof(eh_index)) };
+	size_t bytePad{ sizeof(eh_index) - ((cBitLen + 1) + 7) / 8 };
+	std::vector<unsigned char> array(lenIndices);
+	for (int i = 0; i < indices.size(); i++) {
+		EhIndexToArray(indices[i], array.data() + (i*sizeof(eh_index)));
+	}
+	std::vector<unsigned char> ret(minLen);
+	CompressArray(array.data(), lenIndices,
+		ret.data(), minLen, cBitLen + 1, bytePad);
+	return ret;
+}
 
 
 void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
@@ -40,16 +110,20 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
     size_t offset;
     arith_uint256 inc;
     arith_uint256 target;
+	std::string jobId;
+	std::string nTime;
     std::atomic_bool workReady {false};
     std::atomic_bool cancelSolver {false};
 	std::atomic_bool pauseMining {false};
 
     miner->NewJob.connect(NewJob_t::slot_type(
-		[&m_zmt, &header, &space, &offset, &inc, &target, &workReady, &cancelSolver, pos, &pauseMining]
+		[&m_zmt, &header, &space, &offset, &inc, &target, &workReady, &cancelSolver, pos, &pauseMining, &jobId, &nTime]
         (const ZcashJob* job) mutable {
             std::lock_guard<std::mutex> lock{*m_zmt.get()};
             if (job) {
 				BOOST_LOG_CUSTOM(debug, pos) << "Loading new job #" << job->jobId();
+				jobId = job->jobId();
+				nTime = job->time;
                 header = job->header;
                 space = job->nonce2Space;
                 offset = job->nonce1Size * 4; // Hex length to bit length
@@ -85,21 +159,31 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
             // Calculate nonce limits
             arith_uint256 nonce;
             arith_uint256 nonceEnd;
+			CBlockHeader actualHeader;
+			std::string actualJobId;
+			std::string actualTime;
+			size_t actualNonce1size;
             {
                 std::lock_guard<std::mutex> lock{*m_zmt.get()};
                 arith_uint256 baseNonce = UintToArith256(header.nNonce);
 				arith_uint256 add(pos);
 				nonce = baseNonce | (add << (8 * 31));
 				nonceEnd = baseNonce | ((add + 1) << (8 * 31));
-                //nonce = baseNonce + ((space/size)*pos << offset);
-                //nonceEnd = baseNonce + ((space/size)*(pos+1) << offset);
+				//nonce = baseNonce + ((space/size)*pos << offset);
+				//nonceEnd = baseNonce + ((space/size)*(pos+1) << offset);
+
+				// save job id and time
+				actualHeader = header;
+				actualJobId = jobId;
+				actualTime = nTime;
+				actualNonce1size = offset / 4;
             }
 
 			// I = the block header minus nonce and solution.
 			CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
 			{
-				std::lock_guard<std::mutex> lock{ *m_zmt.get() };
-				CEquihashInput I{ header };
+				//std::lock_guard<std::mutex> lock{ *m_zmt.get() };
+				CEquihashInput I{ actualHeader };
 				ss << I;
 			}
 
@@ -121,18 +205,17 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 
 				auto bNonce = ArithToUint256(nonce);
                 std::function<bool(std::vector<unsigned char>)> validBlock =
-                        [&m_zmt, &header, &bNonce, &target, &miner, pos]
+					[&m_zmt, &actualHeader, &bNonce, &target, &miner, pos, &actualJobId, &actualTime, &actualNonce1size]
                         (std::vector<unsigned char> soln) {
-                    std::lock_guard<std::mutex> lock{*m_zmt.get()};
+                    //std::lock_guard<std::mutex> lock{*m_zmt.get()};
                     // Write the solution to the hash and compute the result.
 					BOOST_LOG_CUSTOM(debug, pos) << "Checking solution against target...";
-					CBlockHeader newHeader(header);
-					newHeader.nNonce = bNonce;
-					newHeader.nSolution = soln;
+					actualHeader.nNonce = bNonce;
+					actualHeader.nSolution = soln;
 
 					speed.AddSolution();
 
-					uint256 headerhash = newHeader.GetHash();
+					uint256 headerhash = actualHeader.GetHash();
 					if (UintToArith256(headerhash) > target) {
 						BOOST_LOG_CUSTOM(debug, pos) << "Too large: " << headerhash.ToString();
                         return false;
@@ -140,8 +223,8 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 
                     // Found a solution
 					BOOST_LOG_CUSTOM(debug, pos) << "Found solution with header hash: " << headerhash.ToString();
-                    EquihashSolution solution {bNonce, soln};
-                    miner->submitSolution(solution);
+					EquihashSolution solution{ bNonce, soln, actualTime, actualNonce1size };
+                    miner->submitSolution(solution, actualJobId);
 
                     // We're a pooled miner, so try all solutions
                     return false;
@@ -294,29 +377,6 @@ void ZcashJob::setTarget(std::string target)
     }
 }
 
-bool ZcashJob::evalSolution(const EquihashSolution* solution)
-{
-	unsigned int n = PARAMETER_N;
-	unsigned int k = PARAMETER_K;
-
-    // Hash state
-    blake2b_state_old state;
-    EhInitialiseState(n, k, state);
-
-    // I = the block header minus nonce and solution.
-    CEquihashInput I{header};
-    // I||V
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << I;
-    ss << solution->nonce;
-
-    // H(I||V||...
-    blake2b_update_old(&state, (unsigned char*)&ss[0], ss.size());
-
-    bool isValid;
-    EhIsValidSolution(n, k, state, solution->solution, isValid);
-    return isValid;
-}
 
 std::string ZcashJob::getSubmission(const EquihashSolution* solution)
 {
@@ -339,7 +399,8 @@ ZcashMiner::ZcashMiner(int threads)
 {
 	m_isActive = false;
     if (nThreads < 1) {
-		nThreads = std::thread::hardware_concurrency();
+		nThreads = std::thread::hardware_concurrency() * 3 / 4; // take 75% of all threads by default
+		if (nThreads < 1) nThreads = 1;
     }
 }
 
@@ -415,7 +476,7 @@ void ZcashMiner::setServerNonce(const std::string& n1str)
     CDataStream ss(nonceData, SER_NETWORK, PROTOCOL_VERSION);
     ss >> nonce1;
 
-	BOOST_LOG_TRIVIAL(info) << "miner | Full nonce " << nonce1.ToString();
+	//BOOST_LOG_TRIVIAL(info) << "miner | Full nonce " << nonce1.ToString();
 
     nonce1Size = n1str.size();
     size_t nonce1Bits = nonce1Size * 4; // Hex length to bit length
@@ -487,14 +548,14 @@ void ZcashMiner::setJob(ZcashJob* job)
 }
 
 void ZcashMiner::onSolutionFound(
-        const std::function<bool(const EquihashSolution&)> callback)
+        const std::function<bool(const EquihashSolution&, const std::string&)> callback)
 {
     solutionFoundCallback = callback;
 }
 
-void ZcashMiner::submitSolution(const EquihashSolution& solution)
+void ZcashMiner::submitSolution(const EquihashSolution& solution, const std::string& jobid)
 {
-    solutionFoundCallback(solution);
+    solutionFoundCallback(solution, jobid);
 	speed.AddShare();
 }
 
@@ -637,7 +698,11 @@ void do_benchmark(int nThreads, int hashes)
 
 	std::cout << "Benchmark starting... this may take several minutes, please wait..." << std::endl;
 
-	if (nThreads < 1) nThreads = std::thread::hardware_concurrency();
+	if (nThreads < 1)
+	{
+		nThreads = std::thread::hardware_concurrency() * 3 / 4; // take 75% of all threads by default
+		if (nThreads < 1) nThreads = 1;
+	}
 	std::thread* bthreads = new std::thread[nThreads];
 
 	auto start = std::chrono::high_resolution_clock::now();
