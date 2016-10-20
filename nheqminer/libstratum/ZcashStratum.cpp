@@ -187,17 +187,8 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 				ss << I;
 			}
 
-#ifdef  USE_TROMP_EQUIHASH
 			const char *tequihash_header = (char *)&ss[0];
 			unsigned int tequihash_header_len = ss.size();
-#else
-            // Hash state
-            blake2b_state state;
-            EhInitialiseState(n, k, state);
-
-            // H(I||...
-            blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
-#endif
 
             // Start working
             while (true) {
@@ -230,7 +221,6 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
                     return false;
                 };
 
-#ifdef USE_TROMP_EQUIHASH
 				//////////////////////////////////////////////////////////////////////////
 				// TROMP EQ SOLVER START
 				// I = the block header minus nonce and solution.
@@ -278,42 +268,7 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 				//////////////////////////////////////////////////////////////////////
 				// TROMP EQ SOLVER END
 				//////////////////////////////////////////////////////////////////////
-#else
-				std::function<bool(EhSolverCancelCheck)> cancelled =
-					[&cancelSolver, &miner, pos](EhSolverCancelCheck pos1)
-				{
-					if (!miner->minerThreadActive[pos])
-						throw boost::thread_interrupted();
-					//boost::this_thread::interruption_point();
-					return cancelSolver.load();
-				};
-
-				// H(I||V||...
-				blake2b_state curr_state;
-				curr_state = state;
-				blake2b_update(&curr_state,
-					bNonce.begin(),
-					bNonce.size());
-
-                try 
-				{
-                    // If we find a valid block, we get more work
-                    if (EhOptimisedSolve(n, k, curr_state, validBlock, cancelled))
-					{
-						speed.AddHash(); // found block, hash was done
-                        break;
-                    }
-					speed.AddHash(); // did not cancel in the middle, hash was done
-                } 
-				catch (EhSolverCancelledException&) 
-				{
-					speed.AddHashInterrupted();
-					BOOST_LOG_CUSTOM(debug, pos) << "Equihash solver cancelled";
-                    cancelSolver.store(false);
-                    break;
-                }
-
-#endif
+				
                 // Check for stop
 				if (!miner->minerThreadActive[pos])
 					throw boost::thread_interrupted();
@@ -587,15 +542,8 @@ bool benchmark_solve_equihash()
 	unsigned int n = PARAMETER_N;
 	unsigned int k = PARAMETER_K;
 
-#ifdef USE_TROMP_EQUIHASH
 	const char *tequihash_header = (char *)&ss[0];
 	unsigned int tequihash_header_len = ss.size();
-#else
-	blake2b_state_old eh_state;
-
-	EhInitialiseState(n, k, eh_state);
-	blake2b_update_old(&eh_state, (unsigned char*)&ss[0], ss.size());
-#endif
 
 	benchmark_work.lock();
 	if (benchmark_nonces.empty())
@@ -609,7 +557,6 @@ bool benchmark_solve_equihash()
 
 	BOOST_LOG_TRIVIAL(debug) << "Testing, nonce = " << nonce->ToString();
 
-#ifdef USE_TROMP_EQUIHASH
 	equi eq(1);
 	eq.setnonce(tequihash_header, tequihash_header_len, (const char*)nonce->begin(), nonce->size());
 	eq.digit0(0);
@@ -643,26 +590,6 @@ bool benchmark_solve_equihash()
 
 		++benchmark_solutions;
 	}
-
-#else
-	blake2b_update_old(&eh_state,
-		nonce->begin(),
-		nonce->size());
-
-	std::set<std::vector<unsigned int>> solns;
-	EhOptimisedSolveUncancellable(n, k, eh_state, [nonce, &pblock](std::vector<unsigned char> soln)
-	{
-		CBlockHeader hdr = pblock.GetBlockHeader();
-		hdr.nNonce = *nonce;
-		hdr.nSolution = soln;
-
-		BOOST_LOG_TRIVIAL(debug) << "Solution found, header = " << hdr.GetHash().ToString();
-
-		++benchmark_solutions;
-
-		return false;
-	});
-#endif
 
 	delete nonce;
 
