@@ -11,6 +11,7 @@
 #include <boost/bind.hpp>
 #include <mutex>
 #include <thread>
+#include <atomic>
 
 #include "json/json_spirit_value.h"
 
@@ -155,6 +156,8 @@ private:
     boost::asio::deadline_timer * p_worktimer;
 
     string m_nextJobTarget;
+
+	std::atomic_int m_share_id;
 };
 
 typedef StratumClient<ZcashMiner, ZcashJob, EquihashSolution> ZcashStratumClient;

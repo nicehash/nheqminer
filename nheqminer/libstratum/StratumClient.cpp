@@ -154,6 +154,8 @@ void StratumClient<Miner, Job, Solution>::connect()
 		os << sss;
 		BOOST_LOG_CUSTOM(trace) << "Sending: " << sss;
         write(m_socket, m_requestBuffer);
+
+		m_share_id = 4;
     }
 }
 
@@ -240,6 +242,80 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
     Value valRes;
     bool accepted = false;
     switch (id) {
+	case 0:
+	{
+		const Value& valMethod = find_value(responseObject, "method");
+		string method = "";
+		if (valMethod.type() == str_type) {
+			method = valMethod.get_str();
+		}
+
+		if (method == "mining.notify") {
+			const Value& valParams = find_value(responseObject, "params");
+			if (valParams.type() == array_type) {
+				const Array& params = valParams.get_array();
+				Job* workOrder = p_miner->parseJob(params);
+
+				if (workOrder)
+				{
+					if (!workOrder->clean)
+					{
+						BOOST_LOG_CUSTOM(info) << CL_CYN "Ignoring non-clean job #" << workOrder->jobId() << CL_N;;
+						break;
+					}
+
+					BOOST_LOG_CUSTOM(info) << CL_CYN "Received new job #" << workOrder->jobId() << CL_N;
+					workOrder->setTarget(m_nextJobTarget);
+
+					if (!(p_current && *workOrder == *p_current)) {
+						//x_current.lock();
+						//if (p_worktimer)
+						//    p_worktimer->cancel();
+
+						if (p_previous) {
+							delete p_previous;
+						}
+						p_previous = p_current;
+						p_current = workOrder;
+
+						p_miner->setJob(p_current);
+						//x_current.unlock();
+						//p_worktimer = new boost::asio::deadline_timer(m_io_service, boost::posix_time::seconds(m_worktimeout));
+						//p_worktimer->async_wait(boost::bind(&StratumClient::work_timeout_handler, this, boost::asio::placeholders::error));
+					}
+				}
+			}
+		}
+		else if (method == "mining.set_target") {
+			const Value& valParams = find_value(responseObject, "params");
+			if (valParams.type() == array_type) {
+				const Array& params = valParams.get_array();
+				m_nextJobTarget = params[0].get_str();
+				BOOST_LOG_CUSTOM(info) << CL_MAG "Target set to " << m_nextJobTarget << CL_N;
+			}
+		}
+		else if (method == "mining.set_extranonce") {
+			const Value& valParams = find_value(responseObject, "params");
+			if (valParams.type() == array_type) {
+				const Array& params = valParams.get_array();
+				p_miner->setServerNonce(params[0].get_str());
+			}
+		}
+		else if (method == "client.reconnect") {
+			const Value& valParams = find_value(responseObject, "params");
+			if (valParams.type() == array_type) {
+				const Array& params = valParams.get_array();
+				if (params.size() > 1) {
+					p_active->host = params[0].get_str();
+					p_active->port = params[1].get_str();
+				}
+				// TODO: Handle wait time
+				BOOST_LOG_CUSTOM(info) << "Reconnection requested";
+				reconnect();
+			}
+		}
+		break;
+	}
     case 1:
         valRes = find_value(responseObject, "result");
         if (valRes.type() == array_type) {
@@ -280,13 +356,13 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
     case 3:
         // nothing to do...
         break;
-    case 4:
+    default:
         valRes = find_value(responseObject, "result");
         if (valRes.type() == bool_type) {
             accepted = valRes.get_bool();
         }
         if (accepted) {
-			BOOST_LOG_CUSTOM(info) << CL_GRN "Accepted" CL_N;
+			BOOST_LOG_CUSTOM(info) << CL_GRN "Accepted share #" << id << CL_N;
             p_miner->acceptedSolution(m_stale);
         } else {
 			valRes = find_value(responseObject, "error");
@@ -297,80 +373,11 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
 				if (params.size() > 1 && params[1].type() == str_type)
 					reason = params[1].get_str();
 			}
-			BOOST_LOG_CUSTOM(warning) << CL_RED "Rejected" CL_N " (" << reason << ")";
+			BOOST_LOG_CUSTOM(warning) << CL_RED "Rejected share #" << id << CL_N " (" << reason << ")";
             p_miner->rejectedSolution(m_stale);
         }
         break;
-    default:
-        const Value& valMethod = find_value(responseObject, "method");
-        string method = "";
-        if (valMethod.type() == str_type) {
-            method = valMethod.get_str();
-        }
-
-        if (method == "mining.notify") {
-            const Value& valParams = find_value(responseObject, "params");
-            if (valParams.type() == array_type) {
-                const Array& params = valParams.get_array();
-                Job* workOrder = p_miner->parseJob(params);
-
-                if (workOrder)
-				{
-					if (!workOrder->clean)
-					{
-						BOOST_LOG_CUSTOM(info) << CL_CYN "Ignoring non-clean job #" << workOrder->jobId() << CL_N;;
-						break;
-					}
-
-					BOOST_LOG_CUSTOM(info) << CL_CYN "Received new job #" << workOrder->jobId() << CL_N;
-                    workOrder->setTarget(m_nextJobTarget);
-
-                    if (!(p_current && *workOrder == *p_current)) {
-                        //x_current.lock();
-                        //if (p_worktimer)
-                        //    p_worktimer->cancel();
-
-                        if (p_previous) {
-                            delete p_previous;
-                        }
-                        p_previous = p_current;
-                        p_current = workOrder;
-
-                        p_miner->setJob(p_current);
-                        //x_current.unlock();
-                        //p_worktimer = new boost::asio::deadline_timer(m_io_service, boost::posix_time::seconds(m_worktimeout));
-                        //p_worktimer->async_wait(boost::bind(&StratumClient::work_timeout_handler, this, boost::asio::placeholders::error));
-                    }
-                }
-            }
-        } else if (method == "mining.set_target") {
-            const Value& valParams = find_value(responseObject, "params");
-            if (valParams.type() == array_type) {
-                const Array& params = valParams.get_array();
-                m_nextJobTarget = params[0].get_str();
-				BOOST_LOG_CUSTOM(info) << CL_MAG "Target set to " << m_nextJobTarget << CL_N;
-            }
-		} else if (method == "mining.set_extranonce") {
-			const Value& valParams = find_value(responseObject, "params");
-			if (valParams.type() == array_type) {
-				const Array& params = valParams.get_array();
-				p_miner->setServerNonce(params[0].get_str());
-			}
-		}
-		else if (method == "client.reconnect") {
-            const Value& valParams = find_value(responseObject, "params");
-            if (valParams.type() == array_type) {
-                const Array& params = valParams.get_array();
-				if (params.size() > 1) {
-					p_active->host = params[0].get_str();
-					p_active->port = params[1].get_str();
-				}
-                // TODO: Handle wait time
-				BOOST_LOG_CUSTOM(info) << "Reconnection requested";
-                reconnect();
-            }
-        }
-        break;
+    
     }
 }
 
@@ -387,7 +394,8 @@ void StratumClient<Miner, Job, Solution>::work_timeout_handler(
 template <typename Miner, typename Job, typename Solution>
 bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const std::string& jobid)
 {
-	BOOST_LOG_CUSTOM(info) << "Submitting, nonce " << solution->toString();
+	int id = std::atomic_fetch_add(&m_share_id, 1);
+	BOOST_LOG_CUSTOM(info) << "Submitting share #" << id << ", nonce " << solution->toString().substr(0, 64 - solution->nonce1size);
 
 	CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
 	ss << solution->nonce;
@@ -395,7 +403,7 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const
 	std::string strHex = HexStr(ss.begin(), ss.end());
 
 	std::stringstream stream;
-	stream << "{\"id\":4,\"method\":\"mining.submit\",\"params\":[\"";
+	stream << "{\"id\":" << id << ",\"method\":\"mining.submit\",\"params\":[\"";
 	stream << p_active->user;
 	stream << "\",\"" << jobid;
 	stream << "\",\"" << solution->time;
@@ -409,45 +417,6 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const
 	write(m_socket, m_requestBuffer);
 
 	return true;
-
-    /*x_current.lock();
-    Job* tempJob = p_current->clone();
-    Job* tempPreviousJob;
-    if (p_previous) {
-        tempPreviousJob = p_previous->clone();
-    }
-    x_current.unlock();
-
-	BOOST_LOG_CUSTOM(info) << "Submitting, nonce " << solution->toString();
-
-    if (tempJob->evalSolution(solution)) {
-        string json = "{\"id\":4,\"method\":\"mining.submit\",\"params\":[\"" +
-                      p_active->user + "\"," +
-                      tempJob->getSubmission(solution) + "]}\n";
-        std::ostream os(&m_requestBuffer);
-        os << json;
-        m_stale = false;
-		BOOST_LOG_CUSTOM(trace) << "Sending: " << json;
-        write(m_socket, m_requestBuffer);
-        return true;
-    } else if (tempPreviousJob && tempPreviousJob->evalSolution(solution)) {
-        string json = "{\"id\":4,\"method\":\"mining.submit\",\"params\":[\"" +
-                      p_active->user + "\"," +
-                      tempPreviousJob->getSubmission(solution) + "]}\n";
-        std::ostream os(&m_requestBuffer);
-        os << json;
-        m_stale = true;
-		BOOST_LOG_CUSTOM(warning) << "Submitting stale solution";
-		BOOST_LOG_CUSTOM(trace) << "Sending: " << json;
-        write(m_socket, m_requestBuffer);
-        return true;
-    } else {
-        m_stale = false;
-		BOOST_LOG_CUSTOM(warning) << "FAILURE: Miner gave incorrect result!";
-        p_miner->failedSolution();
-    }
-
-    return false;*/
 }
 
 template class StratumClient<ZcashMiner, ZcashJob, EquihashSolution>;
