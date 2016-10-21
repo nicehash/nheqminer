@@ -2,8 +2,13 @@
 
 ## Windows:
 
-In order to build project make sure you have  [**Visual C++ Compiler November 2013 CTP**](https://www.microsoft.com/en-us/download/details.aspx?id=41151) installed.
-Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build. 
+Windows builds made by us are available here: https://github.com/nicehash/nheqminer/releases
+
+Download and install:
+- Visual Studio 2013 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs
+- Visual C++ Compiler November 2013 CTP: https://www.microsoft.com/en-us/download/details.aspx?id=41151
+
+Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 
 ## Linux (Ubuntu/Debian based, Tested on Ubuntu 16.04):
 To build under Ubuntu Linux make sure you have Qt5 installed. You can install it manually from [Qt website](https://www.qt.io/) or install it from the command line: `sudo apt-get install qt5-default`.
