@@ -16,7 +16,7 @@ Open a terminal and cd to nheqminer root folder and run the following commands (
   - `make`
 
 ## Linux (non Ubuntu/Debian based distros):
-If you are using a Linux distribution that is not Ubuntu/Debian based you can still build but you will have to build boost 1.68 and copy the static libraries [**libboost_log.a**  **libboost_system.a**  **libboost_thread.a**] over to **nheqminer/libs/linux_ubuntu** and follow the Ubuntu/Debian instructions (installing qt5 qmake accordingly to systems package manager).
+If you are using a Linux distribution that is not Ubuntu/Debian based you can still build but you will have to build boost 1.62 and copy the static libraries [**libboost_log.a**  **libboost_system.a**  **libboost_thread.a**] over to **nheqminer/libs/linux_ubuntu** and follow the Ubuntu/Debian instructions (installing qt5 qmake accordingly to systems package manager).
 
 # Run instructions:
 
