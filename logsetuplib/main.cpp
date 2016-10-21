@@ -64,7 +64,7 @@ void init_logging(boost::log::core_ptr cptr, int level)
 	logging::aux::add_console_log2
 	(
 		cptr,
-		std::clog,
+		std::cout,
 		keywords::format = "[%TimeStamp%][%ThreadID%]: %Message%"
 	);
 
