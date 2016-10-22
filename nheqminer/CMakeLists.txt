@@ -90,10 +90,9 @@ set(SOURCE_FILES
     amount.h
     api.hpp
     arith_uint256.h
-    blake2/blake2-impl.h
-    blake2/blake2.h
-    blake2/blamka-round-opt.h
-    blake2/blamka-round-ref.h
+#    blake2/blake2-impl.h
+#    blake2/blake2.h
+#    blake2/blamka-round-opt.h
     compat/byteswap.h
     compat/endian.h
     compat/sanity.h
