@@ -5,25 +5,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
-    #endian
-    add_definitions(-DHAVE_ENDIAN_H)
-    add_definitions(-DHAVE_DECL_HTOBE16)
-    add_definitions(-DHAVE_DECL_HTOLE16)
-    add_definitions(-DHAVE_DECL_BE16TOH)
-    add_definitions(-DHAVE_DECL_LE16TOH)
-    add_definitions(-DHAVE_DECL_HTOBE32)
-    add_definitions(-DHAVE_DECL_HTOLE32)
-    add_definitions(-DHAVE_DECL_BE32TOH)
-    add_definitions(-DHAVE_DECL_LE32TOH)
-    add_definitions(-DHAVE_DECL_HTOBE64)
-    add_definitions(-DHAVE_DECL_HTOLE64)
-    add_definitions(-DHAVE_DECL_BE64TOH)
-    add_definitions(-DHAVE_DECL_LE64TOH)
-    #byteswap
-    add_definitions(-DHAVE_BYTESWAP_H)
-    add_definitions(-DHAVE_DECL_BSWAP_16)
-    add_definitions(-DHAVE_DECL_BSWAP_32)
-    add_definitions(-DHAVE_DECL_BSWAP_64)
     # optimizations
     add_definitions(-O3)
 endif()
@@ -72,7 +53,8 @@ set(SOURCE_FILES
     amount.cpp
     api.cpp
     arith_uint256.cpp
-    compat/strnlen.cpp
+    # don't use this on Linux (Linux has it by default)
+#    compat/strnlen.cpp
     crypto/ripemd160.cpp
     crypto/sha256.cpp
     json/json_spirit_reader.cpp
@@ -90,12 +72,10 @@ set(SOURCE_FILES
     amount.h
     api.hpp
     arith_uint256.h
-#    blake2/blake2-impl.h
-#    blake2/blake2.h
-#    blake2/blamka-round-opt.h
-    compat/byteswap.h
-    compat/endian.h
-    compat/sanity.h
+    # don't use this on Linux (Linux has it by default)
+#    compat/byteswap.h
+#    compat/endian.h
+##    compat/sanity.h
     crypto/common.h
     crypto/equihash.h
     crypto/ripemd160.h
