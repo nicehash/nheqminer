@@ -2,7 +2,7 @@
 
 ## Windows:
 
-Windows builds made by us are available here: https://github.com/nicehash/nheqminer/releases
+Windows builds made by us are available here: https://github.com/feeleep75/nheqminer/releases
 
 Download and install:
 - Visual Studio 2013 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs
@@ -28,8 +28,8 @@ If you are using a Linux distribution that is not Ubuntu/Debian based you can st
 If run without parameters, miner will start mining with 75% of available virtual cores on NiceHash. Use parameter -h to learn about available parameters:
 
         -h              Print this help and quit
-        -l [location]   Location (eu, usa, hk, jp)
-        -u [username]   Username (bitcoinaddress)
+        -l [location]   Stratum server (zec.coinmine.pl:7007)
+        -u [username]   Username (worker_name)
         -p [password]   Password (default: x)
         -t [num_thrds]  Number of threads (default: number of sys cores)
         -d [level]      Debug print level (0 = print all, 5 = fatal only, default: 2)
@@ -38,18 +38,14 @@ If run without parameters, miner will start mining with 75% of available virtual
         
 Example to run benchmark:
 
-        nheqminer_x64_AVX.exe -b
+        nheqminer.exe -b
         
 Example to run with full logging (including network dump):
 
-        nheqminer_x64_AVX.exe -d 0
+        nheqminer.exe -d 0
         
-Example to mine with your own BTC address and worker1 on USA server:
+Example to mine:
 
-        nheqminer_x64_AVX.exe -l usa -u YOUR_BTC_ADDRESS_HERE.worker1
-
-Example to mine with your own BTC address and worker1 on EU server, using 6 threads:
-
-        nheqminer_x64_AVX.exe -l eu -u YOUR_BTC_ADDRESS_HERE.worker1 -t 6
+        nheqmine.exe -l zec.coinmine.pl:7007 -u feeleep.1 -p x -t 6
 
 <i>Note: if you have a 4-core CPU with hyper threading enabled (total 8 threads) it is best to run with only 6 threads (experimental benchmarks shows that best results are achieved with 75% threads utilized)</i>
