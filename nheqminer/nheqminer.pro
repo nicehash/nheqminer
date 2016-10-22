@@ -28,6 +28,8 @@ QMAKE_CXXFLAGS_RELEASE *= -O3
 #QMAKE_CFLAGS_RELEASE += -msse2
 #QMAKE_CXXFLAGS_RELEASE += -msse2
 
+INCLUDEPATH += $$PWD/3rdparty/
+
 # use this instead of CONFIG c++11 since some qmake versions use experimental flag
 QMAKE_CXXFLAGS += -std=gnu++11
 
