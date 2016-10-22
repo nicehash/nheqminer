@@ -24,6 +24,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     add_definitions(-DHAVE_DECL_BSWAP_16)
     add_definitions(-DHAVE_DECL_BSWAP_32)
     add_definitions(-DHAVE_DECL_BSWAP_64)
+    # optimizations
+    add_definitions(-O3)
 endif()
 
 # Common
