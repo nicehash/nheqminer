@@ -5,20 +5,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
+    # use native cpu features
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
     # optimizations
     add_definitions(-O3)
 endif()
 
 # Common
 include_directories(${nheqminer_SOURCE_DIR})
-
-# CPU extension options
-#add_definitions(-DHAVE_SSSE2)
-#add_definitions(-DHAVE_SSSE3)
-#add_definitions(-DHAVE_SSE41)
-#add_definitions(-DHAVE_AVX)
-#add_definitions(-DHAVE_AVX2)
-
 
 add_definitions(-DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
 
