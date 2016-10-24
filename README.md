@@ -14,7 +14,7 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
 Under Ubuntu open a terminal and run the following commands:
   - `sudo apt-get install cmake build-essential libboost-all-dev`
-  - `git clone https://github.com/nicehash/nheqminer.git`
+  - `git clone https://github.com/feeleep75/nheqminer.git`
   - `cd nheqminer/nheqminer`
   - `mkdir build`
   - `cd build`
