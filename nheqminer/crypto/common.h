@@ -13,7 +13,12 @@
 #include <assert.h>
 
 //#include "sodium.h"
+
+#ifdef WIN32
 #include "compat/endian.h"
+#else
+#include <endian.h>
+#endif
 
 //#if defined(NDEBUG)
 //# error "Bitcoin cannot be compiled without assertions."

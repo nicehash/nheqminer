@@ -10,6 +10,18 @@ Download and install:
 
 Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 
+## Linux cmake **recommended** (Tested on Ubuntu Desktop 14.04 and 16.04 and Ubuntu server 14.04):
+You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
+Under Ubuntu open a terminal and run the following commands:
+  - `sudo apt-get install cmake build-essential libboost-all-dev`
+  - `git clone https://github.com/nicehash/nheqminer.git`
+  - `cd nheqminer/nheqminer`
+  - `mkdir build`
+  - `cd build`
+  - `cmake ..`
+  - `make`
+
+
 ## Linux (Ubuntu/Debian based, Tested on Ubuntu 16.04):
 To build under Ubuntu Linux make sure you have Qt5 installed. You can install it manually from [Qt website](https://www.qt.io/) or install it from the command line: `sudo apt-get install qt5-default`.
 Open a terminal and cd to nheqminer root folder and run the following commands (make sure you have qmake in your PATH, if installed manually from Qt website you will have to export it to your PATH):
@@ -19,9 +31,7 @@ Open a terminal and cd to nheqminer root folder and run the following commands (
   - `cd build`
   - `qmake ../nheqminer/nheqminer.pro`
   - `make`
-
-## Linux (non Ubuntu/Debian based distros):
-If you are using a Linux distribution that is not Ubuntu/Debian based you can still build but you will have to build boost 1.62 and copy the static libraries [**libboost_log.a**  **libboost_system.a**  **libboost_thread.a**] over to **nheqminer/libs/linux_ubuntu** and follow the Ubuntu/Debian instructions (installing qt5 qmake accordingly to systems package manager).
+  
 
 # Run instructions:
 
