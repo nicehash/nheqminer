@@ -124,4 +124,4 @@ set(LIBS ${LIBS} ${Threads_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 #target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${LIBS})
+target_link_libraries(${PROJECT_NAME} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
