@@ -2,17 +2,40 @@
 cmake_minimum_required(VERSION 2.8)
 
 option(STATIC_BUILD "Build with static libraries on Linux")
+option(XENON "Build options with xenoncat")
+option(MARCH "GCC options for architecture (default: native)")
 
 project(nheqminer)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
+	if (MARCH)
+		set (GCCMARCH MARCH)
+	else()
+		set (GCCMARCH "-march=native")
+	endif()
+
     # use native cpu features
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCCMARCH}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCCMARCH}")
     # optimizations
     add_definitions(-O3)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	if (XENON EQUAL 0)
+		unset (XENONCAT)
+	elseif (XENON EQUAL 1)
+		set (XENONCAT "${nheqminer_SOURCE_DIR}/external/equihash-xenon/Linux/asm/equihash_avx1.o")
+		add_definitions(-DXENONCAT=1)
+	elseif (XENON EQUAL 2)
+		set (XENONCAT "${nheqminer_SOURCE_DIR}/external/equihash-xenon/Linux/asm/equihash_avx2.o")
+		add_definitions(-DXENONCAT=2)
+	else()
+		set (XENONCAT "${nheqminer_SOURCE_DIR}/external/equihash-xenon/Linux/asm/equihash_avx2.o")
+		add_definitions(-DXENONCAT=2)
+	endif()
 endif()
 
 # Common
@@ -23,8 +46,6 @@ if (STATIC_BUILD)
 else()
 	add_definitions(-DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
 endif()
-
-
 
 find_package(Threads REQUIRED COMPONENTS)
 find_package(Boost REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
@@ -136,12 +157,15 @@ endif()
 set(LIBS ${LIBS} ${Threads_LIBRARIES} ${Boost_LIBRARIES})
 
 message("-- CXXFLAGS: ${CMAKE_CXX_FLAGS}")
-
 message("-- LIBS: ${LIBS}")
+message("-- XENON: ${XENON}")
+message("-- XENONCAT: ${XENONCAT}")
+
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 #target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${LIBS})
+# target_link_libraries(${PROJECT_NAME} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${nheqminer_SOURCE_DIR}/external/equihash-xenon/Linux/asm/equihash_avx2.o)
+target_link_libraries(${PROJECT_NAME} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${XENONCAT})
 if (STATIC_BUILD)
 	# set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
 	set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
