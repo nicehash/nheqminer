@@ -1,5 +1,8 @@
 #cmake global
 cmake_minimum_required(VERSION 2.8)
+
+option(STATIC_BUILD "Build with static libraries on Linux")
+
 project(nheqminer)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -15,7 +18,13 @@ endif()
 # Common
 include_directories(${nheqminer_SOURCE_DIR})
 
-add_definitions(-DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
+if (STATIC_BUILD)
+	set(Boost_USE_STATIC_LIBS   ON)
+else()
+	add_definitions(-DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
+endif()
+
+
 
 find_package(Threads REQUIRED COMPONENTS)
 find_package(Boost REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
@@ -117,11 +126,23 @@ set(SOURCE_FILES
     )
 #add_executable(${PROJECT_NAME} ${SRC_LIST})
 
+if (STATIC_BUILD)
+	SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+	SET(BUILD_SHARED_LIBRARIES OFF)
+	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+endif()
+
+
 set(LIBS ${LIBS} ${Threads_LIBRARIES} ${Boost_LIBRARIES})
 
-#message("-- CXXFLAGS: ${CMAKE_CXX_FLAGS}")
-#message("-- LIBS: ${LIBS}")
+message("-- CXXFLAGS: ${CMAKE_CXX_FLAGS}")
+
+message("-- LIBS: ${LIBS}")
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 #target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${LIBS})
+if (STATIC_BUILD)
+	# set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
+	set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
+endif()
