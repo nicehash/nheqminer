@@ -2,7 +2,7 @@
 
 ## Windows:
 
-Windows builds made by us are available here: https://github.com/nicehash/nheqminer/releases
+Windows builds made by us are available here: https://github.com/kost/nheqminer/releases
 
 Download and install:
 - Visual Studio 2013 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs
@@ -14,18 +14,29 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
 Under Ubuntu open a terminal and run the following commands:
   - `sudo apt-get install cmake build-essential libboost-all-dev`
-  - `git clone https://github.com/nicehash/nheqminer.git`
+  - `git clone https://github.com/kost/nheqminer.git`
   - `cd nheqminer/nheqminer`
   - `mkdir build`
   - `cd build`
   - `cmake ..`
   - `make`
 
+## Full static Linux cmake **recommended** (Tested on Ubuntu Desktop 14.04 and 16.04 and Ubuntu server 14.04):
+You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
+Under Ubuntu open a terminal and run the following commands:
+  - `sudo apt-get install cmake build-essential libboost-all-dev`
+  - `git clone https://github.com/kost/nheqminer.git`
+  - `cd nheqminer/nheqminer`
+  - `mkdir build`
+  - `cd build`
+  - `cmake -DSTATIC_BUILD=1 ..`
+  - `make`
+
 
 ## Linux (Ubuntu/Debian based, Tested on Ubuntu 16.04):
 To build under Ubuntu Linux make sure you have Qt5 installed. You can install it manually from [Qt website](https://www.qt.io/) or install it from the command line: `sudo apt-get install qt5-default`.
 Open a terminal and cd to nheqminer root folder and run the following commands (make sure you have qmake in your PATH, if installed manually from Qt website you will have to export it to your PATH):
-  - `git clone https://github.com/nicehash/nheqminer.git`
+  - `git clone https://github.com/kost/nheqminer.git`
   - `cd nheqminer`
   - `mkdir build`
   - `cd build`
@@ -54,12 +65,12 @@ Example to run with full logging (including network dump):
 
         nheqminer_x64_AVX.exe -d 0
         
-Example to mine with your own BTC address and worker1 on USA server:
+Example to mine with your own ZEC address and worker1 on USA server:
 
-        nheqminer_x64_AVX.exe -l usa -u YOUR_BTC_ADDRESS_HERE.worker1
+        nheqminer_x64_AVX.exe -l eu1-zcash.flypool.org:3333 -u YOUR_ZCASH_ADDRESS_HERE.worker1
 
-Example to mine with your own BTC address and worker1 on EU server, using 6 threads:
+Example to mine with your own ZEC address and worker1 on EU server, using 6 threads:
 
-        nheqminer_x64_AVX.exe -l eu -u YOUR_BTC_ADDRESS_HERE.worker1 -t 6
+        nheqminer_x64_AVX.exe -l eu1-zcash.flypool.org:3333 -u YOUR_ZCASH_ADDRESS_HERE.worker1 -t 6
 
 <i>Note: if you have a 4-core CPU with hyper threading enabled (total 8 threads) it is best to run with only 6 threads (experimental benchmarks shows that best results are achieved with 75% threads utilized)</i>
