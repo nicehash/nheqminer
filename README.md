@@ -104,7 +104,7 @@ Under Alpine open a terminal and run the following commands:
 
 ## Mac OS X  (currently only Tromp, no xenoncat):
 You need to have git, cmake, make and Mac OS X Developer stuff (compiler, etc).
-Under Alpine open a terminal and run the following commands:
+Under Mac open a terminal and run the following commands:
   - `git clone --recursive https://github.com/kost/nheqminer.git`
   - `cd nheqminer/nheqminer`
   - `mkdir build`
