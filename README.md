@@ -1,4 +1,53 @@
-# Build instructions:
+# Nheqminer
+
+Equihash/zcash/zec miner (can be used for pool mining)
+
+# Usage
+
+### flypool
+`nheqminer -l eu1-zcash.flypool.org:3333 -u ZcashTransparentAddress`
+
+Example:
+`nheqminer -l eu1-zcash.flypool.org:3333 -u t1JBZzdaUUSJDs8q7SUxcCSzakThqtNRtNv`
+
+### suprnova
+nheqminer -l zec.suprnova.cc:2142 -u suprnovaaccount.1 -p x -t threadCount 
+
+Example:
+`nheqminer -l zec.suprnova.cc:2142 -u suprnova.1 -p x`
+
+### zmine
+`nheqminer  -l zmine.io:1337 -u ZcashTransparentAddress`
+
+Example:
+`nheqminer  -l zmine.io:1337 -u t1JBZzdaUUSJDs8q7SUxcCSzakThqtNRtNv`
+
+
+# Building
+
+Add -DXENON to cmake to build with AVX/AVX2 support. 
+
+## Options to build Fastest miner
+
+If you are building for Linux and your processor is i5 or i7 (supports AVX2), you can say something like:
+`cmake -DXENON=r2 ..`
+
+If you are building for Linux and your processor is i3 or xeon (supports AVX), you can say something like:
+`cmake -DXENON=1 ..`
+
+If you don't have AVX/AVX2 support, just build without any options:
+`cmake  ..`
+
+Full example:
+```
+sudo apt-get install cmake build-essential libboost-all-dev
+git clone --recursive https://github.com/kost/nheqminer.git
+cd nheqminer/nheqminer
+mkdir build
+cd build
+cmake -DXENON=2 ..
+make
+```
 
 ## Windows:
 
@@ -14,22 +63,24 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
 Under Ubuntu open a terminal and run the following commands:
   - `sudo apt-get install cmake build-essential libboost-all-dev`
-  - `git clone https://github.com/kost/nheqminer.git`
+  - `git clone --recursive https://github.com/kost/nheqminer.git`
   - `cd nheqminer/nheqminer`
   - `mkdir build`
   - `cd build`
-  - `cmake ..`
+  - `cmake -DXENON=2 ..`
   - `make`
 
-## Full static Linux cmake **recommended** (Tested on Ubuntu Desktop 14.04 and 16.04 and Ubuntu server 14.04):
+Note: for the fastest miner, it is recommended to use `cmake -DXENON=2 ..`
+
+## Full static Linux cmake **recommended** (Tested on Alpine 3.4):
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
-Under Ubuntu open a terminal and run the following commands:
-  - `sudo apt-get install cmake build-essential libboost-all-dev`
-  - `git clone https://github.com/kost/nheqminer.git`
+Under Alpine open a terminal and run the following commands:
+  - `sudo apk add --update git cmake make gcc g++ libc-dev boost-dev`
+  - `git clone --recursive https://github.com/kost/nheqminer.git`
   - `cd nheqminer/nheqminer`
   - `mkdir build`
   - `cd build`
-  - `cmake -DSTATIC_BUILD=1 ..`
+  - `cmake -DXENON=2 -DSTATIC_BUILD=1 ..`
   - `make`
 
 
@@ -74,3 +125,13 @@ Example to mine with your own ZEC address and worker1 on EU server, using 6 thre
         nheqminer_x64_AVX.exe -l eu1-zcash.flypool.org:3333 -u YOUR_ZCASH_ADDRESS_HERE.worker1 -t 6
 
 <i>Note: if you have a 4-core CPU with hyper threading enabled (total 8 threads) it is best to run with only 6 threads (experimental benchmarks shows that best results are achieved with 75% threads utilized)</i>
+
+## Donations
+If you feel this project is useful to you. Feel free to donate.
+
+    BTC address: 1KHRiwNdFiL4uFUGFEpbG7t2F3pUcttLuX
+
+    ZEC address: t1JBZzdaUUSJDs8q7SUxcCSzakThqtNRtNv
+
+
+
