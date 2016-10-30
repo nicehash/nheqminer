@@ -33,8 +33,8 @@ void print_help()
 {
 	std::cout << "Parameters: " << std::endl;
 	std::cout << "\t-h\t\tPrint this help and quit" << std::endl;
-	std::cout << "\t-l [location]\tLocation (eu, usa, hk, jp)" << std::endl;
-	std::cout << "\t-u [username]\tUsername (bitcoinaddress)" << std::endl;
+	std::cout << "\t-l [location]\tStratum server:port" << std::endl;
+	std::cout << "\t-u [username]\tUsername (pool worker)" << std::endl;
 	std::cout << "\t-p [password]\tPassword (default: x)" << std::endl;
 	std::cout << "\t-t [num_thrds]\tNumber of threads (default: number of sys cores)" << std::endl;
 	std::cout << "\t-d [level]\tDebug print level (0 = print all, 5 = fatal only, default: 2)" << std::endl;
@@ -74,13 +74,14 @@ int main(int argc, char* argv[])
 #ifdef WIN32
 	system("");
 #endif
-	std::cout << "Equihash CPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
+	std::cout << "Equihash CPU Kost Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "Thanks to Zcash developers for providing most of the code" << std::endl;
 	std::cout << "Special thanks to tromp for providing optimized CPU equihash solver" << std::endl;
+	std::cout << "Special thanks to xenoncat for providing assembly optimized CPU equihash solver" << std::endl;
 	std::cout << std::endl;
 
-	std::string location = "eu";
-	std::string user = "1DXnVXrTmcEd77Z6E4zGxkn7fGeHXSGDt1";
+	std::string location = "eu1-zcash.flypool.org:3333";
+	std::string user = "t1JBZzdaUUSJDs8q7SUxcCSzakThqtNRtNv";
 	std::string password = "x";
 	int num_threads = -1;
 	bool benchmark = false;
@@ -146,8 +147,9 @@ int main(int argc, char* argv[])
 
 	if (!benchmark)
 	{
-		std::string host = "equihash." + location + ".nicehash.com";
-		std::string port = "3357";
+		size_t delim = location.find(':');
+		std::string host = location.substr(0, delim);
+		std::string port = location.substr(delim+1);
 
 		std::shared_ptr<boost::asio::io_service> io_service(new boost::asio::io_service);
 
