@@ -11,7 +11,7 @@ Download and install:
 Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 
 ## Linux**
-Work in progress.
+Work in progress. Check [Linux branch](https://github.com/nicehash/nheqminer/tree/Linux) 
 
 
 # Run instructions:
