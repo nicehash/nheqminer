@@ -601,12 +601,8 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::failedSolution()
 {
 }
 
-#ifdef WIN32
 template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp>;
 template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp>;
-#else
-template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp>;
-#endif
 
 std::mutex benchmark_work;
 std::vector<uint256*> benchmark_nonces;
@@ -811,14 +807,4 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 	BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)benchmark_solutions * 1000 / (double)msec) << " Sols/s";
 }
 
-#ifdef WIN32
-template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp>;
-template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp>;
-#else
-void ZMinerSSE2_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en)
-{
-    ZMinerSSE2::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en);
-}
-#endif
 

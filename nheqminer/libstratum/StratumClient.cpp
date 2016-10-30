@@ -421,10 +421,6 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const
 	return true;
 }
 
-#ifdef WIN32
 template class StratumClient<ZMinerAVX, ZcashJob, EquihashSolution>;
 template class StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution>;
-#else
-template class StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution>;
-#endif
 

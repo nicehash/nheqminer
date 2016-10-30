@@ -164,10 +164,6 @@ private:
 };
 
 
-#ifdef WIN32
 typedef StratumClient<ZMinerAVX, ZcashJob, EquihashSolution> ZcashStratumClientAVX;
 typedef StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution> ZcashStratumClientSSE2;
-#else
-    typedef StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution> ZcashStratumClientSSE2;
-#endif
 
