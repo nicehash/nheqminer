@@ -30,12 +30,15 @@ Add -DXENON to cmake to build with AVX/AVX2 support.
 ## Options to build Fastest miner
 
 If you are building for Linux and your processor is i5 or i7 (supports AVX2), you can say something like:
+
 `cmake -DXENON=r2 ..`
 
 If you are building for Linux and your processor is i3 or xeon (supports AVX), you can say something like:
+
 `cmake -DXENON=1 ..`
 
 If you don't have AVX/AVX2 support, just build without any options:
+
 `cmake  ..`
 
 Full example:
