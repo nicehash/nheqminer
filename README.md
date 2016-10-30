@@ -10,15 +10,11 @@ Download and install:
 
 Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 
-<<<<<<< HEAD
+
 ## Linux
 Work in progress.
 Working solvers CPU_TROMP: 
 Work in progress (CPU_XENONCAT, CUDA_TROM, OCL_XMP)
-=======
-## Linux**
-Work in progress. Check [Linux branch](https://github.com/nicehash/nheqminer/tree/Linux) 
->>>>>>> Windows
 
 
 # Run instructions:
