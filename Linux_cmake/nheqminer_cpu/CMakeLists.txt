@@ -1,4 +1,4 @@
-project(nheqminer_cpu_xenoncat)
+project(nheqminer_cpu)
 cmake_minimum_required(VERSION 2.8)
 
 #aux_source_directory(. SRC_LIST)
@@ -44,6 +44,7 @@ endif ()
 
 ## Add solvers here
 add_definitions(-DUSE_CPU_XENONCAT)
+add_definitions(-DUSE_CPU_TROMP)
 
 add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )
 set_target_properties ( xenoncat_avx1 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx1.o" )
@@ -104,6 +105,20 @@ set(SOURCE_FILES
     ../../nheqminer/zcash/Proof.hpp
     ../../nheqminer/zcash/Zcash.h
     ../../nheqminer/SolverStub.h # just a stub
+
+    # cpu tromp
+    ../../cpu_tromp/blake2/blake2bx.cpp
+    ../../cpu_tromp/cpu_tromp.cpp
+    ../../cpu_tromp/blake2/blake2-config.h
+    ../../cpu_tromp/blake2/blake2-impl.h
+    ../../cpu_tromp/blake2/blake2-round.h
+    ../../cpu_tromp/blake2/blake2.h
+    ../../cpu_tromp/blake2/blake2b-load-sse2.h
+    ../../cpu_tromp/blake2/blake2b-load-sse41.h
+    ../../cpu_tromp/blake2/blake2b-round.h
+    ../../cpu_tromp/cpu_tromp.hpp
+    ../../cpu_tromp/equi.h
+    ../../cpu_tromp/equi_miner.h
 
     # cpu xenocat
     ../../cpu_xenoncat/cpu_xenoncat.hpp
