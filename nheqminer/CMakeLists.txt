@@ -37,8 +37,12 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	endif()
 endif()
 
-# Common
-include_directories(${nheqminer_SOURCE_DIR})
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+	include_directories(${nheqminer_SOURCE_DIR} ${nheqminer_SOURCE_DIR}/compat)
+else()
+	# Common
+	include_directories(${nheqminer_SOURCE_DIR})
+endif()
 
 if (STATIC_BUILD)
 	set(Boost_USE_STATIC_LIBS   ON)
@@ -149,7 +153,11 @@ set(SOURCE_FILES
 if (STATIC_BUILD)
 	SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 	SET(BUILD_SHARED_LIBRARIES OFF)
-	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+	if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+		message("Mac OS X does not support full static build, building only what we can")
+	else()
+		set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+	endif()
 endif()
 
 
