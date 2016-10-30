@@ -1,3 +1,4 @@
+#pragma once
 // Copyright (c) 2016 Genoil <jw@meneer.net>
 // Copyright (c) 2016 Jack Grigg <jack@z.cash>
 // Distributed under the MIT software license, see the accompanying
@@ -158,6 +159,15 @@ private:
     string m_nextJobTarget;
 
 	std::atomic_int m_share_id;
+
+	unsigned char o_index;
 };
 
-typedef StratumClient<ZcashMiner, ZcashJob, EquihashSolution> ZcashStratumClient;
+
+#ifdef WIN32
+typedef StratumClient<ZMinerAVX, ZcashJob, EquihashSolution> ZcashStratumClientAVX;
+typedef StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution> ZcashStratumClientSSE2;
+#else
+    typedef StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution> ZcashStratumClientSSE2;
+#endif
+

@@ -141,7 +141,7 @@ bool Client::Parse(const std::string& request)
 		double accepted = speed.GetShareOKSpeed() * 60;
 
 		ss << "{\"interval_seconds\":" << INTERVAL_SECONDS << ",";
-		ss << "\"speed_hps\":" << speed.GetHashSpeed() << ",";
+		ss << "\"speed_ips\":" << speed.GetHashSpeed() << ",";
 		ss << "\"speed_sps\":" << speed.GetSolutionSpeed() << ",";
 		ss << "\"accepted_per_minute\":" << accepted << ",";
 		ss << "\"rejected_per_minute\":" << (allshares - accepted);

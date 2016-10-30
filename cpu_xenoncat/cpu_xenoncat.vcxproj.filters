@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="asm">
+      <UniqueIdentifier>{7cbe3ea4-a625-499e-a054-1591688c5fca}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="asm\data_blake2b.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\macro_blake2b_avx2.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\macro_eh.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\params.inc">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\proc_ehprepare_avx2.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\proc_ehsolver_avx2.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\struct_eh.inc">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\macro_blake2b_avx1.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\proc_ehprepare_avx1.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\proc_ehsolver_avx1.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\xenoncat_AVX2.asm">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="asm\xenoncat_AVX.asm">
+      <Filter>asm</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cpu_xenoncat.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="xenoncat.cpp" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="cpu_tromp.cpp" />
+    <ClCompile Include="blake2\blake2bx.cpp">
+      <Filter>blake2</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cpu_tromp.hpp" />
+    <ClInclude Include="equi.h" />
+    <ClInclude Include="equi_miner.h" />
+    <ClInclude Include="blake2\blake2.h">
+      <Filter>blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2\blake2b-load-sse2.h">
+      <Filter>blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2\blake2b-load-sse41.h">
+      <Filter>blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2\blake2b-round.h">
+      <Filter>blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2\blake2-config.h">
+      <Filter>blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2\blake2-impl.h">
+      <Filter>blake2</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2\blake2-round.h">
+      <Filter>blake2</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="blake2">
+      <UniqueIdentifier>{eb5b5181-3ce5-4fa9-89a1-1285463a5a99}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

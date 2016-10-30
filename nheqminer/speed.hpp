@@ -8,6 +8,8 @@ class Speed
 
 	using time_point = std::chrono::high_resolution_clock::time_point;
 
+	time_point m_start;
+
 	std::vector<time_point> m_buffer_hashes;
 	std::vector<time_point> m_buffer_solutions;
 	std::vector<time_point> m_buffer_shares;

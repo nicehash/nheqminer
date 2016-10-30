@@ -1,3 +1,4 @@
+#pragma once
 // Copyright (c) 2016 Jack Grigg <jack@z.cash>
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -15,8 +16,34 @@
 
 #include "json/json_spirit_value.h"
 
+#include "SolverStub.h"
+
+#ifdef USE_CPU_TROMP
+#include "../cpu_tromp/cpu_tromp.hpp"
+#else
+using cpu_tromp = SolverStub;
+#endif
+#ifdef DUSE_CPU_XENONCAT
+#include "../cpu_xenoncat/cpu_xenoncat.hpp"
+#else
+using cpu_xenoncat = SolverStub;
+#endif
+#ifdef USE_CUDA_TROMP
+#include "../cuda_tromp/cuda_tromp.hpp"
+#else
+using cuda_tromp = SolverStub;
+#endif
+#ifdef USE_OCL_XMP
+#include "../ocl_xpm/ocl_xmp.hpp"
+#else
+using ocl_xmp = SolverStub;
+#endif
+
+
 using namespace json_spirit;
 
+extern int use_avx;
+extern int use_avx2;
 
 struct EquihashSolution
 {
@@ -70,6 +97,7 @@ inline bool operator==(const ZcashJob& a, const ZcashJob& b)
 
 typedef boost::signals2::signal<void (const ZcashJob*)> NewJob_t;
 
+template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
 class ZcashMiner
 {
     int nThreads;
@@ -82,11 +110,19 @@ class ZcashMiner
     std::function<bool(const EquihashSolution&, const std::string&)> solutionFoundCallback;
 	bool m_isActive;
 
+
+	std::vector<CPUSolver*> cpu_contexts;
+	std::vector<CUDASolver*> cuda_contexts;
+	std::vector<OPENCLSolver*> opencl_contexts;
+
+
 public:
     NewJob_t NewJob;
 	bool* minerThreadActive;
 
-    ZcashMiner(int threads);
+	ZcashMiner(int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+		int opencl_count, int opencl_platf, int* opencl_en);
+	~ZcashMiner();
 
     std::string userAgent();
     void start();
@@ -100,7 +136,16 @@ public:
     void acceptedSolution(bool stale);
     void rejectedSolution(bool stale);
     void failedSolution();
+
+    static void doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+		int opencl_count, int opencl_platf, int* opencl_en);
 };
 
-
-void do_benchmark(int nThreads, int hashes);
+#ifdef WIN32
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVX;
+typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2;
+#else
+typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2;
+void ZMinerSSE2_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+                            int opencl_count, int opencl_platf, int* opencl_en);
+#endif

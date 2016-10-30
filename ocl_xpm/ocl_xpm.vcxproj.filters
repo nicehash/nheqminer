@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="zcash">
+      <UniqueIdentifier>{69f1aa4c-1be3-4265-a93c-b58266bad10b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zcash\gpu">
+      <UniqueIdentifier>{a95c2e64-90c0-48d9-9287-46723392025d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ocl_device_utils">
+      <UniqueIdentifier>{3b452960-cd44-43c3-b425-e9ac22174656}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ocl_xmp.hpp" />
+    <ClInclude Include="opencl.h" />
+    <ClInclude Include="zcash\gpu\common.h">
+      <Filter>zcash\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="ocl_device_utils\ocl_device_utils.h">
+      <Filter>ocl_device_utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ocl_device_utils\cl_ext.hpp">
+      <Filter>ocl_device_utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ocl_device_utils\OpenCLDevice.h">
+      <Filter>ocl_device_utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ocl_xmp.cpp" />
+    <ClCompile Include="opencl.cpp" />
+    <ClCompile Include="..\cpu_tromp\blake2\blake2bx.cpp" />
+    <ClCompile Include="ocl_device_utils\ocl_device_utils.cpp">
+      <Filter>ocl_device_utils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="zcash\gpu\equihash.cl">
+      <Filter>zcash\gpu</Filter>
+    </None>
+  </ItemGroup>
+</Project>

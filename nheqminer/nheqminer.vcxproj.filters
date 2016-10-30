@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Source Files\blake">
-      <UniqueIdentifier>{d3f35ba4-18e1-4514-a425-d9e5d31c11e2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\crypto">
       <UniqueIdentifier>{56045a6c-b044-4247-9492-ee7433789783}</UniqueIdentifier>
     </Filter>
@@ -27,90 +24,30 @@
     <Filter Include="Source Files\json">
       <UniqueIdentifier>{b1105506-3545-4176-ba36-6172e1941389}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\trompequihash">
-      <UniqueIdentifier>{b5f18094-4b56-47ca-98aa-edd316f56973}</UniqueIdentifier>
+    <Filter Include="Header Files\solvers">
+      <UniqueIdentifier>{847cb5d9-8d8d-44d2-ab87-bec76756fb32}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\trompequihash\blake2">
-      <UniqueIdentifier>{790fb8f7-1fdd-4231-b42c-c6f11936e90c}</UniqueIdentifier>
+    <Filter Include="Header Files\libstratum">
+      <UniqueIdentifier>{10bdd2d1-7fc8-4eab-8d6e-87376324ea6b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\trompblake">
-      <UniqueIdentifier>{1b527c9c-492d-434c-87c8-30b566cfff9c}</UniqueIdentifier>
+    <Filter Include="Header Files\zcash">
+      <UniqueIdentifier>{888f8dc8-51f1-4e4a-b6f1-92a3e220c145}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\trompequihash\pthreads">
-      <UniqueIdentifier>{672eb60d-9543-46a0-ac15-dab65dc4bd5d}</UniqueIdentifier>
+    <Filter Include="Header Files\primitives">
+      <UniqueIdentifier>{61c55629-41bc-4eb6-8486-bbb178020141}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\compat">
+      <UniqueIdentifier>{26136bfd-a097-417a-973f-143a8f825d8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\stuff">
+      <UniqueIdentifier>{ef052183-3bec-4f22-be54-b4c0eee09356}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\stuff">
+      <UniqueIdentifier>{e3039ecd-7399-4161-b8f9-456ccb2a4632}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="primitives\block.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="primitives\transaction.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="serialize.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="uint256.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="streams.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="version.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="amount.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyformat.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="compat\endian.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="compat\byteswap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="script\script.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zcash\JoinSplit.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zcash\NoteEncryption.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zcash\Proof.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zcash\Zcash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="uint252.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="support\allocators\zeroafterfree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\sha256.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="utilstrencodings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="arith_uint256.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="hash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libstratum\StratumClient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libstratum\ZcashStratum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="json\json_spirit.h">
@@ -146,54 +83,93 @@
     <ClInclude Include="api.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\equi.h">
-      <Filter>Header Files\trompequihash</Filter>
+    <ClInclude Include="..\cuda_tromp\cuda_tromp.hpp">
+      <Filter>Header Files\solvers</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\blake2\blake2.h">
-      <Filter>Header Files\trompequihash\blake2</Filter>
+    <ClInclude Include="..\cpu_xenoncat\cpu_xenoncat.hpp">
+      <Filter>Header Files\solvers</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\blake2\blake2b-load-sse2.h">
-      <Filter>Header Files\trompequihash\blake2</Filter>
+    <ClInclude Include="..\cpu_tromp\cpu_tromp.hpp">
+      <Filter>Header Files\solvers</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\blake2\blake2b-load-sse41.h">
-      <Filter>Header Files\trompequihash\blake2</Filter>
+    <ClInclude Include="libstratum\StratumClient.h">
+      <Filter>Header Files\libstratum</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\blake2\blake2b-round.h">
-      <Filter>Header Files\trompequihash\blake2</Filter>
+    <ClInclude Include="libstratum\ZcashStratum.h">
+      <Filter>Header Files\libstratum</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\blake2\blake2-config.h">
-      <Filter>Header Files\trompequihash\blake2</Filter>
+    <ClInclude Include="zcash\JoinSplit.hpp">
+      <Filter>Header Files\zcash</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\blake2\blake2-impl.h">
-      <Filter>Header Files\trompequihash\blake2</Filter>
+    <ClInclude Include="zcash\NoteEncryption.hpp">
+      <Filter>Header Files\zcash</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\blake2\blake2-round.h">
-      <Filter>Header Files\trompequihash\blake2</Filter>
+    <ClInclude Include="zcash\Zcash.h">
+      <Filter>Header Files\zcash</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\pthreads\pthread.h">
-      <Filter>Header Files\trompequihash\pthreads</Filter>
+    <ClInclude Include="primitives\block.h">
+      <Filter>Header Files\primitives</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\equi_miner2.h">
-      <Filter>Header Files\trompequihash</Filter>
+    <ClInclude Include="primitives\transaction.h">
+      <Filter>Header Files\primitives</Filter>
     </ClInclude>
-    <ClInclude Include="trompequihash\equi_miner.h">
-      <Filter>Header Files\trompequihash</Filter>
+    <ClInclude Include="compat\endian.h">
+      <Filter>Header Files\compat</Filter>
+    </ClInclude>
+    <ClInclude Include="compat\byteswap.h">
+      <Filter>Header Files\compat</Filter>
+    </ClInclude>
+    <ClInclude Include="amount.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="arith_uint256.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\common.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="hash.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="zcash\Proof.hpp">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="script\script.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="serialize.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\sha256.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="streams.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyformat.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="uint252.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="uint256.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="utilstrencodings.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="support\allocators\zeroafterfree.h">
+      <Filter>Header Files\stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ocl_xpm\ocl_xmp.hpp">
+      <Filter>Header Files\solvers</Filter>
+    </ClInclude>
+    <ClInclude Include="SolverStub.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="amount.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="uint256.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="utilstrencodings.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="arith_uint256.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="primitives\block.cpp">
@@ -223,8 +199,17 @@
     <ClCompile Include="api.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="trompequihash\blake2\blake2bx.cpp">
-      <Filter>Source Files\trompblake</Filter>
+    <ClCompile Include="amount.cpp">
+      <Filter>Source Files\stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="arith_uint256.cpp">
+      <Filter>Source Files\stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="uint256.cpp">
+      <Filter>Source Files\stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="utilstrencodings.cpp">
+      <Filter>Source Files\stuff</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

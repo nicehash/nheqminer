@@ -6,7 +6,8 @@
 #include "speed.hpp"
 
 
-Speed::Speed(int interval) : m_interval(interval) { }
+Speed::Speed(int interval) 
+	: m_interval(interval), m_start(std::chrono::high_resolution_clock::now()) {}
 Speed::~Speed() { }
 
 void Speed::Add(std::vector<time_point>& buffer, std::mutex& mutex)
@@ -20,6 +21,12 @@ double Speed::Get(std::vector<time_point>& buffer, std::mutex& mutex)
 {
 	time_point now = std::chrono::high_resolution_clock::now();
 	time_point past = now - std::chrono::seconds(m_interval);
+	double interval = (double)m_interval;
+	if (past < m_start)
+	{
+		interval = ((double)std::chrono::duration_cast<std::chrono::milliseconds>(now - m_start).count()) / 1000;
+		past = m_start;
+	}
 	size_t total = 0;
 
 	mutex.lock();
@@ -37,7 +44,7 @@ double Speed::Get(std::vector<time_point>& buffer, std::mutex& mutex)
 	}
 	mutex.unlock();
 
-	return (double)total / (double)m_interval;
+	return (double)total / (double)interval;
 }
 
 void Speed::AddHash()
@@ -98,6 +105,8 @@ void Speed::Reset()
 	m_mutex_shares_ok.lock();
 	m_buffer_shares_ok.clear();
 	m_mutex_shares_ok.unlock();
+
+	m_start = std::chrono::high_resolution_clock::now();
 }
 
 

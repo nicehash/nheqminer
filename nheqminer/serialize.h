@@ -653,8 +653,8 @@ template<typename Stream, typename T, typename A, typename V>
 void Serialize_impl(Stream& os, const std::vector<T, A>& v, int nType, int nVersion, const V&)
 {
     WriteCompactSize(os, v.size());
-//    for (typename std::vector<T, A>::const_iterator vi = v.begin(); vi != v.end(); ++vi)
-//        ::Serialize(os, (*vi), nType, nVersion);
+    for (typename std::vector<T, A>::const_iterator vi = v.begin(); vi != v.end(); ++vi)
+        ::Serialize(os, (*vi), nType, nVersion);
 }
 
 template<typename Stream, typename T, typename A>

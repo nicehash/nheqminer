@@ -47,6 +47,7 @@ StratumClient<Miner, Job, Solution>::StratumClient(
     p_current = nullptr;
     p_previous = nullptr;
     p_worktimer = nullptr;
+
     startWorking();
 }
 
@@ -72,13 +73,18 @@ template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::startWorking()
 {
     m_work.reset(new std::thread([&]() {
-        workLoop();
+        this->workLoop();
     }));
 }
 
 template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::workLoop()
 {
+	if (!p_miner->isMining()) {
+		BOOST_LOG_CUSTOM(info) << "Starting miner";
+		p_miner->start();
+	}
+
     while (m_running) {
         try {
             if (!m_connected) {
@@ -140,10 +146,6 @@ void StratumClient<Miner, Job, Solution>::connect()
     } else {
 		BOOST_LOG_CUSTOM(info) << "Connected!";
         m_connected = true;
-        if (!p_miner->isMining()) {
-			BOOST_LOG_CUSTOM(info) << "Starting miner";
-            p_miner->start();
-        }
 		std::stringstream ss;
 		ss << "{\"id\":1,\"method\":\"mining.subscribe\",\"params\":[\""
 			<< p_miner->userAgent() << "\", null,\""
@@ -419,4 +421,10 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const
 	return true;
 }
 
-template class StratumClient<ZcashMiner, ZcashJob, EquihashSolution>;
+#ifdef WIN32
+template class StratumClient<ZMinerAVX, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution>;
+#else
+template class StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution>;
+#endif
+
