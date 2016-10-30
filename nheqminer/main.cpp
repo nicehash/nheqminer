@@ -49,7 +49,7 @@ void print_help()
 	std::cout << "Parameters: " << std::endl;
 	std::cout << "\t-h\t\tPrint this help and quit" << std::endl;
 #ifndef ZCASH_POOL
-	std::cout << "\t-l [location]\tLocation (eu, usa, hk, jp)" << std::endl;
+	std::cout << "\t-l [location]\tStratum server:port" << std::endl;
 	std::cout << "\t-u [username]\tUsername (bitcoinaddress)" << std::endl;
 #else
 	std::cout << "\t-l [location]\tLocation (eu, usa)" << std::endl;

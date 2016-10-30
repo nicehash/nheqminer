@@ -421,3 +421,6 @@ build
 !nheqminer/libs/**
 !trompequihash/pthreads**
 !nheqminer/boost/**
+!3rdparty/**
+# ignore for now
+Linux_projects/**
