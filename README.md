@@ -22,6 +22,10 @@ Example:
 Example:
 `nheqminer  -l zmine.io:1337 -u t1JBZzdaUUSJDs8q7SUxcCSzakThqtNRtNv`
 
+## Production usage
+
+I would suggest putting nheqminer inside while true loop in order to have basic watchdog. i.e.
+`while true; do nheqminer -l zec.suprnova.cc:2142 -u suprnova.1 -p x; echo "sleep & restart"; sleep 30; done`
 
 # Building
 
