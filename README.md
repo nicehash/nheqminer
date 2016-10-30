@@ -91,17 +91,16 @@ Under Alpine open a terminal and run the following commands:
   - `make`
 
 
-## Linux (Ubuntu/Debian based, Tested on Ubuntu 16.04):
-To build under Ubuntu Linux make sure you have Qt5 installed. You can install it manually from [Qt website](https://www.qt.io/) or install it from the command line: `sudo apt-get install qt5-default`.
-Open a terminal and cd to nheqminer root folder and run the following commands (make sure you have qmake in your PATH, if installed manually from Qt website you will have to export it to your PATH):
-  - `git clone https://github.com/kost/nheqminer.git`
-  - `cd nheqminer`
+## Mac OS X  (currently only Tromp, no xenoncat):
+You need to have git, cmake, make and Mac OS X Developer stuff (compiler, etc).
+Under Alpine open a terminal and run the following commands:
+  - `git clone --recursive https://github.com/kost/nheqminer.git`
+  - `cd nheqminer/nheqminer`
   - `mkdir build`
   - `cd build`
-  - `qmake ../nheqminer/nheqminer.pro`
+  - `cmake -DSTATIC_BUILD=1 ..`
   - `make`
   
-
 # Run instructions:
 
 If run without parameters, miner will start mining with 75% of available virtual cores on NiceHash. Use parameter -h to learn about available parameters:
