@@ -17,6 +17,12 @@
 #include "speed.hpp"
 #include "api.hpp"
 
+#ifdef __linux__
+#define __cpuid(out, infoType)\
+	asm("cpuid": "=a" (out[0]), "=b" (out[1]), "=c" (out[2]), "=d" (out[3]): "a" (infoType));
+#define __cpuidex(out, infoType, ecx)\
+	asm("cpuid": "=a" (out[0]), "=b" (out[1]), "=c" (out[2]), "=d" (out[3]): "a" (infoType), "c" (ecx));
+#endif
 
 // TODO:
 // fix compiler issues with standard vs2013 compiler
@@ -26,22 +32,13 @@
 int use_avx = 0;
 int use_avx2 = 0;
 
-#ifdef WIN32
 static ZcashStratumClientAVX* scSigAVX = nullptr;
 static ZcashStratumClientSSE2* scSigSSE2 = nullptr;
-#else
-static ZcashStratumClientSSE2* scSigSSE2 = nullptr;
-#endif
 
 extern "C" void stratum_sigint_handler(int signum) 
 { 
-#ifdef WIN32
     if (scSigAVX) scSigAVX->disconnect();
     if (scSigSSE2) scSigSSE2->disconnect();
-#else
-    if (scSigSSE2) scSigSSE2->disconnect();
-#endif
-
 }
 
 void print_help()
@@ -134,7 +131,6 @@ int opencl_enabled[8] = { 0 };
 void detect_AVX_and_AVX2()
 {
     // Fix on Linux
-#ifdef WIN32
 	//int cpuInfo[4] = {-1};
 	std::array<int, 4> cpui;
 	std::vector<std::array<int, 4>> data_;
@@ -164,7 +160,6 @@ void detect_AVX_and_AVX2()
 		f_7_EBX_ = data_[7][1];
 		use_avx2 = f_7_EBX_[5];
 	}
-#endif
 }
 
 template <typename MinerType, typename StratumType>
@@ -423,28 +418,19 @@ int main(int argc, char* argv[])
 			std::string host = location.substr(0, delim);
 			std::string port = location.substr(delim + 1);
 
-#ifdef WIN32
             if (use_avx)
                 start_mining<ZMinerAVX, ZcashStratumClientAVX>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
                     location, port, user, password, scSigAVX);
             else
                 start_mining<ZMinerSSE2, ZcashStratumClientSSE2>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
                     location, port, user, password, scSigSSE2);
-#else
-            start_mining<ZMinerSSE2, ZcashStratumClientSSE2>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-                host, port, user, password, scSigSSE2);
-#endif
 		}
 		else
 		{
-#ifdef WIN32
             if (use_avx)
                 ZMinerAVX::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
             else
                 ZMinerSSE2::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
-#else
-            ZMinerSSE2_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
-#endif
 		}
 	}
 	catch (std::runtime_error& er)

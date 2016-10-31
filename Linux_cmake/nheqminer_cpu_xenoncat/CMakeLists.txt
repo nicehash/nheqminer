@@ -1,4 +1,4 @@
-project(nheqminer_cpu_xenocat)
+project(nheqminer_cpu_xenoncat)
 cmake_minimum_required(VERSION 2.8)
 
 #aux_source_directory(. SRC_LIST)
@@ -45,9 +45,11 @@ endif ()
 ## Add solvers here
 add_definitions(-DUSE_CPU_XENONCAT)
 
-set (XENONCAT_AVX1 "../../cpu_xenoncat/Linux/asm/equihash_avx1.o")
-set (XENONCAT_AVX2 "../../cpu_xenoncat/Linux/asm/equihash_avx2.o")
+add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )
+set_target_properties ( xenoncat_avx1 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx1.o" )
 
+add_library ( xenoncat_avx2 SHARED IMPORTED GLOBAL )
+set_target_properties ( xenoncat_avx2 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx2.o" )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/../../nheqminer/)
 
@@ -117,4 +119,4 @@ set(LIBS ${LIBS} ${Threads_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 #target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${LIBS} ${XENONCAT_AVX1} ${XENONCAT_AVX2} )
+target_link_libraries(${PROJECT_NAME} ${LIBS} xenoncat_avx1 xenoncat_avx2 )

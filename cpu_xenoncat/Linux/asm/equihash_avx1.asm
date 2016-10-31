@@ -1,7 +1,7 @@
 format elf64
-public EhPrepare
-public EhSolver
-public testinput
+public EhPrepare as 'EhPrepareAVX1'
+public EhSolver as 'EhSolverAVX1'
+public testinput as 'testinputAVX1'
 
 include "struct.inc"
 include "params.inc"
