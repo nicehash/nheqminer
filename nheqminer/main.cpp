@@ -428,9 +428,9 @@ int main(int argc, char* argv[])
 		else
 		{
             if (use_avx)
-                ZMinerAVX::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+                ZMinerAVX_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
             else
-                ZMinerSSE2::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+                ZMinerSSE2_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
 		}
 	}
 	catch (std::runtime_error& er)
