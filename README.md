@@ -44,17 +44,21 @@ Add -DXENON to cmake to build with AVX/AVX2 support.
 
 ## Options to build Fastest miner
 
-If you are building for Linux and your processor is i5 or i7 (supports AVX2), you can say something like:
-
-`cmake -DXENON=2 ..`
-
-If you are building for Linux and your processor is i3 or xeon (supports AVX), you can say something like:
+If you are building for Linux and for your processor on local machine (with AVX1/AVX2 automatically detected) , you can say something like:
 
 `cmake -DXENON=1 ..`
 
-If you don't have AVX/AVX2 support, just build without any options:
+This will build -march=native by default. 
+
+If you need to transfer binaries to other machines and automatically detect AVX1/AVX2 or not, you can say something like:
+
+`cmake -DXENON=1 -DMARCH="-m64" ..`
+
+If you don't want to compile with AVX/AVX2 support, just build without any options:
 
 `cmake  ..`
+
+Note AVX/AVX2 binaries should automatically downgrade to tromp if nothing else found.
 
 Full example:
 ```
@@ -90,7 +94,7 @@ Under Ubuntu open a terminal and run the following commands:
 
 Note: for the fastest miner, it is recommended to use `cmake -DXENON=2 ..`
 
-## Full static Linux cmake **recommended** (Tested on Alpine 3.4):
+## Full static Linux cmake **auto-AVX build recommended** (Tested on Alpine 3.4):
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
 Under Alpine open a terminal and run the following commands:
   - `sudo apk add --update git cmake make gcc g++ libc-dev boost-dev`
@@ -98,7 +102,7 @@ Under Alpine open a terminal and run the following commands:
   - `cd nheqminer/nheqminer`
   - `mkdir build`
   - `cd build`
-  - `cmake -DXENON=2 -DSTATIC_BUILD=1 ..`
+  - `cmake -DSTATIC_BUILD=1 -DXENON=1 -DMARCH="-m64" ..`
   - `make`
 
 
