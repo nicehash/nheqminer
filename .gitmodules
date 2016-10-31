@@ -1,3 +1,4 @@
 [submodule "nheqminer/external/equihash-xenon"]
 	path = nheqminer/external/equihash-xenon
-	url = https://github.com/xenoncat/equihash-xenon
+	url = https://github.com/kost/equihash-xenon
+	branch = kost
