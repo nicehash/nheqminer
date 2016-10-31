@@ -15,8 +15,15 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 
 ## Linux
 Work in progress.
-Working solvers CPU_TROMP: 
-Work in progress (CPU_XENONCAT, CUDA_TROM, OCL_XMP)
+Working solvers CPU_TROMP, CPU_XENONCAT:
+Work in progress (CUDA_TROM, OCL_XMP)
+## Linux (Ubuntu 14.04 / 16.04) Build  CPU_XENONCAT:
+ - Open terminal and run the following commands:
+   - `sudo apt-get install cmake build-esenital libboost-all-dev`
+   - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
+   - `cd nheqminer/cpu_xenoncat/Linux/asm/ && sh assemble.sh && cd ../../../Linux_cmake/nheqminer_cpu && cmake . && make`
+ 
+
 
 
 # Run instructions:
