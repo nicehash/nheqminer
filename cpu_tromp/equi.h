@@ -9,6 +9,11 @@
 #define htole32(x) OSSwapHostToLittleInt32(x)
 #else
 #ifdef WIN32
+#if _MSC_VER >= 1900
+#ifndef HAVE_STRUCT_TIMESPEC
+#define HAVE_STRUCT_TIMESPEC 
+#endif
+#endif
 #include "pthreads/pthread.h"
 #undef _POSIX_THREADS
 #endif
