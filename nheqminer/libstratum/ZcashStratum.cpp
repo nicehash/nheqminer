@@ -32,8 +32,13 @@ typedef uint32_t eh_index;
 
 #ifdef XENONCAT
 #define CONTEXT_SIZE 178033152
-extern "C" void EhPrepare(void *context, void *input);
-extern "C" int32_t EhSolver(void *context, uint32_t nonce);
+extern "C" void EhPrepareAVX1(void *context, void *input);
+extern "C" int32_t EhSolverAVX1(void *context, uint32_t nonce);
+extern "C" void EhPrepareAVX2(void *context, void *input);
+extern "C" int32_t EhSolverAVX2(void *context, uint32_t nonce);
+
+void (*EhPrepare)(void *,void *);
+int32_t (*EhSolver)(void *, uint32_t);
 #endif
 
 void CompressArray(const unsigned char* in, size_t in_len,
@@ -245,11 +250,11 @@ void static XenoncatZcashMinerThread(ZcashMiner* miner, int size, int pos)
 					memcpy(inputheader + tequihash_header_len, (unsigned  char*) arthNonce.begin(), arthNonce.size());
 
 
-					EhPrepare(context, (void *) inputheader);
+					(*EhPrepare)(context, (void *) inputheader);
 
 				unsigned char* nonceBegin = bNonce.begin();
 				uint32_t nonceToApi = *(uint32_t *)(nonceBegin+28);
-				uint32_t numsolutions = EhSolver(context, nonceToApi);
+				uint32_t numsolutions = (*EhSolver)(context, nonceToApi);
 				if (!cancelSolver.load()) {
 					for (uint32_t i=0; i<numsolutions; i++) {
 						// valid block method expects vector of unsigned chars.
@@ -521,20 +526,18 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 {
 
 	#ifdef XENONCAT
-		#if XENONCAT == 2
 		if (__builtin_cpu_supports("avx2")) {
 			BOOST_LOG_CUSTOM(info, pos) << "Using Xenoncat's AVX2 solver. ";
+			EhPrepare=&EhPrepareAVX2;
+			EhSolver=&EhSolverAVX2;
 			XenoncatZcashMinerThread(miner, size, pos);
 		}
-		#elif XENONCAT == 1
-		if (__builtin_cpu_supports("avx")) {
+		else if (__builtin_cpu_supports("avx")) {
 			BOOST_LOG_CUSTOM(info, pos) << "Using Xenoncat's AVX solver. ";
+			EhPrepare=&EhPrepareAVX1;
+			EhSolver=&EhSolverAVX1;
 			XenoncatZcashMinerThread(miner, size, pos);
-		}
-		#else
-			if (0) {}
-		#endif
-	else {
+		} else {
 	#endif
 		BOOST_LOG_CUSTOM(info, pos) << "Using Tromp's solver.";
 		TrompZcashMinerThread(miner, size, pos);
