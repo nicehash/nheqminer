@@ -422,5 +422,5 @@ build
 !trompequihash/pthreads**
 !nheqminer/boost/**
 !3rdparty/**
-cpu_xenoncat/asm/*.obj
 !cpu_xenoncat/asm/**
+cpu_xenoncat/asm/*.obj
