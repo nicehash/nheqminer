@@ -5,7 +5,7 @@ Equihash/zcash/zec miner (can be used for pool mining)
 # Features
 
 Major things:
-- Implemented all fast implementations (tromp and xenoncati with AVX1/AVX2) 
+- Implemented all fast implementations (tromp and xenoncat with AVX1/AVX2) 
 - Better support for other platforms
 
 Platforms:
