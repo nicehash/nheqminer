@@ -426,10 +426,10 @@ int main(int argc, char* argv[])
 #ifdef WIN32
             if (use_avx)
                 start_mining<ZMinerAVX, ZcashStratumClientAVX>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-                    location, port, user, password, scSigAVX);
+                host, port, user, password, scSigAVX);
             else
                 start_mining<ZMinerSSE2, ZcashStratumClientSSE2>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-                    location, port, user, password, scSigSSE2);
+				host, port, user, password, scSigSSE2);
 #else
             start_mining<ZMinerSSE2, ZcashStratumClientSSE2>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
                 host, port, user, password, scSigSSE2);
