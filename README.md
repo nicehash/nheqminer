@@ -2,6 +2,14 @@
 
 Equihash/zcash/zec miner (can be used for pool mining)
 
+**NOTE: Common mistake is to clone this repo without recursive, you need to use --recursive**
+
+```
+git clone --recursive https://github.com/kost/nheqminer
+```
+
+**Your build with XENON/XENONCAT will fail otherwise**
+
 # Features
 
 Major things:
