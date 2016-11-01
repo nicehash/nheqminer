@@ -24,7 +24,9 @@
 
 #include <boost/static_assert.hpp>
 
+#ifdef __clang__ // support for clang and AVX1/2 detection
 #include <cpuid.h>
+#endif
 
 
 typedef uint32_t eh_index;
