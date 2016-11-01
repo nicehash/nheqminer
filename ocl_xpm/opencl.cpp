@@ -80,7 +80,14 @@ bool clCompileKernel(cl_context gContext,
     
     std::string sourceFile;
     for (auto &i: sources) {
-      std::ifstream stream(i);
+      std::ifstream stream;
+      stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+      try {
+        stream.open(i);
+      } catch (std::system_error& e) {
+        fprintf(stderr, "<error> %s\n", e.code().message());
+        return false;
+      }
       std::string str((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
       sourceFile.append(str);
     }
