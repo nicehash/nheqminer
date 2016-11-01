@@ -601,8 +601,8 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::failedSolution()
 {
 }
 
-template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp>;
-template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp>;
+template class ZcashMiner<cpu_xenoncat, cuda_tromp, open_cl_solver>;
+template class ZcashMiner<cpu_tromp, cuda_tromp, open_cl_solver>;
 
 std::mutex benchmark_work;
 std::vector<uint256*> benchmark_nonces;

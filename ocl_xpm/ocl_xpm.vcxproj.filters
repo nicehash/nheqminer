@@ -26,6 +26,8 @@
     <ClInclude Include="ocl_device_utils\OpenCLDevice.h">
       <Filter>ocl_device_utils</Filter>
     </ClInclude>
+    <ClInclude Include="ocl_silentarmy.hpp" />
+    <ClInclude Include="param.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ocl_xmp.cpp" />
@@ -34,6 +36,7 @@
     <ClCompile Include="ocl_device_utils\ocl_device_utils.cpp">
       <Filter>ocl_device_utils</Filter>
     </ClCompile>
+    <ClCompile Include="ocl_silentarmy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="zcash\gpu\equihash.cl">

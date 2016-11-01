@@ -35,6 +35,8 @@ using cuda_tromp = SolverStub;
 #endif
 #ifdef USE_OCL_XMP
 #include "../ocl_xpm/ocl_xmp.hpp"
+#include "../ocl_xpm/ocl_silentarmy.hpp"
+using open_cl_solver = ocl_silentarmy;
 #else
 using ocl_xmp = SolverStub;
 #endif
@@ -141,8 +143,8 @@ public:
 		int opencl_count, int opencl_platf, int* opencl_en);
 };
 
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVX;
-typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2;
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp, open_cl_solver> ZMinerAVX;
+typedef ZcashMiner<cpu_tromp, cuda_tromp, open_cl_solver> ZMinerSSE2;
 
 // gcc static undefined reference workaround
 void ZMinerAVX_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
