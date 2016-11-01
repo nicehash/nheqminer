@@ -26,7 +26,7 @@ using cpu_tromp = SolverStub;
 #ifdef USE_CPU_XENONCAT
 #include "../cpu_xenoncat/cpu_xenoncat.hpp"
 #else
-using cpu_xenoncat = SolverStub;
+using cpu_xenoncat = SolverStub1;
 #endif
 #ifdef USE_CUDA_TROMP
 #include "../cuda_tromp/cuda_tromp.hpp"

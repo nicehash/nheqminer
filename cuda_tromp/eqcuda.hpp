@@ -1,12 +1,19 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+#ifdef WIN32
+#define _SNPRINTF _snprintf
+#else
+#include <stdio.h>
+#define _SNPRINTF snprintf
+#endif
+
 #define checkCudaErrors(call)								\
 do {														\
 	cudaError_t err = call;									\
 	if (cudaSuccess != err) {								\
 		char errorBuff[512];								\
-		_snprintf(errorBuff, sizeof(errorBuff) - 1,			\
+        _SNPRINTF(errorBuff, sizeof(errorBuff) - 1,			\
 			"CUDA error '%s' in func '%s' line %d",			\
 			cudaGetErrorString(err), __FUNCTION__, __LINE__);	\
 		throw std::runtime_error(errorBuff);				\
