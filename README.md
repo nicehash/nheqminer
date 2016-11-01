@@ -10,7 +10,7 @@ Major things:
 
 Platforms:
 - Linux (tromp, xenoncat support)
-- Mac OS X (tromp so far)
+- Mac OS X (tromp and xenoncat support)
 - Windows (tromp, xenoncat but need tweaking)
 
 # Usage
@@ -106,14 +106,14 @@ Under Alpine open a terminal and run the following commands:
   - `make`
 
 
-## Mac OS X  (currently only Tromp, no xenoncat):
+## Mac OS X  (Tromp and Xenoncat):
 You need to have git, cmake, make and Mac OS X Developer stuff (compiler, etc).
 Under Mac open a terminal and run the following commands:
   - `git clone --recursive https://github.com/kost/nheqminer.git`
   - `cd nheqminer/nheqminer`
   - `mkdir build`
   - `cd build`
-  - `cmake -DSTATIC_BUILD=1 ..`
+  - `cmake -DXENON=1 -DSTATIC_BUILD=1 ..`
   - `make`
   
 # Run instructions:
