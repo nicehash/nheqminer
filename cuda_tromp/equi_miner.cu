@@ -453,7 +453,7 @@ __global__ void digitH(equi *eq) {
 	uchar hash[HASHOUT];
 	blake2b_state state;
 	equi::htlayout htl(eq, 0);
-	const u32 hashbytes = hashsize(0);
+	const u32 hashbytes = hashsize(0); // always 23 ?
 	const u32 id = blockIdx.x * blockDim.x + threadIdx.x;
 	for (u32 block = id; block < NBLOCKS; block += eq->nthreads) {
 		state = eq->blake_ctx;
@@ -491,8 +491,8 @@ __global__ void digitH(equi *eq) {
 #endif
 			memcpy(s.hash->bytes+htl.nextbo, ph+WN/8-hashbytes, hashbytes);
 		}
-		}
 	}
+}
 
 __global__ void digitO(equi *eq, const u32 r) {
 	equi::htlayout htl(eq, r);

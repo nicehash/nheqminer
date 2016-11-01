@@ -415,22 +415,22 @@ int main(int argc, char* argv[])
 			}
 
 			size_t delim = location.find(':');
-			std::string host = location.substr(0, delim);
-			std::string port = location.substr(delim + 1);
+			std::string host = delim != std::string::npos ? location.substr(0, delim) : location;
+			std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
 
-            if (use_avx)
-                start_mining<ZMinerAVX, ZcashStratumClientAVX>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-                host, port, user, password, scSigAVX);
-            else
+			if (use_avx)
+				start_mining<ZMinerAVX, ZcashStratumClientAVX>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+					host, port, user, password, scSigAVX);
+			else
 				start_mining<ZMinerSSE2, ZcashStratumClientSSE2>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-                host, port, user, password, scSigSSE2);
+					host, port, user, password, scSigSSE2);
 		}
 		else
 		{
-            if (use_avx)
-                ZMinerAVX_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
-            else
-                ZMinerSSE2_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+			if (use_avx)
+				ZMinerAVX::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+			else
+				ZMinerSSE2::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
 		}
 	}
 	catch (std::runtime_error& er)

@@ -21,7 +21,9 @@ using namespace boost::asio;
 using boost::asio::ip::tcp;
 using namespace json_spirit;
 
+#ifndef _MSC_VER
 #define CONSOLE_COLORS
+#endif
 
 #ifndef CONSOLE_COLORS
 #define CL_N    ""
@@ -41,11 +43,7 @@ using namespace json_spirit;
 #define CL_CY2  "" /* cyan */
 #define CL_SIL  "" /* gray */
 
-#ifdef WIN32
 #define CL_GRY  "" /* dark gray */
-#else
-#define CL_GRY  ""    /* dark gray selectable in putty */
-#endif
 #define CL_LRD  "" /* light red */
 #define CL_LGR  "" /* light green */
 #define CL_LYL  "" /* tooltips */

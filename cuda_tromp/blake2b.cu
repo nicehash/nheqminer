@@ -97,7 +97,7 @@ static void G(const int r, const int i, u64 &a, u64 &b, u64 &c, u64 &d, u64 cons
   G(r, 6, v[2], v[7], v[ 8], v[13], m); \
   G(r, 7, v[3], v[4], v[ 9], v[14], m);
 
-__device__ void blake2b_gpu_hash(blake2b_state *state, u32 idx, uchar *hash, u32 outlen) {
+__device__ void blake2b_gpu_hash(blake2b_state *state, u32 idx, uchar *hash, const u32 outlen) {
   const u32 leb = htole32(idx);
   memcpy(state->buf + state->buflen, &leb, sizeof(u32));
   state->buflen += sizeof(u32);
@@ -136,7 +136,7 @@ __device__ void blake2b_gpu_hash(blake2b_state *state, u32 idx, uchar *hash, u32
   v[7] = state->h[7];
   v[8] = 0x6a09e667f3bcc908;
   v[9] = 0xbb67ae8584caa73b;
-  v[10] =  0x3c6ef372fe94f82b;
+  v[10] = 0x3c6ef372fe94f82b;
   v[11] = 0xa54ff53a5f1d36f1;
   v[12] = 0x510e527fade682d1 ^ state->counter;
   v[13] = 0x9b05688c2b3e6c1f;
@@ -164,5 +164,6 @@ __device__ void blake2b_gpu_hash(blake2b_state *state, u32 idx, uchar *hash, u32
   state->h[5] ^= v[5] ^ v[13];
   state->h[6] ^= v[6] ^ v[14];
   state->h[7] ^= v[7] ^ v[15];
+
   memcpy(hash, (uchar *)state->h, outlen);
 }
