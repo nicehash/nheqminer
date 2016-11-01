@@ -24,6 +24,8 @@
 
 #include <boost/static_assert.hpp>
 
+#include <cpuid.h>
+
 
 typedef uint32_t eh_index;
 
@@ -522,17 +524,65 @@ void static TrompZcashMinerThread(ZcashMiner* miner, int size, int pos)
     }
 }
 
+// Windows have __cpuidex
+#ifdef _WIN32
+#define cpuid(info, x)    __cpuidex(info, x, 0)
+#endif
+
+#ifdef __clang__
+void cpuid(int32_t out[4], int32_t x){
+	__cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
+}
+#endif
+
+int detect_avx (void) {
+#ifdef __GNUC__
+#ifndef __clang__
+	if (__builtin_cpu_supports("avx2")) {
+		return 2;
+	}
+	if (__builtin_cpu_supports("avx")) {
+		return 1;
+	}
+#endif // __clang__
+#endif // __GNUC__
+#ifdef __clang__ // clang does not have __builtin_cpu_supports
+	int info[4];
+	cpuid(info, 0);
+	int nIds = info[0];
+
+	cpuid(info, 0x80000000);
+	uint32_t nExIds = info[0];
+	// AVX2
+	if (nIds >= 0x00000007){
+		cpuid(info, 0x00000007);
+		if ((info[1] & ((int)1 << 5)) != 0) {
+			return 2;
+		}
+	}
+	// AVX1
+	if (nIds >= 0x00000001){
+		cpuid(info, 0x00000001);
+		if ((info[2] & ((int)1 << 28)) != 0) {
+			return 1;
+		}
+	}
+#endif
+	// Fallback to no-AVX
+	return 0;
+}
+
 void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 {
 
 	#ifdef XENONCAT
-		if (__builtin_cpu_supports("avx2")) {
+		if (detect_avx()==2) {
 			BOOST_LOG_CUSTOM(info, pos) << "Using Xenoncat's AVX2 solver. ";
 			EhPrepare=&EhPrepareAVX2;
 			EhSolver=&EhSolverAVX2;
 			XenoncatZcashMinerThread(miner, size, pos);
 		}
-		else if (__builtin_cpu_supports("avx")) {
+		else if (detect_avx()==1) {
 			BOOST_LOG_CUSTOM(info, pos) << "Using Xenoncat's AVX solver. ";
 			EhPrepare=&EhPrepareAVX1;
 			EhSolver=&EhSolverAVX1;
