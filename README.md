@@ -1,6 +1,8 @@
 # Build instructions:
+
 ### Dependencies:
   - Boost 1.54+
+
 ## Windows:
 
 Windows builds made by us are available here: https://github.com/nicehash/nheqminer/releases
