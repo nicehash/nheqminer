@@ -13,9 +13,14 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <inttypes.h>
 #include <boost/thread/exceptions.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/circular_buffer.hpp>
+
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/thread.hpp>
+
 #include "speed.hpp"
 
 #ifdef WIN32
@@ -43,15 +48,16 @@ extern "C" void __attribute__((sysv_abi)) EhPrepareAVX1(void *context, void *inp
 extern "C" int32_t __attribute__((sysv_abi)) EhSolverAVX1(void *context, uint32_t nonce);
 extern "C" void __attribute__((sysv_abi)) EhPrepareAVX2(void *context, void *input);
 extern "C" int32_t __attribute__((sysv_abi)) EhSolverAVX2(void *context, uint32_t nonce);
+void __attribute__((sysv_abi)) (*EhPrepare)(void *,void *);
+int32_t __attribute__((sysv_abi)) (*EhSolver)(void *, uint32_t);
 #else
 extern "C" void EhPrepareAVX1(void *context, void *input);
 extern "C" int32_t EhSolverAVX1(void *context, uint32_t nonce);
 extern "C" void EhPrepareAVX2(void *context, void *input);
 extern "C" int32_t EhSolverAVX2(void *context, uint32_t nonce);
-#endif
-
 void (*EhPrepare)(void *,void *);
 int32_t (*EhSolver)(void *, uint32_t);
+#endif
 #endif
 
 void CompressArray(const unsigned char* in, size_t in_len,
@@ -167,7 +173,7 @@ void static XenoncatZcashMinerThread(ZcashMiner* miner, int size, int pos)
 
 	// Initialize context memory.
 	void* context_alloc = malloc(CONTEXT_SIZE+4096);
-	void* context = (void*) (((long) context_alloc+4095) & -4096);
+	void* context = (void*) (((long long)context_alloc+((long long)4095)) & -((long long)4096));
 
     try {
 	while (true) {
@@ -713,6 +719,11 @@ void ZcashMiner::stop()
 			minerThreadActive[i] = false;
 		for (int i = 0; i < nThreads; i++)
 			minerThreads[i].join();
+		for (int i = 0; i < nThreads; i++) {
+			BOOST_LOG_CUSTOM(warning, i) << "Waiting for miners join";
+			while (minerThreads[i].joinable()) { boost::this_thread::sleep(boost::posix_time::milliseconds(100)); } ;
+		}
+
 		delete[] minerThreads;
 		delete[] minerThreadActive;
 	}
