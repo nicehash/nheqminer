@@ -22,6 +22,7 @@
 // file logging
 // mingw compilation for windows (faster?)
 
+int equiengine;
 
 static ZcashStratumClient* scSig;
 extern "C" void stratum_sigint_handler(int signum) 
@@ -35,6 +36,7 @@ void print_help()
 	std::cout << "\t-h\t\tPrint this help and quit" << std::endl;
 	std::cout << "\t-l [location]\tStratum server:port" << std::endl;
 	std::cout << "\t-u [username]\tUsername (pool worker)" << std::endl;
+	std::cout << "\t-x [enginenum]\tEngine (-1=auto,0=tromp,1=AVX1,2=AVX2)" << std::endl;
 	std::cout << "\t-p [password]\tPassword (default: x)" << std::endl;
 	std::cout << "\t-t [num_thrds]\tNumber of threads (default: number of sys cores)" << std::endl;
 	std::cout << "\t-d [level]\tDebug print level (0 = print all, 5 = fatal only, default: 2)" << std::endl;
@@ -86,6 +88,9 @@ int main(int argc, char* argv[])
 	int num_hashes = 100;
 	int api_port = 0;
 
+	// set defaults
+	equiengine = -1;
+
 	for (int i = 1; i < argc; ++i)
 	{
 		if (argv[i][0] != '-') continue;
@@ -114,6 +119,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'd':
 			log_level = atoi(argv[++i]);
+			break;
+		case 'x':
+			equiengine = atoi(argv[++i]);
 			break;
 		case 'a':
 			api_port = atoi(argv[++i]);

@@ -29,7 +29,7 @@
 #include <cpuid.h>
 #endif
 
-
+extern int equiengine;
 typedef uint32_t eh_index;
 
 
@@ -547,6 +547,11 @@ void cpuid(int32_t out[4], int32_t x){
 #endif
 
 int detect_avx (void) {
+	// return engine forcefully set via commandline
+	if (equiengine>-1) {
+		return equiengine;
+	}
+	// if not set on commandline, auto-detect it!
 #if defined(__GNUC__) || defined(__MINGW32__)
 #ifndef __clang__
 	if (__builtin_cpu_supports("avx2")) {
