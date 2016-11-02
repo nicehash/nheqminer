@@ -708,8 +708,8 @@ void ZcashMiner::stop()
 			minerThreadActive[i] = false;
 		for (int i = 0; i < nThreads; i++)
 			minerThreads[i].join();
-		delete minerThreads;
-		delete minerThreadActive;
+		delete[] minerThreads;
+		delete[] minerThreadActive;
 	}
     /*if (minerThreads) {
         minerThreads->interrupt_all();
