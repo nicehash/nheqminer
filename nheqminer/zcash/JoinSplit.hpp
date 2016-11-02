@@ -35,10 +35,10 @@ class JSOutput {
 public:
     PaymentAddress addr;
     uint64_t value;
-    boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
+    boost::array<unsigned char, ZC_MEMO_SIZE> memo;
 
-    JSOutput();
-    JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
+    JSOutput() { memo = {{ 0xF6 }}; };  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
+    JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value) { JSOutput(); }
 
     Note note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const;
 };

@@ -13,13 +13,19 @@
 #include <string>
 #include <vector>
 
+#ifdef _MSC_VER
+# define _ALIGN(x) __declspec(align(x))
+#else
+# define _ALIGN(x) __attribute__ ((aligned(x)))
+#endif
+
 /** Template base class for fixed-sized opaque blobs. */
 template<unsigned int BITS>
 class base_blob
 {
 protected:
     enum { WIDTH=BITS/8 };
-    alignas(uint32_t) uint8_t data[WIDTH];
+    uint8_t _ALIGN(4) data[WIDTH];
 public:
     base_blob()
     {

@@ -14,10 +14,13 @@
 
 #define CONTEXT_SIZE 178033152
 
+//#define USE_XENON_DLL
+
 #ifdef __cplusplus
 extern "C" 
 #endif
 {
+#ifndef USE_XENON_DLL
 	//Linkage with assembly
 	//EhPrepare takes in 136 bytes of input. The remaining 4 bytes of input is fed as nonce to EhSolver.
 	//EhPrepare saves the 136 bytes in context, and EhSolver can be called repeatedly with different nonce.
@@ -27,7 +30,8 @@ extern "C"
 	void EhPrepareAVX2(void *context, void *input);
 	int32_t EhSolverAVX2(void *context, uint32_t nonce);
 
-	/*typedef void(__fastcall *_EhPrepare)(void*, void*);
+#else
+	typedef void(__fastcall *_EhPrepare)(void*, void*);
 	_EhPrepare EhPrepare;
 
 	typedef int32_t(__fastcall *_EhSolver)(void*, uint32_t);
@@ -46,13 +50,18 @@ extern "C"
 			puts("Library xenoncat is missing.");
 			exit(0);
 		}
-	}*/
-}
+	}
+#endif
 
+#ifdef __cplusplus
+}
+#endif
 
 void cpu_xenoncat::start(cpu_xenoncat& device_context) 
-{ 
-	//init_library(device_context.use_opt);
+{
+#ifdef USE_XENON_DLL
+	init_library(device_context.use_opt);
+#endif
 	device_context.memory_alloc = malloc(CONTEXT_SIZE + 4096);
 	device_context.memory = (void*)(((long long)device_context.memory_alloc + 4095) & -4096);
 
@@ -78,6 +87,11 @@ void cpu_xenoncat::solve(const char *tequihash_header,
 
 	memcpy(context, tequihash_header, 108);
 	memcpy(context + 108, nonce, 32);
+
+#ifdef USE_XENON_DLL
+	EhPrepare(device_context.memory, (void *)context);
+	numsolutions = EhSolver(device_context.memory, *(uint32_t *)(context + 136));
+#else
 	if (device_context.use_opt)
 	{
 		EhPrepareAVX2(device_context.memory, (void *)context);
@@ -88,7 +102,7 @@ void cpu_xenoncat::solve(const char *tequihash_header,
 		EhPrepareAVX1(device_context.memory, (void *)context);
 		numsolutions = EhSolverAVX1(device_context.memory, *(uint32_t *)(context + 136));
 	}
-
+#endif
 	for (i = 0; i < numsolutions; i++) 
 	{
 		//printf("Solution found, start: %08x\n", *(uint32_t*)((unsigned char*)device_context.memory + (1344 * i)));
