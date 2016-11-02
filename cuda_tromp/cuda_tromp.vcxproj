@@ -11,7 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\nheqminer\trompequihash\equi.h" />
     <ClInclude Include="cuda_tromp.hpp" />
     <ClInclude Include="eqcuda.hpp" />
   </ItemGroup>
