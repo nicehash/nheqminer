@@ -149,7 +149,7 @@ cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..
 
 Windows (on Fedora 22 with MingW):
 ```
-cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..
+cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw64.cmake ..
 ```
 
 
