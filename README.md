@@ -135,6 +135,16 @@ Download and install:
 
 Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 
+## Release builds
+
+Linux on Alpine 3.4:
+`cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..`
+Mac OS X:
+`cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..`
+Windows (on Fedora 22 with MingW):
+`cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..`
+
+
 # Run instructions:
 
 If run without parameters, miner will start mining with 75% of available virtual cores on flypool with developers account using best engine. Feel free to donate that way. Use parameter -h to learn about available parameters:
@@ -167,6 +177,9 @@ Example to mine with your own ZEC address and worker1 on EU server, using 6 thre
         nheqminer_x64_AVX.exe -l eu1-zcash.flypool.org:3333 -u YOUR_ZCASH_ADDRESS_HERE.worker1 -t 6
 
 <i>Note: if you have a 4-core CPU with hyper threading enabled (total 8 threads) it is best to run with only 6 threads (experimental benchmarks shows that best results are achieved with 75% threads utilized)</i>
+
+
+
 
 # Acknowledgments and credits
 
