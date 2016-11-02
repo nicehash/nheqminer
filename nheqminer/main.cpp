@@ -75,6 +75,7 @@ int main(int argc, char* argv[])
 {
 	std::cout << "Kost CPU Miner - https://github.com/kost/nheqminer " STANDALONE_MINER_NAME "/" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "Thanks to Zcash developers and community, nicehash, tromp and xenoncat." << std::endl;
+	std::cout << "Donations are welcome! BTC:1KHRiwNdFiL4uFUGFEpbG7t2F3pUcttLuX or ZEC t1JBZzdaUUSJDs8q7SUxcCSzakThqtNRtNv" << std::endl;
 	std::cout << std::endl;
 
 	std::string location = "eu1-zcash.flypool.org:3333";
