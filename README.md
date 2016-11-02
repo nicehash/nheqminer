@@ -157,6 +157,7 @@ cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" -DCMAKE_TOOLCHAIN_FILE=../toolch
 
 If run without parameters, miner will start mining with 75% of available virtual cores on flypool with developers account using best engine. Feel free to donate that way. Use parameter -h to learn about available parameters:
 
+```
 Parameters:
         -h              Print this help and quit
         -l [location]   Stratum server:port
@@ -167,6 +168,7 @@ Parameters:
         -d [level]      Debug print level (0 = print all, 5 = fatal only, default: 2)
         -b [hashes]     Run in benchmark mode (default: 100 hashes)
         -a [port]       Local API port (default: 0 = do not bind)
+```
 
 Example to run benchmark:
 
