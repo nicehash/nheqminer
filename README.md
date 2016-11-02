@@ -75,7 +75,7 @@ git clone --recursive https://github.com/kost/nheqminer.git
 cd nheqminer/nheqminer
 mkdir build
 cd build
-cmake -DXENON=2 ..
+cmake -DXENON=1 ..
 make
 ```
 
@@ -97,10 +97,22 @@ Under Ubuntu open a terminal and run the following commands:
   - `cd nheqminer/nheqminer`
   - `mkdir build`
   - `cd build`
-  - `cmake -DXENON=2 ..`
+  - `cmake -DXENON=1 ..`
   - `make`
 
 Note: for the fastest miner, it is recommended to use `cmake -DXENON=2 ..`
+
+## Windows cmake **recommended** (Tested on Fedora 22):
+You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
+Under Fedora open a terminal and run the following commands:
+
+  - `sudo dnf install mingw64-winpthreads-static mingw64-boost-static cmake make git`
+  - `git clone --recursive https://github.com/kost/nheqminer.git`
+  - `cd nheqminer/nheqminer`
+  - `mkdir build`
+  - `cd build`
+  - `cmake -DSTATIC_BUILD=1 -DXENON=1 -DMARCH="-m64" ..`
+  - `make`
 
 ## Full static Linux cmake **auto-AVX build recommended** (Tested on Alpine 3.4):
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
