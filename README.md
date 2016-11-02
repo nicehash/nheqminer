@@ -137,17 +137,19 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 
 # Run instructions:
 
-If run without parameters, miner will start mining with 75% of available virtual cores on NiceHash. Use parameter -h to learn about available parameters:
+If run without parameters, miner will start mining with 75% of available virtual cores on flypool with developers account using best engine. Feel free to donate that way. Use parameter -h to learn about available parameters:
 
+Parameters:
         -h              Print this help and quit
-        -l [location]   Location (eu, usa, hk, jp)
-        -u [username]   Username (bitcoinaddress)
+        -l [location]   Stratum server:port
+        -u [username]   Username (pool worker)
+        -x [enginenum]  Engine (-1=auto,0=tromp,1=AVX1,2=AVX2)
         -p [password]   Password (default: x)
         -t [num_thrds]  Number of threads (default: number of sys cores)
         -d [level]      Debug print level (0 = print all, 5 = fatal only, default: 2)
         -b [hashes]     Run in benchmark mode (default: 100 hashes)
         -a [port]       Local API port (default: 0 = do not bind)
-        
+
 Example to run benchmark:
 
         nheqminer_x64_AVX.exe -b
