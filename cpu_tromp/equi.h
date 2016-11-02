@@ -1,3 +1,4 @@
+#pragma once
 // Equihash solver
 // Copyright (c) 2016-2016 John Tromp
 

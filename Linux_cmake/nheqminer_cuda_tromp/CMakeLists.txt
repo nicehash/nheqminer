@@ -1,16 +1,15 @@
-project(nheqminer_cpu_tromp)
+project(nheqminer_cuda_tromp)
 cmake_minimum_required(VERSION 2.8)
 
-#aux_source_directory(. SRC_LIST)
-#add_executable(${PROJECT_NAME} ${SRC_LIST})
+option(ENABLE_CUDA "Enable the cuda build" ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
     # use native cpu features
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
     # optimizations
     add_definitions(-O3)
 endif()
@@ -20,8 +19,34 @@ include_directories(${nheqminer_SOURCE_DIR})
 
 add_definitions(-DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
 
+#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-m64;--std=c++11;--disable-warnings;--ptxas-options=-v;-use_fast_math;-lineinfo)
+
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};--disable-warnings;--ptxas-options=-v;-use_fast_math;-lineinfo)
+
+add_definitions(-DHIST)
+#add_definitions(-DXINTREE)
+#add_definitions(-DUNROLL)
+
+list(APPEND CUDA_NVCC_FLAGS_RELEASE -O3)
+
+
+FIND_PACKAGE(CUDA REQUIRED)
+if(COMPUTE AND (COMPUTE GREATER 0))
+        LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_${COMPUTE},code=sm_${COMPUTE})
+else(COMPUTE AND (COMPUTE GREATER 0))
+        set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};; -gencode arch=compute_20,code=sm_21; -gencode arch=compute_30,code=sm_30; -gencode arch=compute_35,code=sm_35; -gencode arch=compute_50,code=sm_50; -gencode arch=compute_52,code=sm_52; -gencode arch=compute_61,code=sm_61 )
+endif(COMPUTE AND (COMPUTE GREATER 0))
+
+include_directories(${CUDA_INCLUDE_DIRS})
+
 find_package(Threads REQUIRED COMPONENTS)
 find_package(Boost REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
+
+if(CUDA_FOUND)
+message("CUDA FOUND")
+else()
+message("CUDA NOT FOUND")
+endif()
 
 if (Boost_FOUND)
   # From the offical documentation:
@@ -43,7 +68,15 @@ else()
 endif ()
 
 ## Add solvers here
-add_definitions(-DUSE_CPU_TROMP)
+#add_definitions(-DUSE_CPU_XENONCAT)
+#add_definitions(-DUSE_CPU_TROMP)
+add_definitions(-DUSE_CUDA_TROMP)
+
+#add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )
+#set_target_properties ( xenoncat_avx1 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx1.o" )
+
+#add_library ( xenoncat_avx2 SHARED IMPORTED GLOBAL )
+#set_target_properties ( xenoncat_avx2 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx2.o" )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/../../nheqminer/)
 
@@ -99,45 +132,39 @@ set(SOURCE_FILES
     ../../nheqminer/zcash/Zcash.h
     ../../nheqminer/SolverStub.h # just a stub
 
-    # cpu tromp
+#    # cpu tromp
+#    ../../cpu_tromp/blake2/blake2bx.cpp
+#    ../../cpu_tromp/cpu_tromp.cpp
+#    ../../cpu_tromp/blake2/blake2-config.h
+#    ../../cpu_tromp/blake2/blake2-impl.h
+#    ../../cpu_tromp/blake2/blake2-round.h
+#    ../../cpu_tromp/blake2/blake2.h
+#    ../../cpu_tromp/blake2/blake2b-load-sse2.h
+#    ../../cpu_tromp/blake2/blake2b-load-sse41.h
+#    ../../cpu_tromp/blake2/blake2b-round.h
+#    ../../cpu_tromp/cpu_tromp.hpp
+#    ../../cpu_tromp/equi.h
+#    ../../cpu_tromp/equi_miner.h
+
+#    # cpu xenocat
+#    ../../cpu_xenoncat/cpu_xenoncat.hpp
+#    ../../cpu_xenoncat/xenoncat.cpp
+
+    # cuda tromp
+    ../../cuda_tromp/cuda_tromp.hpp
+    ../../cuda_tromp/cuda_tromp.cpp
+    ../../cuda_tromp/eqcuda.hpp
+    ../../cuda_tromp/equi_miner.cu
     ../../cpu_tromp/blake2/blake2bx.cpp
-    ../../cpu_tromp/cpu_tromp.cpp
-    ../../cpu_tromp/blake2/blake2-config.h
-    ../../cpu_tromp/blake2/blake2-impl.h
-    ../../cpu_tromp/blake2/blake2-round.h
-    ../../cpu_tromp/blake2/blake2.h
-    ../../cpu_tromp/blake2/blake2b-load-sse2.h
-    ../../cpu_tromp/blake2/blake2b-load-sse41.h
-    ../../cpu_tromp/blake2/blake2b-round.h
-    ../../cpu_tromp/cpu_tromp.hpp
-    ../../cpu_tromp/equi.h
-    ../../cpu_tromp/equi_miner.h
     )
 
-#if(USE_CPU_TROMP)
-#    set(SOURCE_FILES ${SOURCE_FILES}
-#        ../../cpu_tromp/blake2/blake2bx.cpp
-#        ../../cpu_tromp/cpu_tromp.cpp
-#        ../../cpu_tromp/blake2/blake2-config.h
-#        ../../cpu_tromp/blake2/blake2-impl.h
-#        ../../cpu_tromp/blake2/blake2-round.h
-#        ../../cpu_tromp/blake2/blake2.h
-#        ../../cpu_tromp/blake2/blake2b-load-sse2.h
-#        ../../cpu_tromp/blake2/blake2b-load-sse41.h
-#        ../../cpu_tromp/blake2/blake2b-round.h
-#        ../../cpu_tromp/cpu_tromp.hpp
-#        ../../cpu_tromp/equi.h
-#        ../../cpu_tromp/equi_miner.h
-#        )
-#endif()
-
 #add_executable(${PROJECT_NAME} ${SRC_LIST})
-
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
+set(LIBS ${LIBS} ${Threads_LIBRARIES} ${Boost_LIBRARIES})
 
 #message("-- CXXFLAGS: ${CMAKE_CXX_FLAGS}")
 #message("-- LIBS: ${LIBS}")
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+#add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 #target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+CUDA_ADD_EXECUTABLE(${PROJECT_NAME} ${SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} ${LIBS} ${CUDA_LIBRARIES} )
