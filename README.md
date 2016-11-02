@@ -1,4 +1,5 @@
 # Build instructions:
+
 ### Dependencies:
   - Boost 1.54+
 ## Windows:
@@ -15,12 +16,15 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 
 
 ## Linux
+
 Work in progress.
 
 Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP
 
 Work in progress (OCL_XMP)
+
 ## Linux (Ubuntu 14.04 / 16.04) Build CPU_XENONCAT:
+
  - Open terminal and run the following commands:
    - `sudo apt-get install cmake build-essential libboost-all-dev`
    - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
@@ -29,7 +33,9 @@ Work in progress (OCL_XMP)
    - `cd ../../../Linux_cmake/nheqminer_cpu`
    - `cmake .`
    - `make -j $(nproc)`
+
 ## Linux (Ubuntu 14.04 / 16.04) Build CUDA_TROMP:
+
  - Open terminal and run the following commands:
    - **Ubuntu 14.04**:
      - `wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_8.0.44-1_amd64.deb`
