@@ -15,6 +15,7 @@
 //#include <unistd.h>
 //#include <getopt.h>
 #include <errno.h>
+#include <memory>
 
 
 #include "opencl.h"
@@ -47,11 +48,13 @@ typedef struct  debug_s
 	uint32_t    dropped_stor;
 }               debug_t;
 
-struct OclContext {
-	cl_context _context;
-	cl_program _program;
+cl_platform_id gPlatform_ = 0;
 
-	cl_platform_id gPlatform = 0;
+struct OclContext {
+	cl_context _context = 0;
+	cl_program _program = 0;
+
+	//cl_platform_id platform = 0;
 
 	cl_command_queue queue;
 	clBuffer<uint8_t> buf_ht0;
@@ -66,20 +69,21 @@ struct OclContext {
 	/*uint256 nonce;
 
 	MinerInstance() {}*/
-	bool init(cl_context context, cl_program program, cl_device_id dev, unsigned threadsNum, unsigned threadsPerBlock);
+	bool init(/*cl_context context, cl_program program, */cl_device_id dev, unsigned threadsNum, unsigned threadsPerBlock);
 };
 
-bool OclContext::init(cl_context context,
-	cl_program program,
+bool OclContext::init(
+	/*cl_context context,
+	cl_program program,*/
 	cl_device_id dev,
 	unsigned int threadsNum,
 	unsigned int threadsPerBlock)
 {
 	cl_int error;
 
-	_context = context;
-	_program = program;
-	queue = clCreateCommandQueue(context, dev, 0, &error);
+	//_context = context;
+	//_program = program;
+	queue = clCreateCommandQueue(_context, dev, 0, &error);
 
 #ifdef ENABLE_DEBUG
 	size_t              dbg_size = NR_ROWS;
@@ -87,20 +91,20 @@ bool OclContext::init(cl_context context,
 	size_t              dbg_size = 1;
 #endif  
 
-	buf_dbg.init(context, dbg_size, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR);
-	buf_ht0.init(context, HT_SIZE, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
-	buf_ht1.init(context, HT_SIZE, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
-	buf_sols.init(context, 1, CL_MEM_READ_WRITE);
+	buf_dbg.init(_context, dbg_size, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS); // CL_MEM_COPY_HOST_PTR
+	buf_ht0.init(_context, HT_SIZE, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
+	buf_ht1.init(_context, HT_SIZE, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
+	buf_sols.init(_context, 1, CL_MEM_READ_WRITE);
 	fprintf(stderr, "Hash tables will use %.1f MB\n", 2.0 * HT_SIZE / 1e6);
 
-	k_init_ht = clCreateKernel(program, "kernel_init_ht", &error);
+	k_init_ht = clCreateKernel(_program, "kernel_init_ht", &error);
 	for (unsigned i = 0; i < WK; i++) {
 		char kernelName[128];
 		sprintf(kernelName, "kernel_round%d", i);
-		k_rounds[i] = clCreateKernel(program, kernelName, &error);
+		k_rounds[i] = clCreateKernel(_program, kernelName, &error);
 	}
 
-	k_sols = clCreateKernel(program, "kernel_sols", &error);
+	k_sols = clCreateKernel(_program, "kernel_sols", &error);
 	return true;
 }
 
@@ -223,35 +227,7 @@ void zcash_blake2b_final(blake2b_state_t *st, uint8_t *out, uint8_t outlen)
 
 int             verbose = 0;
 uint32_t	show_encoded = 0;
-uint64_t	nr_nonces = 1;
-uint32_t	do_list_gpu = 0;
-uint32_t	gpu_to_use = 0;
 
-
-uint64_t parse_num(char *str)
-{
-	char	*endptr;
-	uint64_t	n;
-	n = strtoul(str, &endptr, 0);
-	if (endptr == str || *endptr)
-		printf("'%s' is not a valid number\n", str);
-	return n;
-}
-
-uint64_t now(void)
-{
-	/*struct timeval	tv;
-	gettimeofday(&tv, NULL);
-	return (uint64_t)tv.tv_sec * 1000 * 1000 + tv.tv_usec;*/
-	return 0;
-}
-
-void show_time(uint64_t t0)
-{
-	uint64_t            t1;
-	t1 = now();
-	fprintf(stderr, "Elapsed time: %.1f msec\n", (t1 - t0) / 1e3);
-}
 
 cl_mem check_clCreateBuffer(cl_context ctx, cl_mem_flags flags, size_t size,
 	void *host_ptr)
@@ -437,37 +413,6 @@ void print_device_info(unsigned i, cl_device_id d)
 	printf("ID %d: %s\n", i, name);
 }
 
-//void examine_dbg(cl_command_queue queue, cl_mem buf_dbg, size_t dbg_size)
-//{
-//	debug_t     *dbg;
-//	size_t      dropped_coll_total, dropped_stor_total;
-//	if (verbose < 2)
-//		return;
-//	dbg = (debug_t *)malloc(dbg_size);
-//	if (!dbg)
-//		printf("malloc: %s\n", strerror(errno));
-//	check_clEnqueueReadBuffer(queue, buf_dbg,
-//		CL_TRUE,	// cl_bool	blocking_read
-//		0,		// size_t	offset
-//		dbg_size,   // size_t	size
-//		dbg,	// void		*ptr
-//		0,		// cl_uint	num_events_in_wait_list
-//		NULL,	// cl_event	*event_wait_list
-//		NULL);	// cl_event	*event
-//	dropped_coll_total = dropped_stor_total = 0;
-//	for (unsigned tid = 0; tid < dbg_size / sizeof(*dbg); tid++)
-//	{
-//		dropped_coll_total += dbg[tid].dropped_coll;
-//		dropped_stor_total += dbg[tid].dropped_stor;
-//		if (0 && (dbg[tid].dropped_coll || dbg[tid].dropped_stor))
-//			printf("thread %6d: dropped_coll %zd dropped_stor %zd\n", tid,
-//			dbg[tid].dropped_coll, dbg[tid].dropped_stor);
-//	}
-//	printf("Dropped: %zd (coll) %zd (stor)\n",
-//		dropped_coll_total, dropped_stor_total);
-//	free(dbg);
-//}
-
 size_t select_work_size_blake(void)
 {
 	size_t              work_size =
@@ -500,66 +445,6 @@ static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, clBuffer<uint8_
 		NULL));  // cl_event *event
 }
 
-/*
-** Print on stdout a hex representation of the encoded solution as per the
-** zcash protocol specs (512 x 21-bit inputs).
-**
-** inputs       array of 32-bit inputs
-** n            number of elements in array
-*/
-void print_encoded_sol(uint32_t *inputs, uint32_t n)
-{
-	uint32_t byte_pos = 0;
-	int32_t bits_left = PREFIX + 1;
-	uint8_t x = 0;
-	uint8_t x_bits_used = 0;
-	while (byte_pos < n)
-	{
-		if (bits_left >= 8 - x_bits_used)
-		{
-			x |= inputs[byte_pos] >> (bits_left - 8 + x_bits_used);
-			bits_left -= 8 - x_bits_used;
-			x_bits_used = 8;
-		}
-		else if (bits_left > 0)
-		{
-			uint32_t mask = ~(-1 << (8 - x_bits_used));
-			mask = ((~mask) >> bits_left) & mask;
-			x |= (inputs[byte_pos] << (8 - x_bits_used - bits_left)) & mask;
-			x_bits_used += bits_left;
-			bits_left = 0;
-		}
-		else if (bits_left <= 0)
-		{
-			//assert(!bits_left);
-			byte_pos++;
-			bits_left = PREFIX + 1;
-		}
-		if (x_bits_used == 8)
-		{
-			printf("%02x", x);
-			x = x_bits_used = 0;
-		}
-	}
-	printf("\n");
-	fflush(stdout);
-}
-
-void print_sol(uint32_t *values, uint64_t *nonce)
-{
-	uint32_t	show_n_sols;
-	show_n_sols = (1 << PARAM_K);
-	if (verbose < 2)
-		show_n_sols = MIN(10, show_n_sols);
-	fprintf(stderr, "Soln:");
-	// for brievity, only print "small" nonces
-	if (*nonce < (1UL << 32))
-		fprintf(stderr, " 0x%lx:", *nonce);
-	for (unsigned i = 0; i < show_n_sols; i++)
-		fprintf(stderr, " %x", values[i]);
-	fprintf(stderr, "%s\n", (show_n_sols != (1 << PARAM_K) ? "..." : ""));
-}
-
 int sol_cmp(const void *_a, const void *_b)
 {
 	const uint32_t	*a = (uint32_t	*)_a;
@@ -572,41 +457,6 @@ int sol_cmp(const void *_a, const void *_b)
 		b++;
 	}
 	return 0;
-}
-
-/*
-** Print all solutions.
-*/
-void print_sols(sols_t *all_sols, uint64_t *nonce, uint32_t nr_valid_sols)
-{
-	uint8_t		*valid_sols;
-	uint32_t		counted;
-	valid_sols = (uint8_t *)malloc(nr_valid_sols * SOL_SIZE);
-	if (!valid_sols)
-		printf("malloc: %s\n", strerror(errno));
-	counted = 0;
-	for (uint32_t i = 0; i < all_sols->nr; i++)
-		if (all_sols->valid[i])
-		{
-			if (counted >= nr_valid_sols)
-				printf("Bug: more than %d solutions\n", nr_valid_sols);
-			memcpy(valid_sols + counted * SOL_SIZE, all_sols->values[i],
-				SOL_SIZE);
-			counted++;
-		}
-	//assert(counted == nr_valid_sols);
-	// sort the solutions amongst each other, to make silentarmy's output
-	// deterministic and testable
-	qsort(valid_sols, nr_valid_sols, SOL_SIZE, sol_cmp);
-	for (uint32_t i = 0; i < nr_valid_sols; i++)
-	{
-		uint32_t	*inputs = (uint32_t *)(valid_sols + i * SOL_SIZE);
-		if (show_encoded)
-			print_encoded_sol(inputs, 1 << PARAM_K);
-		if (verbose)
-			print_sol(inputs, nonce);
-	}
-	free(valid_sols);
 }
 
 /*
@@ -635,22 +485,26 @@ static uint32_t verify_sol(sols_t *sols, unsigned sol_i)
 {
 	uint32_t  *inputs = sols->values[sol_i];
 	uint32_t  seen_len = (1 << (PREFIX + 1)) / 8;
-	uint8_t seen[(1 << (PREFIX + 1)) / 8];
+	std::unique_ptr<uint8_t[]> seen(new uint8_t[seen_len]);
 	uint32_t  i;
 	uint8_t tmp;
 	// look for duplicate inputs
-	memset(seen, 0, seen_len);
-	for (i = 0; i < (1 << PARAM_K); i++)
-	{
+	memset(seen.get(), 0, seen_len);
+	for (i = 0; i < (1 << PARAM_K); i++) {
+		if ((inputs[i] / 8) >= seen_len) {
+			sols->valid[sol_i] = 0;
+			return 0;
+		}
+
 		tmp = seen[inputs[i] / 8];
 		seen[inputs[i] / 8] |= 1 << (inputs[i] & 7);
-		if (tmp == seen[inputs[i] / 8])
-		{
+		if (tmp == seen[inputs[i] / 8]) {
 			// at least one input value is a duplicate
 			sols->valid[sol_i] = 0;
 			return 0;
 		}
 	}
+
 	// the valid flag is already set by the GPU, but set it again because
 	// I plan to change the GPU code to not set it
 	sols->valid[sol_i] = 1;
@@ -694,9 +548,6 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 	device_context.is_init_success = false;
 	device_context.oclc = new OclContext();
 
-	cl_context gContext[64] = { 0 };
-	cl_program gProgram[64] = { 0 };
-
 
 	std::vector<cl_device_id> allGpus;
 	if (!clInitialize(device_context.platform_id, allGpus)) {
@@ -719,12 +570,12 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 
 	// context create
 	for (unsigned i = 0; i < gpus.size(); i++) {
-		cl_context_properties props[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)device_context.oclc->gPlatform, 0 };
+		cl_context_properties props[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)gPlatform_, 0 };
 		cl_int error;
-		gContext[i] = clCreateContext(props, 1, &gpus[i], 0, 0, &error);
+		device_context.oclc->_context = clCreateContext(props, 1, &gpus[i], 0, 0, &error);
 		//OCLR(error, false);
-		if (cl_int err = error) {
-			printf("OpenCL error: %d at %s:%d\n", err, __FILE__, __LINE__);
+		if (error != CL_SUCCESS) {
+			printf("OpenCL error: %d at %s:%d\n", error, __FILE__, __LINE__);
 			return;
 		}
 	}
@@ -735,20 +586,21 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 	for (size_t i = 0; i < gpus.size(); i++) {
 		char kernelName[64];
 		sprintf(kernelName, "silentarmy_gpu%u.bin", (unsigned)i);
-		if (!clCompileKernel(gContext[i],
+		if (!clCompileKernel(device_context.oclc->_context,
 			gpus[i],
 			kernelName,
 			{ "zcash/gpu/kernel.cl" },
 			"",
 			&binstatus[i],
-			&gProgram[i])) {
+			&device_context.oclc->_program)) {
 			return;
 		}
 	}
 
 	for (unsigned i = 0; i < gpus.size(); ++i) {
 		if (binstatus[i] == CL_SUCCESS) {
-			if (!device_context.oclc->init(gContext[i], gProgram[i], gpus[i], device_context.threadsNum, device_context.wokrsize)) {
+			if (!device_context.oclc->init(/*device_context.oclc->_context, device_context.oclc->_program, */
+				gpus[i], device_context.threadsNum, device_context.wokrsize)) {
 				printf("Init failed");
 				return;
 			}
@@ -777,13 +629,20 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	std::function<void(void)> hashdonef,
 	ocl_silentarmy& device_context) {
 
+	unsigned char context[140];
+	memset(context, 0, 140);
+	memcpy(context, tequihash_header, tequihash_header_len);
+	memcpy(context + tequihash_header_len, nonce, nonce_len);
+
 	OclContext *miner = device_context.oclc;
 	clFlush(miner->queue);
 
  //C++ START
 	blake2b_state_t initialCtx;
 	zcash_blake2b_init(&initialCtx, ZCASH_HASH_LEN, PARAM_N, PARAM_K);
-	zcash_blake2b_update(&initialCtx, (const uint8_t*)&tequihash_header, 128, 0);
+	zcash_blake2b_update(&initialCtx, (const uint8_t*)&context, 128, 0);
+	//zcash_blake2b_update(&initialCtx, (const uint8_t*)&tequihash_header_len, 128, 0);
+
 
 	//miner->nonce = header.nNonce;
 	size_t global_ws;
@@ -825,31 +684,38 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 
 	miner->buf_sols.copyToHost(miner->queue, true);
 	sols_t *sols = miner->buf_sols.HostData;
-	if (sols->nr > MAX_SOLS)
+	if (sols->nr > MAX_SOLS) {
 		sols->nr = MAX_SOLS;
+	}
+	printf("sols->nr potential %d\n", sols->nr);
 
-	for (unsigned sol_i = 0; sol_i < sols->nr; sol_i++)
-		verify_sol(sols, sol_i);
+	uint32_t nsols_verify_sol = 0;
+	for (unsigned sol_i = 0; sol_i < sols->nr; sol_i++) {
+		nsols_verify_sol = verify_sol(sols, sol_i);
+	}
+	printf("solution num nsols_verify_sol %d\n", nsols_verify_sol);
 
 	// TODO send compressed or non compressed data
 	uint32_t nsols = 0;
 	uint8_t proof[COMPRESSED_PROOFSIZE * 2];
 	for (uint32_t i = 0; i < sols->nr; i++) {
 		if (sols->valid[i]) {
-			std::vector<uint32_t> index_vector(PROOFSIZE);
-			for (uint32_t el = 0; el < PROOFSIZE; el++) {
-				index_vector[i] = sols->values[i][el];
-			}
-
-			solutionf(index_vector, DIGITBITS, nullptr);
-			if (cancelf()) return;
-			//compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
-			// TODO remove
+			compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
 			nsols++;
+
+			////solutionf(index_vector, DIGITBITS, nullptr);
+			//solutionf(std::vector<uint32_t>(0), COMPRESSED_PROOFSIZE * 2, (unsigned char*)proof + (COMPRESSED_PROOFSIZE * 2 * i));
+			//if (cancelf()) return;
+			////compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
+
+			//printf("Solution found, start: %08x\n", *(uint32_t*)((unsigned char*)device_context.memory + (1344 * i)));
+			solutionf(std::vector<uint32_t>(0), 1344, (unsigned char*)proof + (1344 * i));
+			if (cancelf()) return;
+			//validBlock(validBlockData, (unsigned char*)context + (1344 * i));
 		}
 	}
 	// TODO remove
-	printf("solution num %d", nsols);
+	printf("solution num %d\n", nsols);
 }
 
 void ocl_silentarmy::print_opencl_devices() {
