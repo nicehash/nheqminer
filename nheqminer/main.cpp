@@ -11,11 +11,24 @@
 #include <chrono>
 #include <atomic>
 #include <bitset>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
 
 #include "speed.hpp"
 #include "api.hpp"
+
+#include <boost/log/core/core.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/support/date_time.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+
+namespace logging = boost::log;
+namespace sinks = boost::log::sinks;
+namespace src = boost::log::sources;
+namespace attrs = boost::log::attributes;
+namespace keywords = boost::log::keywords;
 
 #ifdef __linux__
 #define __cpuid(out, infoType)\
@@ -96,28 +109,6 @@ void print_cuda_info()
 void print_opencl_info() {
 	ocl_xmp::print_opencl_devices();
 }
-
-
-#ifdef WIN32
-void init_logging(boost::log::core_ptr cptr, int level);
-#else
-#include <iostream>
-
-#include <boost/log/core/core.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/utility/setup/console.hpp>
-#include <boost/log/attributes.hpp>
-#include <boost/log/support/date_time.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-
-namespace logging = boost::log;
-namespace sinks = boost::log::sinks;
-namespace src = boost::log::sources;
-namespace attrs = boost::log::attributes;
-namespace keywords = boost::log::keywords;
-#endif
 
 
 int cuda_enabled[8] = { 0 };
@@ -381,9 +372,7 @@ int main(int argc, char* argv[])
 	else
 		detect_AVX_and_AVX2();
 
-#ifdef WIN32
-    init_logging(boost::log::core::get(), log_level);
-#else
+	// init_logging init START
     std::cout << "Setting log level to " << log_level << std::endl;
     boost::log::add_console_log(
         std::clog,
@@ -398,7 +387,7 @@ int main(int argc, char* argv[])
     );
     boost::log::core::get()->add_global_attribute("TimeStamp", boost::log::attributes::local_clock());
     boost::log::core::get()->add_global_attribute("ThreadID", boost::log::attributes::current_thread_id());
-#endif
+	// init_logging init END
 
 	BOOST_LOG_TRIVIAL(info) << "Using SSE2: YES";
 	BOOST_LOG_TRIVIAL(info) << "Using AVX: " << (use_avx ? "YES" : "NO");

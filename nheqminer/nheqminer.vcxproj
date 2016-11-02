@@ -66,7 +66,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>logsetuplib.lib;cuda_tromp.lib;cpu_xenoncat.lib;cpu_tromp_SSE2.lib;ocl_xpm.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cuda_tromp.lib;cpu_xenoncat.lib;cpu_tromp_SSE2.lib;ocl_xpm.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>
       </IgnoreAllDefaultLibraries>
       <LargeAddressAware>
@@ -96,7 +96,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>logsetuplib.lib;cuda_tromp.lib;cpu_xenoncat.lib;cpu_tromp_SSE2.lib;cpu_tromp_AVX.lib;ocl_xpm.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cuda_tromp.lib;cpu_xenoncat.lib;cpu_tromp_SSE2.lib;cpu_tromp_AVX.lib;ocl_xpm.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>.\trompequihash\pthreads\x64;..\3rdparty\libs\win64;$(AMDAPPSDKROOT)\lib\x86_64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LargeAddressAware>
       </LargeAddressAware>
