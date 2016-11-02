@@ -39,14 +39,10 @@ typedef uint32_t eh_index;
 #define CONTEXT_SIZE 178033152
 
 #ifdef __MINGW32__
-extern void __attribute__((sysv_abi)) EhPrepareAVX1(void *context, void *input);
-extern int32_t __attribute__((sysv_abi)) EhSolverAVX1(void *context, uint32_t nonce);
-extern void __attribute__((sysv_abi)) EhPrepareAVX2(void *context, void *input);
-extern int32_t __attribute__((sysv_abi)) EhSolverAVX2(void *context, uint32_t nonce);
-//#define EhPrepareAVX1 _EhPrepareAVX1
-//#define EhPrepareAVX2 _EhPrepareAVX2
-//#define EhSolverAVX1 _EhSolverAVX1
-//#define EhSolverAVX2 _EhSolverAVX2
+extern "C" void __attribute__((sysv_abi)) EhPrepareAVX1(void *context, void *input);
+extern "C" int32_t __attribute__((sysv_abi)) EhSolverAVX1(void *context, uint32_t nonce);
+extern "C" void __attribute__((sysv_abi)) EhPrepareAVX2(void *context, void *input);
+extern "C" int32_t __attribute__((sysv_abi)) EhSolverAVX2(void *context, uint32_t nonce);
 #else
 extern "C" void EhPrepareAVX1(void *context, void *input);
 extern "C" int32_t EhSolverAVX1(void *context, uint32_t nonce);
