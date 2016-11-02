@@ -79,16 +79,6 @@ cmake -DXENON=1 ..
 make
 ```
 
-## Windows:
-
-Windows builds made by us are available here: https://github.com/kost/nheqminer/releases
-
-Download and install:
-- Visual Studio 2013 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs
-- Visual C++ Compiler November 2013 CTP: https://www.microsoft.com/en-us/download/details.aspx?id=41151
-
-Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
-
 ## Linux cmake **recommended** (Tested on Ubuntu Desktop 14.04 and 16.04 and Ubuntu server 14.04):
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
 Under Ubuntu open a terminal and run the following commands:
@@ -136,6 +126,15 @@ Under Mac open a terminal and run the following commands:
   - `cmake -DXENON=1 -DSTATIC_BUILD=1 ..`
   - `make`
   
+## Windows (Microsoft Visual Studio - needs tweaking):
+Windows builds made by us are available here: https://github.com/kost/nheqminer/releases
+
+Download and install:
+- Visual Studio 2013 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs
+- Visual C++ Compiler November 2013 CTP: https://www.microsoft.com/en-us/download/details.aspx?id=41151
+
+Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
+
 # Run instructions:
 
 If run without parameters, miner will start mining with 75% of available virtual cores on NiceHash. Use parameter -h to learn about available parameters:
