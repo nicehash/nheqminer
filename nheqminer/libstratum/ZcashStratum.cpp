@@ -47,7 +47,7 @@ extern int32_t __attribute__((sysv_abi)) EhSolverAVX2(void *context, uint32_t no
 //#define EhPrepareAVX2 _EhPrepareAVX2
 //#define EhSolverAVX1 _EhSolverAVX1
 //#define EhSolverAVX2 _EhSolverAVX2
-else
+#else
 extern "C" void EhPrepareAVX1(void *context, void *input);
 extern "C" int32_t EhSolverAVX1(void *context, uint32_t nonce);
 extern "C" void EhPrepareAVX2(void *context, void *input);
