@@ -166,7 +166,22 @@ Example to mine with your own ZEC address and worker1 on EU server, using 6 thre
 
 <i>Note: if you have a 4-core CPU with hyper threading enabled (total 8 threads) it is best to run with only 6 threads (experimental benchmarks shows that best results are achieved with 75% threads utilized)</i>
 
+# Acknowledgments and credits
+
+## Acknowledgements
+
+This miner is based on Equihash Miner for NiceHash
+Thanks to Zcash developers for providing most of the code
+Special thanks to tromp for providing optimized CPU equihash solver
+Special thanks to xenoncat for providing assembly optimized CPU equihash solver
+Special thanks to [Zcash Community on Slack](https://zcashcommunity.slack.com)
+
+## Credits
+
+Author of this miner: Kost
+
 ## Donations
+
 If you feel this project is useful to you. Feel free to donate.
 
     BTC address: 1KHRiwNdFiL4uFUGFEpbG7t2F3pUcttLuX

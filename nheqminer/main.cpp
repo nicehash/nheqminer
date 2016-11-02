@@ -73,10 +73,8 @@ namespace keywords = boost::log::keywords;
 
 int main(int argc, char* argv[])
 {
-	std::cout << "Equihash CPU Kost Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
-	std::cout << "Thanks to Zcash developers for providing most of the code" << std::endl;
-	std::cout << "Special thanks to tromp for providing optimized CPU equihash solver" << std::endl;
-	std::cout << "Special thanks to xenoncat for providing assembly optimized CPU equihash solver" << std::endl;
+	std::cout << "Kost CPU Miner - https://github.com/kost/nheqminer " STANDALONE_MINER_NAME "/" STANDALONE_MINER_VERSION << std::endl;
+	std::cout << "Thanks to Zcash developers and community, nicehash, tromp and xenoncat." << std::endl;
 	std::cout << std::endl;
 
 	std::string location = "eu1-zcash.flypool.org:3333";
