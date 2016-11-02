@@ -87,7 +87,8 @@ bool OclContext::init(cl_context context,
 	size_t              dbg_size = 1;
 #endif  
 
-	buf_dbg.init(context, dbg_size, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR);
+	//buf_dbg.init(context, dbg_size, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR);
+	buf_dbg.init(context, dbg_size, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
 	buf_ht0.init(context, HT_SIZE, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
 	buf_ht1.init(context, HT_SIZE, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
 	buf_sols.init(context, 1, CL_MEM_READ_WRITE);
@@ -723,7 +724,8 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 	for (unsigned i = 0; i < gpus.size(); i++) {
 		cl_context_properties props[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)device_context.oclc->gPlatform, 0 };
 		cl_int error;
-		gContext[i] = clCreateContext(props, 1, &gpus[i], 0, 0, &error);
+		//gContext[i] = clCreateContext(props, 1, &gpus[i], 0, 0, &error);
+		gContext[i] = clCreateContext(NULL, 1, &gpus[i], 0, 0, &error);
 		//OCLR(error, false);
 		if (cl_int err = error) {
 			printf("OpenCL error: %d at %s:%d\n", err, __FILE__, __LINE__);
@@ -779,10 +781,10 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	std::function<void(void)> hashdonef,
 	ocl_silentarmy& device_context) {
 
-	/*unsigned char context[140];
+	unsigned char context[140];
 	memset(context, 0, 140);
 	memcpy(context, tequihash_header, tequihash_header_len);
-	memcpy(context + tequihash_header_len, nonce, nonce_len);*/
+	memcpy(context + tequihash_header_len, nonce, nonce_len);
 
 	OclContext *miner = device_context.oclc;
 	clFlush(miner->queue);
@@ -790,7 +792,7 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	//C++ START
 	blake2b_state_t initialCtx;
 	zcash_blake2b_init(&initialCtx, ZCASH_HASH_LEN, PARAM_N, PARAM_K);
-	zcash_blake2b_update(&initialCtx, (const uint8_t*)&tequihash_header, 128, 0);
+	zcash_blake2b_update(&initialCtx, (const uint8_t*)context, 128, 0);
 
 	//miner->nonce = header.nNonce;
 	size_t global_ws;
@@ -843,20 +845,21 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	uint8_t proof[COMPRESSED_PROOFSIZE * 2];
 	for (uint32_t i = 0; i < sols->nr; i++) {
 		if (sols->valid[i]) {
-			std::vector<uint32_t> index_vector(PROOFSIZE);
+			/*std::vector<uint32_t> index_vector(PROOFSIZE);
 			for (uint32_t el = 0; el < PROOFSIZE; el++) {
 				index_vector[i] = sols->values[i][el];
 			}
 
 			solutionf(index_vector, DIGITBITS, nullptr);
-			if (cancelf()) return;
-			//compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
+			if (cancelf()) return;*/
+			compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
+			solutionf(std::vector<uint32_t>(0), 1344, proof);
 			// TODO remove
 			nsols++;
 		}
 	}
 	// TODO remove
-	printf("solution num %d\n", nsols);
+	//printf("solution num %d\n", nsols);
 }
 
 void ocl_silentarmy::print_opencl_devices() {
