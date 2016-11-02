@@ -138,11 +138,19 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
 ## Release builds
 
 Linux on Alpine 3.4:
-`cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..`
+```
+cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..
+```
+
 Mac OS X:
-`cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..`
+```
+cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..
+```
+
 Windows (on Fedora 22 with MingW):
-`cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..`
+```
+cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..
+```
 
 
 # Run instructions:
