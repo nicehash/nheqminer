@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 option(STATIC_BUILD "Build with static libraries on Linux")
 option(XENON "Build options with xenoncat")
 option(MARCH "GCC options for architecture (default: native)")
+option(MOPT "GCC options for optimization (default: -O3)")
 
 project(nheqminer)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -19,8 +20,13 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     # use native cpu features
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCCMARCH}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCCMARCH}")
-    # optimizations
-    add_definitions(-O3)
+
+	# optimizations
+	if (MOPT)
+		add_definitions("${MOPT}")
+	else()
+		add_definitions("-O3")
+	endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -43,6 +49,13 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 			set (XENONCAT "${nheqminer_SOURCE_DIR}/external/equihash-xenon/Mac/equihash_avx1.o" "${nheqminer_SOURCE_DIR}/external/equihash-xenon/Mac/equihash_avx2.o")
 			add_definitions(-DXENONCAT=1)
 		endif()
+	endif()
+
+	# optimizations
+	if (MOPT)
+		add_definitions("${MOPT}")
+	else()
+		add_definitions("-O3")
 	endif()
 else()
 	# Common
