@@ -24,7 +24,8 @@
 
 #include <boost/static_assert.hpp>
 
-#ifdef __clang__ // support for clang and AVX1/2 detection
+#if defined(__clang__)
+// support for clang and AVX1/2 detection
 #include <cpuid.h>
 #endif
 
@@ -36,10 +37,22 @@ typedef uint32_t eh_index;
 
 #ifdef XENONCAT
 #define CONTEXT_SIZE 178033152
+
+#ifdef __MINGW32__
+extern void __attribute__((sysv_abi)) EhPrepareAVX1(void *context, void *input);
+extern int32_t __attribute__((sysv_abi)) EhSolverAVX1(void *context, uint32_t nonce);
+extern void __attribute__((sysv_abi)) EhPrepareAVX2(void *context, void *input);
+extern int32_t __attribute__((sysv_abi)) EhSolverAVX2(void *context, uint32_t nonce);
+//#define EhPrepareAVX1 _EhPrepareAVX1
+//#define EhPrepareAVX2 _EhPrepareAVX2
+//#define EhSolverAVX1 _EhSolverAVX1
+//#define EhSolverAVX2 _EhSolverAVX2
+else
 extern "C" void EhPrepareAVX1(void *context, void *input);
 extern "C" int32_t EhSolverAVX1(void *context, uint32_t nonce);
 extern "C" void EhPrepareAVX2(void *context, void *input);
 extern "C" int32_t EhSolverAVX2(void *context, uint32_t nonce);
+#endif
 
 void (*EhPrepare)(void *,void *);
 int32_t (*EhSolver)(void *, uint32_t);
@@ -538,7 +551,7 @@ void cpuid(int32_t out[4], int32_t x){
 #endif
 
 int detect_avx (void) {
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__MINGW32__)
 #ifndef __clang__
 	if (__builtin_cpu_supports("avx2")) {
 		return 2;
@@ -548,7 +561,7 @@ int detect_avx (void) {
 	}
 #endif // __clang__
 #endif // __GNUC__
-#ifdef __clang__ // clang does not have __builtin_cpu_supports
+#if defined(__clang__) // clang does not have __builtin_cpu_supports
 	int info[4];
 	cpuid(info, 0);
 	int nIds = info[0];

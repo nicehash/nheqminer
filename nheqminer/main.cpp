@@ -43,7 +43,7 @@ void print_help()
 	std::cout << std::endl;
 }
 
-#ifdef WIN32
+#ifdef _MSC_VER
 void init_logging(boost::log::core_ptr cptr, int level);
 #else
 #include <iostream>
@@ -71,9 +71,6 @@ namespace keywords = boost::log::keywords;
 
 int main(int argc, char* argv[])
 {
-#ifdef WIN32
-	system("");
-#endif
 	std::cout << "Equihash CPU Kost Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "Thanks to Zcash developers for providing most of the code" << std::endl;
 	std::cout << "Special thanks to tromp for providing optimized CPU equihash solver" << std::endl;
@@ -124,7 +121,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-#ifdef WIN32
+#ifdef _MSC_VER
     init_logging(boost::log::core::get(), log_level);
 #else
     std::cout << "Setting log level to " << log_level << std::endl;
