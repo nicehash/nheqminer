@@ -671,7 +671,7 @@ ZcashMiner::ZcashMiner(int threads)
 
 std::string ZcashMiner::userAgent()
 {
-	return "equihashminer/" STANDALONE_MINER_VERSION;
+	return STANDALONE_MINER_NAME "/" STANDALONE_MINER_VERSION;
 }
 
 void ZcashMiner::start()
