@@ -348,17 +348,17 @@ static uint32_t verify_sol(sols_t *sols, unsigned sol_i)
 
 
 
-ocl_silentarmy::ocl_silentarmy(int platf_id, int dev_id) { /*TODO*/
+ocl_silentarmy::ocl_silentarmy(int platf_id, int dev_id) {
 	platform_id = platf_id;
 	device_id = dev_id;
 	// TODO 
 	threadsNum = 8192;
 	wokrsize = 128; // 256;
-	//threadsperblock = 128;
 }
 
-std::string ocl_silentarmy::getdevinfo() { /*TODO*/
-	return "TODO";
+std::string ocl_silentarmy::getdevinfo() {
+	/*TODO get name*/
+	return "GPU_ID(" + std::to_string(device_id)+ ")";
 }
 
 // STATICS START
@@ -438,7 +438,7 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 	device_context.is_init_success = true;
 }
 
-void ocl_silentarmy::stop(ocl_silentarmy& device_context) { /*TODO*/
+void ocl_silentarmy::stop(ocl_silentarmy& device_context) {
 	if (device_context.oclc != nullptr) delete device_context.oclc;
 }
 
@@ -530,8 +530,5 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	free(sols);
 }
 
-void ocl_silentarmy::print_opencl_devices() {
-	/*TODO*/
-}
 // STATICS END
 
