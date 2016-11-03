@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <utility>
+#include <algorithm>
 
 using namespace std;
 using namespace cl;

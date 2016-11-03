@@ -168,8 +168,8 @@ void static ZcashMinerThread(ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>* mi
                 std::lock_guard<std::mutex> lock{*m_zmt.get()};
                 arith_uint256 baseNonce = UintToArith256(header.nNonce);
 				arith_uint256 add(pos);
-				nonce = baseNonce | (add << (8 * 31));
-				nonceEnd = baseNonce | ((add + 1) << (8 * 31));
+				nonce = baseNonce | (add << (8 * 19));
+				nonceEnd = baseNonce | ((add + 1) << (8 * 19));
 				//nonce = baseNonce + ((space/size)*pos << offset);
 				//nonceEnd = baseNonce + ((space/size)*(pos+1) << offset);
 
@@ -600,6 +600,7 @@ template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
 void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::failedSolution()
 {
 }
+
 
 template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp>;
 template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp>;

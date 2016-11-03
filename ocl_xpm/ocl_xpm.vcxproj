@@ -14,15 +14,20 @@
     <ClInclude Include="ocl_device_utils\cl_ext.hpp" />
     <ClInclude Include="ocl_device_utils\ocl_device_utils.h" />
     <ClInclude Include="ocl_device_utils\OpenCLDevice.h" />
+    <ClInclude Include="ocl_silentarmy.hpp" />
     <ClInclude Include="ocl_xmp.hpp" />
     <ClInclude Include="opencl.h" />
+    <ClInclude Include="param.h" />
+    <ClInclude Include="sa_blake.h" />
     <ClInclude Include="zcash\gpu\common.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\cpu_tromp\blake2\blake2bx.cpp" />
     <ClCompile Include="ocl_device_utils\ocl_device_utils.cpp" />
+    <ClCompile Include="ocl_silentarmy.cpp" />
     <ClCompile Include="ocl_xmp.cpp" />
     <ClCompile Include="opencl.cpp" />
+    <ClCompile Include="sa_blake.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="zcash\gpu\equihash.cl" />
@@ -83,7 +88,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;OCL_XPM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
