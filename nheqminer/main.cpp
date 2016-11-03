@@ -44,14 +44,19 @@ namespace keywords = boost::log::keywords;
 
 int use_avx = 0;
 int use_avx2 = 0;
+int use_old_cuda = 0;
 
-static ZcashStratumClientAVX* scSigAVX = nullptr;
-static ZcashStratumClientSSE2* scSigSSE2 = nullptr;
+static ZcashStratumClientAVXCUDA80* scSigAVXC80 = nullptr;
+static ZcashStratumClientSSE2CUDA80* scSigSSE2C80 = nullptr;
+static ZcashStratumClientAVXCUDA75* scSigAVXC75 = nullptr;
+static ZcashStratumClientSSE2CUDA75* scSigSSE2C75 = nullptr;
 
 extern "C" void stratum_sigint_handler(int signum) 
 { 
-    if (scSigAVX) scSigAVX->disconnect();
-    if (scSigSSE2) scSigSSE2->disconnect();
+	if (scSigAVXC80) scSigAVXC80->disconnect();
+	if (scSigSSE2C80) scSigSSE2C80->disconnect();
+	if (scSigAVXC75) scSigAVXC75->disconnect();
+	if (scSigSSE2C75) scSigSSE2C75->disconnect();
 }
 
 void print_help()
@@ -75,6 +80,7 @@ void print_help()
 	std::cout << std::endl;
 	std::cout << "NVIDIA CUDA settings" << std::endl;
 	std::cout << "\t-ci\t\tCUDA info" << std::endl;
+	std::cout << "\t-cv [ver]\tSet CUDA version (0 = default 8.0, 1 = 7.5)" << std::endl;
 	std::cout << "\t-cd [devices]\tEnable CUDA mining on spec. devices" << std::endl;
 	std::cout << "\t-cb [blocks]\tNumber of blocks" << std::endl;
 	std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
@@ -214,8 +220,8 @@ int main(int argc, char* argv[])
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << "\t\tEquihash CPU&GPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "\tThanks to Zcash developers for providing base of the code." << std::endl;
-	std::cout << "\t    Special thanks to tromp, xenoncat and eXtremal-ik7 for providing" << std::endl;
-	std::cout << "\t         optimized CPU, CUDA and AMD equihash solvers ." << std::endl;
+	std::cout << "\t  Special thanks to tromp, xenoncat and eXtremal-ik7 for" << std::endl;
+	std::cout << "\t providing optimized CPU, CUDA and AMD equihash solvers." << std::endl;
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << std::endl;
 
@@ -247,6 +253,9 @@ int main(int argc, char* argv[])
 			case 'i':
 				print_cuda_info();
 				return 0;
+			case 'v':
+				use_old_cuda = atoi(argv[++i]);
+				break;
 			case 'd':
 				while (cuda_device_count < 8 && i + 1 < argc)
 				{
@@ -408,18 +417,48 @@ int main(int argc, char* argv[])
 			std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
 
 			if (use_avx)
-				start_mining<ZMinerAVX, ZcashStratumClientAVX>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-					host, port, user, password, scSigAVX);
+			{
+				if (use_old_cuda)
+				{
+					start_mining<ZMinerAVXCUDA75, ZcashStratumClientAVXCUDA75>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+						host, port, user, password, scSigAVXC75);
+				}
+				else
+				{
+					start_mining<ZMinerAVXCUDA80, ZcashStratumClientAVXCUDA80>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+						host, port, user, password, scSigAVXC80);
+				}
+			}
 			else
-				start_mining<ZMinerSSE2, ZcashStratumClientSSE2>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-					host, port, user, password, scSigSSE2);
+			{
+				if (use_old_cuda)
+				{
+					start_mining<ZMinerSSE2CUDA75, ZcashStratumClientSSE2CUDA75>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+						host, port, user, password, scSigSSE2C75);
+				}
+				else
+				{
+					start_mining<ZMinerSSE2CUDA80, ZcashStratumClientSSE2CUDA80>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+						host, port, user, password, scSigSSE2C80);
+				}
+			}
 		}
 		else
 		{
 			if (use_avx)
-				ZMinerAVX::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+			{
+				if (use_old_cuda)
+					ZMinerAVXCUDA75::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+				else
+					ZMinerAVXCUDA80::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+			}
 			else
-				ZMinerSSE2::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+			{
+				if (use_old_cuda)
+					ZMinerSSE2CUDA75::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+				else
+					ZMinerSSE2CUDA80::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+			}
 		}
 	}
 	catch (std::runtime_error& er)

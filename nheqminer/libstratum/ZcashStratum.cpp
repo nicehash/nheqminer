@@ -603,6 +603,8 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::failedSolution()
 
 template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp>;
 template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp>;
+template class ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_xmp>;
+template class ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_xmp>;
 
 std::mutex benchmark_work;
 std::vector<uint256*> benchmark_nonces;
@@ -808,12 +810,12 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 }
 
 
-void ZMinerAVX_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-                           int opencl_count, int opencl_platf, int* opencl_en) {
-    ZMinerAVX::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en);
-}
-
-void ZMinerSSE2_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-                            int opencl_count, int opencl_platf, int* opencl_en) {
-    ZMinerSSE2::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en);
-}
+//void ZMinerAVX_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+//                           int opencl_count, int opencl_platf, int* opencl_en) {
+//    ZMinerAVX::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en);
+//}
+//
+//void ZMinerSSE2_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+//                            int opencl_count, int opencl_platf, int* opencl_en) {
+//    ZMinerSSE2::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en);
+//}

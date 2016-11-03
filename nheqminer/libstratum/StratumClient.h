@@ -162,6 +162,8 @@ private:
 };
 
 
-typedef StratumClient<ZMinerAVX, ZcashJob, EquihashSolution> ZcashStratumClientAVX;
-typedef StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution> ZcashStratumClientSSE2;
+typedef StratumClient<ZMinerAVXCUDA80, ZcashJob, EquihashSolution> ZcashStratumClientAVXCUDA80;
+typedef StratumClient<ZMinerSSE2CUDA80, ZcashJob, EquihashSolution> ZcashStratumClientSSE2CUDA80;
+typedef StratumClient<ZMinerAVXCUDA75, ZcashJob, EquihashSolution> ZcashStratumClientAVXCUDA75;
+typedef StratumClient<ZMinerSSE2CUDA75, ZcashJob, EquihashSolution> ZcashStratumClientSSE2CUDA75;
 

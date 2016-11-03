@@ -141,8 +141,10 @@ public:
 		int opencl_count, int opencl_platf, int* opencl_en);
 };
 
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVX;
-typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2;
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVXCUDA80;
+typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2CUDA80;
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_xmp> ZMinerAVXCUDA75;
+typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_xmp> ZMinerSSE2CUDA75;
 
 // gcc static undefined reference workaround
 void ZMinerAVX_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
