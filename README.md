@@ -14,7 +14,7 @@ Download and install:
 - Visual Studio Update 5 installed
 - 64 bit version only
 
-Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build.
+Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build. You will have to build ReleaseSSE2 cpu_tromp project first, then Release7.5 cuda_tromp project, then select Release and build all.
 
 
 ## Linux
