@@ -359,7 +359,7 @@ ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::ZcashMiner(int cpu_threads, int
 		if (opencl_t[i] < 1) opencl_t[i] = 1;
 
 		// add multiple threads if wanted
-		for (int k = 0; k < opencl_t[i]; ++i)
+		for (int k = 0; k < opencl_t[i]; ++k)
 		{
 			OPENCLSolver* context = new OPENCLSolver(opencl_platf, opencl_en[i]);
 			// todo: save local&global work size
