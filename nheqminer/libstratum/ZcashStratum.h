@@ -35,7 +35,7 @@ using cuda_tromp = SolverStub;
 #endif
 #ifdef USE_OCL_XMP
 #include "../ocl_xpm/ocl_xmp.hpp"
-#include "../ocl_xpm/ocl_silentarmy.hpp"
+#include "../ocl_silentarmy/ocl_silentarmy.hpp"
 using open_cl_solver = ocl_silentarmy;
 #else
 using ocl_xmp = SolverStub;

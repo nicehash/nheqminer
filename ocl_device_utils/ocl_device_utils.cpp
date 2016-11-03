@@ -8,13 +8,6 @@
 using namespace std;
 using namespace cl;
 
-//ocl_device_utils::ocl_device_utils()
-//{
-//}
-//
-//ocl_device_utils::~ocl_device_utils()
-//{
-//}
 
 bool ocl_device_utils::_hasQueried = false;
 std::vector<std::string> ocl_device_utils::_platformNames;
@@ -34,6 +27,11 @@ vector<Platform> ocl_device_utils::getPlatforms() {
 			throw err;
 	}
 	return platforms;
+}
+
+void ocl_device_utils::print_opencl_devices() {
+	ocl_device_utils::QueryDevices();
+	ocl_device_utils::PrintDevices();
 }
 
 vector<Device> ocl_device_utils::getDevices(vector<Platform> const& _platforms, unsigned _platformId) {

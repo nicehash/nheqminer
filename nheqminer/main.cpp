@@ -7,6 +7,8 @@
 
 #include "libstratum/StratumClient.h"
 
+#include "../ocl_device_utils/ocl_device_utils.h"
+
 #include <thread>
 #include <chrono>
 #include <atomic>
@@ -113,7 +115,7 @@ void print_cuda_info()
 }
 
 void print_opencl_info() {
-	ocl_xmp::print_opencl_devices();
+	ocl_device_utils::print_opencl_devices();
 }
 
 

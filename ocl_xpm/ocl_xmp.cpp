@@ -141,8 +141,6 @@ static int inline digit(cl_command_queue clQueue, cl_kernel kernel, size_t nthre
 ////statics non class END
 ////////////////////////////
 
-#include "ocl_device_utils/ocl_device_utils.h"
-
 ocl_xmp::ocl_xmp(int platf_id, int dev_id) { /*TODO*/
 	platform_id = platf_id;
 	device_id = dev_id;
@@ -304,8 +302,4 @@ void ocl_xmp::solve(const char *tequihash_header,
 	hashdonef();
 }
 
-void ocl_xmp::print_opencl_devices() {
-	ocl_device_utils::QueryDevices();
-	ocl_device_utils::PrintDevices();
-}
 // STATICS END

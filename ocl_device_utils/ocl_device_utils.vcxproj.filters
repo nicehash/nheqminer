@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="cl_ext.hpp" />
+    <ClInclude Include="ocl_device_utils.h" />
+    <ClInclude Include="OpenCLDevice.h" />
+    <ClInclude Include="opencl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ocl_device_utils.cpp" />
+    <ClCompile Include="opencl.cpp" />
+  </ItemGroup>
+</Project>

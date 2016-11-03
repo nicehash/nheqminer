@@ -50,8 +50,6 @@ struct DLL_OCL_XMP ocl_xmp
 
 	std::string getname() { return "OCL_XMP"; }
 
-	static void print_opencl_devices();
-
 private:
 	std::string m_gpu_name;
 	std::string m_version;
