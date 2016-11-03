@@ -55,7 +55,7 @@ struct EquihashSolution
     std::vector<unsigned char> solution;
 
     EquihashSolution(uint256 n, std::vector<unsigned char> s, std::string t, size_t n1s)
-		: nonce{ n }, solution{ s }, time{ t }, nonce1size{ n1s } { }
+		: nonce{ n }, nonce1size{ n1s } { solution = s; time = t; }
 
     std::string toString() const { return nonce.GetHex(); }
 };
