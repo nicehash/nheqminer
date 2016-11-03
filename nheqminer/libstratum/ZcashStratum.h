@@ -146,11 +146,17 @@ public:
 		int opencl_count, int opencl_platf, int* opencl_en);
 };
 
-
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVXCUDA80;
-typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2CUDA80;
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_xmp> ZMinerAVXCUDA75;
-typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_xmp> ZMinerSSE2CUDA75;
+// 8 combos make sure not to go beyond this
+// ocl_xmp
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVXCUDA80_XMP;
+typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2CUDA80_XMP;
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_xmp> ZMinerAVXCUDA75_XMP;
+typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_xmp> ZMinerSSE2CUDA75_XMP;
+// ocl_silentarmy
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_silentarmy> ZMinerAVXCUDA80_SA;
+typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_silentarmy> ZMinerSSE2CUDA80_SA;
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_silentarmy> ZMinerAVXCUDA75_SA;
+typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_silentarmy> ZMinerSSE2CUDA75_SA;
 
 // gcc static undefined reference workaround
 void ZMinerAVX_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,

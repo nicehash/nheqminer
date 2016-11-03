@@ -47,18 +47,29 @@ namespace keywords = boost::log::keywords;
 int use_avx = 0;
 int use_avx2 = 0;
 int use_old_cuda = 0;
+int use_old_xmp = 0;
 
-static ZcashStratumClientAVXCUDA80* scSigAVXC80 = nullptr;
-static ZcashStratumClientSSE2CUDA80* scSigSSE2C80 = nullptr;
-static ZcashStratumClientAVXCUDA75* scSigAVXC75 = nullptr;
-static ZcashStratumClientSSE2CUDA75* scSigSSE2C75 = nullptr;
+// _XMP
+static ZcashStratumClientAVXCUDA80_XMP* scSigAVXC80_XMP = nullptr;
+static ZcashStratumClientSSE2CUDA80_XMP* scSigSSE2C80_XMP = nullptr;
+static ZcashStratumClientAVXCUDA75_XMP* scSigAVXC75_XMP = nullptr;
+static ZcashStratumClientSSE2CUDA75_XMP* scSigSSE2C75_XMP = nullptr;
+// _SA
+static ZcashStratumClientAVXCUDA80_SA* scSigAVXC80_SA = nullptr;
+static ZcashStratumClientSSE2CUDA80_SA* scSigSSE2C80_SA = nullptr;
+static ZcashStratumClientAVXCUDA75_SA* scSigAVXC75_SA = nullptr;
+static ZcashStratumClientSSE2CUDA75_SA* scSigSSE2C75_SA = nullptr;
 
 extern "C" void stratum_sigint_handler(int signum) 
 { 
-	if (scSigAVXC80) scSigAVXC80->disconnect();
-	if (scSigSSE2C80) scSigSSE2C80->disconnect();
-	if (scSigAVXC75) scSigAVXC75->disconnect();
-	if (scSigSSE2C75) scSigSSE2C75->disconnect();
+	if (scSigAVXC80_XMP) scSigAVXC80_XMP->disconnect();
+	if (scSigSSE2C80_XMP) scSigSSE2C80_XMP->disconnect();
+	if (scSigAVXC75_XMP) scSigAVXC75_XMP->disconnect();
+	if (scSigSSE2C75_XMP) scSigSSE2C75_XMP->disconnect();
+	if (scSigAVXC80_SA) scSigAVXC80_SA->disconnect();
+	if (scSigSSE2C80_SA) scSigSSE2C80_SA->disconnect();
+	if (scSigAVXC75_SA) scSigAVXC75_SA->disconnect();
+	if (scSigSSE2C75_SA) scSigSSE2C75_SA->disconnect();
 }
 
 void print_help()
@@ -313,6 +324,9 @@ int main(int argc, char* argv[])
 			case 'i':
 				print_opencl_info();
 				return 0;
+			case 'v':
+				use_old_xmp = atoi(argv[++i]);
+				break;
 			case 'p':
 				opencl_platform = std::stol(argv[++i]);
 				break;
@@ -418,48 +432,96 @@ int main(int argc, char* argv[])
 			std::string host = delim != std::string::npos ? location.substr(0, delim) : location;
 			std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
 
-			if (use_avx)
-			{
-				if (use_old_cuda)
+			if (use_old_xmp) {
+				if (use_avx)
 				{
-					start_mining<ZMinerAVXCUDA75, ZcashStratumClientAVXCUDA75>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-						host, port, user, password, scSigAVXC75);
+					if (use_old_cuda)
+					{
+						start_mining<ZMinerAVXCUDA75_XMP, ZcashStratumClientAVXCUDA75_XMP>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+							host, port, user, password, scSigAVXC75_XMP);
+					}
+					else
+					{
+						start_mining<ZMinerAVXCUDA80_XMP, ZcashStratumClientAVXCUDA80_XMP>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+							host, port, user, password, scSigAVXC80_XMP);
+					}
 				}
 				else
 				{
-					start_mining<ZMinerAVXCUDA80, ZcashStratumClientAVXCUDA80>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-						host, port, user, password, scSigAVXC80);
+					if (use_old_cuda)
+					{
+						start_mining<ZMinerSSE2CUDA75_XMP, ZcashStratumClientSSE2CUDA75_XMP>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+							host, port, user, password, scSigSSE2C75_XMP);
+					}
+					else
+					{
+						start_mining<ZMinerSSE2CUDA80_XMP, ZcashStratumClientSSE2CUDA80_XMP>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+							host, port, user, password, scSigSSE2C80_XMP);
+					}
 				}
 			}
-			else
-			{
-				if (use_old_cuda)
+			else { // sarmy
+				if (use_avx)
 				{
-					start_mining<ZMinerSSE2CUDA75, ZcashStratumClientSSE2CUDA75>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-						host, port, user, password, scSigSSE2C75);
+					if (use_old_cuda)
+					{
+						start_mining<ZMinerAVXCUDA75_SA, ZcashStratumClientAVXCUDA75_SA>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+							host, port, user, password, scSigAVXC75_SA);
+					}
+					else
+					{
+						start_mining<ZMinerAVXCUDA80_SA, ZcashStratumClientAVXCUDA80_SA>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+							host, port, user, password, scSigAVXC80_SA);
+					}
 				}
 				else
 				{
-					start_mining<ZMinerSSE2CUDA80, ZcashStratumClientSSE2CUDA80>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-						host, port, user, password, scSigSSE2C80);
+					if (use_old_cuda)
+					{
+						start_mining<ZMinerSSE2CUDA75_SA, ZcashStratumClientSSE2CUDA75_SA>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+							host, port, user, password, scSigSSE2C75_SA);
+					}
+					else
+					{
+						start_mining<ZMinerSSE2CUDA80_SA, ZcashStratumClientSSE2CUDA80_SA>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
+							host, port, user, password, scSigSSE2C80_SA);
+					}
 				}
 			}
 		}
 		else
 		{
-			if (use_avx)
-			{
-				if (use_old_cuda)
-					ZMinerAVXCUDA75::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+			if (use_old_xmp) {
+				if (use_avx)
+				{
+					if (use_old_cuda)
+						ZMinerAVXCUDA75_XMP::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+					else
+						ZMinerAVXCUDA80_XMP::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+				}
 				else
-					ZMinerAVXCUDA80::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+				{
+					if (use_old_cuda)
+						ZMinerSSE2CUDA75_XMP::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+					else
+						ZMinerSSE2CUDA80_XMP::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+				}
 			}
-			else
-			{
-				if (use_old_cuda)
-					ZMinerSSE2CUDA75::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+			else { // sarmy
+				if (use_avx)
+				{
+					if (use_old_cuda)
+						ZMinerAVXCUDA75_SA::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+					else
+						ZMinerAVXCUDA80_SA::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+				}
 				else
-					ZMinerSSE2CUDA80::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+				{
+					if (use_old_cuda)
+						ZMinerSSE2CUDA75_SA::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+					else
+						ZMinerSSE2CUDA80_SA::doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled);
+				}
 			}
 		}
 	}
