@@ -18,7 +18,6 @@
 
 
 #include "opencl.h"
-#include "cl.hpp"
 
 #include <fstream>
 

@@ -1,0 +1,3 @@
+/media/sf_VBShared/github/nheqminer/Linux_cmake/nheqminer_AMD/CMakeFiles/rebuild_cache.dir
+/media/sf_VBShared/github/nheqminer/Linux_cmake/nheqminer_AMD/CMakeFiles/edit_cache.dir
+/media/sf_VBShared/github/nheqminer/Linux_cmake/nheqminer_AMD/CMakeFiles/nheqminer_AMD.dir

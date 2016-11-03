@@ -11,7 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cl.hpp" />
     <ClInclude Include="ocl_device_utils\cl_ext.hpp" />
     <ClInclude Include="ocl_device_utils\ocl_device_utils.h" />
     <ClInclude Include="ocl_device_utils\OpenCLDevice.h" />

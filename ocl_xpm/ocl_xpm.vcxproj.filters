@@ -28,7 +28,6 @@
     </ClInclude>
     <ClInclude Include="ocl_silentarmy.hpp" />
     <ClInclude Include="param.h" />
-    <ClInclude Include="cl.hpp" />
     <ClInclude Include="sa_blake.h" />
   </ItemGroup>
   <ItemGroup>
