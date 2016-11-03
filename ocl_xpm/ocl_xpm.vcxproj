@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cl.hpp" />
     <ClInclude Include="ocl_device_utils\cl_ext.hpp" />
     <ClInclude Include="ocl_device_utils\ocl_device_utils.h" />
     <ClInclude Include="ocl_device_utils\OpenCLDevice.h" />
@@ -18,6 +19,7 @@
     <ClInclude Include="ocl_xmp.hpp" />
     <ClInclude Include="opencl.h" />
     <ClInclude Include="param.h" />
+    <ClInclude Include="sa_blake.h" />
     <ClInclude Include="zcash\gpu\common.h" />
   </ItemGroup>
   <ItemGroup>
@@ -26,6 +28,7 @@
     <ClCompile Include="ocl_silentarmy.cpp" />
     <ClCompile Include="ocl_xmp.cpp" />
     <ClCompile Include="opencl.cpp" />
+    <ClCompile Include="sa_blake.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="zcash\gpu\equihash.cl" />

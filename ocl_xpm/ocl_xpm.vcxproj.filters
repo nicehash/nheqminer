@@ -28,6 +28,8 @@
     </ClInclude>
     <ClInclude Include="ocl_silentarmy.hpp" />
     <ClInclude Include="param.h" />
+    <ClInclude Include="cl.hpp" />
+    <ClInclude Include="sa_blake.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ocl_xmp.cpp" />
@@ -37,6 +39,7 @@
       <Filter>ocl_device_utils</Filter>
     </ClCompile>
     <ClCompile Include="ocl_silentarmy.cpp" />
+    <ClCompile Include="sa_blake.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="zcash\gpu\equihash.cl">
