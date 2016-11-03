@@ -126,7 +126,7 @@ public:
 	bool* minerThreadActive;
 
 	ZcashMiner(int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-		int opencl_count, int opencl_platf, int* opencl_en);
+		int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
 	~ZcashMiner();
 
     std::string userAgent();
@@ -143,7 +143,7 @@ public:
     void failedSolution();
 
     static void doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-		int opencl_count, int opencl_platf, int* opencl_en);
+		int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
 };
 
 // 8 combos make sure not to go beyond this
@@ -160,6 +160,6 @@ typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_silentarmy> ZMinerSSE2CUDA75_SA
 
 // gcc static undefined reference workaround
 void ZMinerAVX_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-                           int opencl_count, int opencl_platf, int* opencl_en);
+	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
 void ZMinerSSE2_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-                            int opencl_count, int opencl_platf, int* opencl_en);
+	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
