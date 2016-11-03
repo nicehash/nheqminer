@@ -224,35 +224,6 @@ void zcash_blake2b_final(blake2b_state_t *st, uint8_t *out, uint8_t outlen)
 
 int             verbose = 0;
 uint32_t	show_encoded = 0;
-uint64_t	nr_nonces = 1;
-uint32_t	do_list_gpu = 0;
-uint32_t	gpu_to_use = 0;
-
-
-uint64_t parse_num(char *str)
-{
-	char	*endptr;
-	uint64_t	n;
-	n = strtoul(str, &endptr, 0);
-	if (endptr == str || *endptr)
-		printf("'%s' is not a valid number\n", str);
-	return n;
-}
-
-uint64_t now(void)
-{
-	/*struct timeval	tv;
-	gettimeofday(&tv, NULL);
-	return (uint64_t)tv.tv_sec * 1000 * 1000 + tv.tv_usec;*/
-	return 0;
-}
-
-void show_time(uint64_t t0)
-{
-	uint64_t            t1;
-	t1 = now();
-	fprintf(stderr, "Elapsed time: %.1f msec\n", (t1 - t0) / 1e3);
-}
 
 cl_mem check_clCreateBuffer(cl_context ctx, cl_mem_flags flags, size_t size,
 	void *host_ptr)
@@ -385,90 +356,6 @@ void get_program_build_log(cl_program program, cl_device_id device)
 	fprintf(stderr, "%s\n", val);
 }
 
-void dump(const char *fname, void *data, size_t len)
-{
-	/*int			fd;
-	ssize_t		ret;
-	if (-1 == (fd = open(fname, O_WRONLY | O_CREAT | O_TRUNC, 0666)))
-	printf("%s: %s\n", fname, strerror(errno));
-	ret = write(fd, data, len);
-	if (ret == -1)
-	printf("write: %s: %s\n", fname, strerror(errno));
-	if ((size_t)ret != len)
-	printf("%s: partial write\n", fname);
-	if (-1 == close(fd))
-	printf("close: %s: %s\n", fname, strerror(errno));*/
-}
-
-void get_program_bins(cl_program program)
-{
-	cl_int		status;
-	size_t		sizes;
-	unsigned char	*p;
-	size_t		ret = 0;
-	status = clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES,
-		sizeof(sizes),	// size_t param_value_size
-		&sizes,		// void *param_value
-		&ret);		// size_t *param_value_size_ret
-	if (status != CL_SUCCESS)
-		printf("clGetProgramInfo(sizes) (%d)\n", status);
-	if (ret != sizeof(sizes))
-		printf("clGetProgramInfo(sizes) did not fill sizes (%d)\n", status);
-	printf("Program binary size is %zd bytes\n", sizes);
-	p = (unsigned char *)malloc(sizes);
-	status = clGetProgramInfo(program, CL_PROGRAM_BINARIES,
-		sizeof(p),	// size_t param_value_size
-		&p,		// void *param_value
-		&ret);	// size_t *param_value_size_ret
-	if (status != CL_SUCCESS)
-		printf("clGetProgramInfo (%d)\n", status);
-	dump("dump.co", p, sizes);
-	printf("program: %02x%02x%02x%02x...\n", p[0], p[1], p[2], p[3]);
-}
-
-void print_device_info(unsigned i, cl_device_id d)
-{
-	char	name[256];
-	size_t	len = 0;
-	int r;
-	r = clGetDeviceInfo(d, CL_DEVICE_NAME, sizeof(name), &name,
-		&len);
-	if (r)
-		printf("clGetDeviceInfo (%d)\n", r);
-	printf("ID %d: %s\n", i, name);
-}
-
-//void examine_dbg(cl_command_queue queue, cl_mem buf_dbg, size_t dbg_size)
-//{
-//	debug_t     *dbg;
-//	size_t      dropped_coll_total, dropped_stor_total;
-//	if (verbose < 2)
-//		return;
-//	dbg = (debug_t *)malloc(dbg_size);
-//	if (!dbg)
-//		printf("malloc: %s\n", strerror(errno));
-//	check_clEnqueueReadBuffer(queue, buf_dbg,
-//		CL_TRUE,	// cl_bool	blocking_read
-//		0,		// size_t	offset
-//		dbg_size,   // size_t	size
-//		dbg,	// void		*ptr
-//		0,		// cl_uint	num_events_in_wait_list
-//		NULL,	// cl_event	*event_wait_list
-//		NULL);	// cl_event	*event
-//	dropped_coll_total = dropped_stor_total = 0;
-//	for (unsigned tid = 0; tid < dbg_size / sizeof(*dbg); tid++)
-//	{
-//		dropped_coll_total += dbg[tid].dropped_coll;
-//		dropped_stor_total += dbg[tid].dropped_stor;
-//		if (0 && (dbg[tid].dropped_coll || dbg[tid].dropped_stor))
-//			printf("thread %6d: dropped_coll %zd dropped_stor %zd\n", tid,
-//			dbg[tid].dropped_coll, dbg[tid].dropped_stor);
-//	}
-//	printf("Dropped: %zd (coll) %zd (stor)\n",
-//		dropped_coll_total, dropped_stor_total);
-//	free(dbg);
-//}
-
 size_t select_work_size_blake(void)
 {
 	size_t              work_size =
@@ -499,115 +386,6 @@ static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, clBuffer<uint8_
 		0,    // cl_uint  num_events_in_wait_list
 		NULL, // cl_event *event_wait_list
 		NULL));  // cl_event *event
-}
-
-/*
-** Print on stdout a hex representation of the encoded solution as per the
-** zcash protocol specs (512 x 21-bit inputs).
-**
-** inputs       array of 32-bit inputs
-** n            number of elements in array
-*/
-void print_encoded_sol(uint32_t *inputs, uint32_t n)
-{
-	uint32_t byte_pos = 0;
-	int32_t bits_left = PREFIX + 1;
-	uint8_t x = 0;
-	uint8_t x_bits_used = 0;
-	while (byte_pos < n)
-	{
-		if (bits_left >= 8 - x_bits_used)
-		{
-			x |= inputs[byte_pos] >> (bits_left - 8 + x_bits_used);
-			bits_left -= 8 - x_bits_used;
-			x_bits_used = 8;
-		}
-		else if (bits_left > 0)
-		{
-			uint32_t mask = ~(-1 << (8 - x_bits_used));
-			mask = ((~mask) >> bits_left) & mask;
-			x |= (inputs[byte_pos] << (8 - x_bits_used - bits_left)) & mask;
-			x_bits_used += bits_left;
-			bits_left = 0;
-		}
-		else if (bits_left <= 0)
-		{
-			//assert(!bits_left);
-			byte_pos++;
-			bits_left = PREFIX + 1;
-		}
-		if (x_bits_used == 8)
-		{
-			printf("%02x", x);
-			x = x_bits_used = 0;
-		}
-	}
-	printf("\n");
-	fflush(stdout);
-}
-
-void print_sol(uint32_t *values, uint64_t *nonce)
-{
-	uint32_t	show_n_sols;
-	show_n_sols = (1 << PARAM_K);
-	if (verbose < 2)
-		show_n_sols = MIN(10, show_n_sols);
-	fprintf(stderr, "Soln:");
-	// for brievity, only print "small" nonces
-	if (*nonce < (1UL << 32))
-		fprintf(stderr, " 0x%lx:", *nonce);
-	for (unsigned i = 0; i < show_n_sols; i++)
-		fprintf(stderr, " %x", values[i]);
-	fprintf(stderr, "%s\n", (show_n_sols != (1 << PARAM_K) ? "..." : ""));
-}
-
-int sol_cmp(const void *_a, const void *_b)
-{
-	const uint32_t	*a = (uint32_t	*)_a;
-	const uint32_t	*b = (uint32_t	*)_b;
-	for (uint32_t i = 0; i < (1 << PARAM_K); i++)
-	{
-		if (*a != *b)
-			return *a - *b;
-		a++;
-		b++;
-	}
-	return 0;
-}
-
-/*
-** Print all solutions.
-*/
-void print_sols(sols_t *all_sols, uint64_t *nonce, uint32_t nr_valid_sols)
-{
-	uint8_t		*valid_sols;
-	uint32_t		counted;
-	valid_sols = (uint8_t *)malloc(nr_valid_sols * SOL_SIZE);
-	if (!valid_sols)
-		printf("malloc: %s\n", strerror(errno));
-	counted = 0;
-	for (uint32_t i = 0; i < all_sols->nr; i++)
-		if (all_sols->valid[i])
-		{
-			if (counted >= nr_valid_sols)
-				printf("Bug: more than %d solutions\n", nr_valid_sols);
-			memcpy(valid_sols + counted * SOL_SIZE, all_sols->values[i],
-				SOL_SIZE);
-			counted++;
-		}
-	//assert(counted == nr_valid_sols);
-	// sort the solutions amongst each other, to make silentarmy's output
-	// deterministic and testable
-	qsort(valid_sols, nr_valid_sols, SOL_SIZE, sol_cmp);
-	for (uint32_t i = 0; i < nr_valid_sols; i++)
-	{
-		uint32_t	*inputs = (uint32_t *)(valid_sols + i * SOL_SIZE);
-		if (show_encoded)
-			print_encoded_sol(inputs, 1 << PARAM_K);
-		if (verbose)
-			print_sol(inputs, nonce);
-	}
-	free(valid_sols);
 }
 
 /*
@@ -662,13 +440,7 @@ static uint32_t verify_sol(sols_t *sols, unsigned sol_i)
 	return 1;
 }
 
-void list_gpu(cl_device_id *devices, cl_uint nr)
-{
-	(void)devices;
-	printf("Found %d GPU device%s\n", nr, (nr != 1) ? "s" : "");
-	for (uint32_t i = 0; i < nr; i++)
-		print_device_info(i, devices[i]);
-}
+
 
 ocl_silentarmy::ocl_silentarmy(int platf_id, int dev_id) { /*TODO*/
 	platform_id = platf_id;
