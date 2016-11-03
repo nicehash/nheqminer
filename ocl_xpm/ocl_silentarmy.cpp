@@ -397,7 +397,6 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 	for (unsigned i = 0; i < gpus.size(); i++) {
 		cl_context_properties props[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)device_context.oclc->platform_id, 0 };
 		cl_int error;
-		//gContext[i] = clCreateContext(props, 1, &gpus[i], 0, 0, &error);
 		device_context.oclc->_context = clCreateContext(NULL, 1, &gpus[i], 0, 0, &error);
 		//OCLR(error, false);
 		if (cl_int err = error) {
@@ -451,89 +450,6 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
 	std::function<void(void)> hashdonef,
 	ocl_silentarmy& device_context) {
-
-#if 0
-	unsigned char context[140];
-	memset(context, 0, 140);
-	memcpy(context, tequihash_header, tequihash_header_len);
-	memcpy(context + tequihash_header_len, nonce, nonce_len);
-
-	OclContext *miner = device_context.oclc;
-	clFlush(miner->queue);
-
-	//C++ START
-	blake2b_state_t initialCtx;
-	cl::Buffer buf_blake_st;
-	zcash_blake2b_init(&initialCtx, ZCASH_HASH_LEN, PARAM_N, PARAM_K);
-	zcash_blake2b_update(&initialCtx, (const uint8_t*)context, 128, 0);
-
-	//miner->nonce = header.nNonce;
-	size_t global_ws;
-	size_t local_work_size = 64;
-	for (unsigned round = 0; round < PARAM_K; round++) {
-		clBuffer<uint8_t> &bufHtFirst = (round % 2 == 0) ? miner->buf_ht0 : miner->buf_ht1;
-		clBuffer<uint8_t> &bufHtSecond = (round % 2 == 0) ? miner->buf_ht1 : miner->buf_ht0;
-
-		init_ht(miner->queue, miner->k_init_ht, bufHtFirst);
-		if (round == 0) {
-			OCL(clSetKernelArg(miner->k_rounds[round], 0, sizeof(cl_mem), &bufHtFirst.DeviceData));
-			OCL(clSetKernelArg(miner->k_rounds[round], 1, sizeof(cl_mem), &bufHtFirst.DeviceData));
-			OCL(clSetKernelArg(miner->k_rounds[round], 3, sizeof(cl_ulong), &initialCtx.h[0]));
-			OCL(clSetKernelArg(miner->k_rounds[round], 4, sizeof(cl_ulong), &initialCtx.h[1]));
-			OCL(clSetKernelArg(miner->k_rounds[round], 5, sizeof(cl_ulong), &initialCtx.h[2]));
-			OCL(clSetKernelArg(miner->k_rounds[round], 6, sizeof(cl_ulong), &initialCtx.h[3]));
-			OCL(clSetKernelArg(miner->k_rounds[round], 7, sizeof(cl_ulong), &initialCtx.h[4]));
-			OCL(clSetKernelArg(miner->k_rounds[round], 8, sizeof(cl_ulong), &initialCtx.h[5]));
-			OCL(clSetKernelArg(miner->k_rounds[round], 9, sizeof(cl_ulong), &initialCtx.h[6]));
-			OCL(clSetKernelArg(miner->k_rounds[round], 10, sizeof(cl_ulong), &initialCtx.h[7]));
-			global_ws = select_work_size_blake();
-		}
-		else {
-			OCL(clSetKernelArg(miner->k_rounds[round], 0, sizeof(cl_mem), &bufHtSecond.DeviceData));
-			OCL(clSetKernelArg(miner->k_rounds[round], 1, sizeof(cl_mem), &bufHtFirst.DeviceData));
-			global_ws = NR_ROWS;
-		}
-
-		OCL(clSetKernelArg(miner->k_rounds[round], 2, sizeof(cl_mem), &miner->buf_dbg.DeviceData));
-		OCL(clEnqueueNDRangeKernel(miner->queue, miner->k_rounds[round], 1, NULL, &global_ws, &local_work_size, 0, NULL, NULL));
-	}
-
-	OCL(clSetKernelArg(miner->k_sols, 0, sizeof(cl_mem), &miner->buf_ht0.DeviceData));
-	OCL(clSetKernelArg(miner->k_sols, 1, sizeof(cl_mem), &miner->buf_ht1.DeviceData));
-	OCL(clSetKernelArg(miner->k_sols, 2, sizeof(cl_mem), &miner->buf_sols.DeviceData));
-	global_ws = NR_ROWS;
-	OCL(clEnqueueNDRangeKernel(miner->queue, miner->k_sols, 1, NULL, &global_ws, &local_work_size, 0, NULL, NULL));
-	//C++ END
-
-	miner->buf_sols.copyToHost(miner->queue, true);
-	sols_t *sols = miner->buf_sols.HostData;
-	if (sols->nr > MAX_SOLS)
-		sols->nr = MAX_SOLS;
-
-	for (unsigned sol_i = 0; sol_i < sols->nr; sol_i++)
-		verify_sol(sols, sol_i);
-
-	// TODO send compressed or non compressed data
-	uint32_t nsols = 0;
-	uint8_t proof[COMPRESSED_PROOFSIZE * 2];
-	for (uint32_t i = 0; i < sols->nr; i++) {
-		if (sols->valid[i]) {
-			/*std::vector<uint32_t> index_vector(PROOFSIZE);
-			for (uint32_t el = 0; el < PROOFSIZE; el++) {
-				index_vector[i] = sols->values[i][el];
-			}
-
-			solutionf(index_vector, DIGITBITS, nullptr);
-			if (cancelf()) return;*/
-			compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
-			solutionf(std::vector<uint32_t>(0), 1344, proof);
-			// TODO remove
-			nsols++;
-		}
-	}
-	// TODO remove
-	//printf("solution num %d\n", nsols);
-#else
 
 	unsigned char context[140];
 	memset(context, 0, 140);
@@ -603,22 +519,15 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	for (unsigned sol_i = 0; sol_i < sols->nr; sol_i++)
 		verify_sol(sols, sol_i);
 
-	// TODO send compressed or non compressed data
-	uint32_t nsols = 0;
+
 	uint8_t proof[COMPRESSED_PROOFSIZE * 2];
 	for (uint32_t i = 0; i < sols->nr; i++) {
 		if (sols->valid[i]) {
 			compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
 			solutionf(std::vector<uint32_t>(0), 1344, proof);
-			// TODO remove
-			nsols++;
 		}
 	}
 	free(sols);
-	// TODO remove
-	//printf("solution num %d\n", nsols);
-
-#endif
 }
 
 void ocl_silentarmy::print_opencl_devices() {
