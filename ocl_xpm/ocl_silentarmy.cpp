@@ -58,21 +58,22 @@ struct OclContext {
 	cl_platform_id platform_id = 0;
 
 	cl_command_queue queue;
-	//clBuffer<uint8_t> buf_ht0;
-	//clBuffer<uint8_t> buf_ht1;
-	//clBuffer<sols_t> buf_sols;
-	//clBuffer<debug_t> buf_dbg;
 
 	cl_kernel k_init_ht;
 	cl_kernel k_rounds[PARAM_K];
 	cl_kernel k_sols;
 
 	cl_mem buf_ht[2], buf_sols, buf_dbg;
+	size_t global_ws;
+	size_t local_work_size = 64;
 
-	/*uint256 nonce;
-
-	MinerInstance() {}*/
 	bool init(cl_device_id dev, unsigned threadsNum, unsigned threadsPerBlock);
+	
+	~OclContext() {
+		clReleaseMemObject(buf_dbg);
+		clReleaseMemObject(buf_ht[0]);
+		clReleaseMemObject(buf_ht[1]);
+	}
 };
 
 cl_mem check_clCreateBuffer(cl_context ctx, cl_mem_flags flags, size_t size,
@@ -91,13 +92,8 @@ bool OclContext::init(
 	size_t              dbg_size = NR_ROWS;
 #else
 	size_t              dbg_size = 1;
-#endif  
+#endif
 
-	//buf_dbg.init(context, dbg_size, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR);
-	/*buf_dbg.init(_context, dbg_size, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
-	buf_ht0.init(_context, HT_SIZE, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
-	buf_ht1.init(_context, HT_SIZE, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
-	buf_sols.init(_context, 1, CL_MEM_READ_WRITE);*/
 	buf_dbg = check_clCreateBuffer(_context, CL_MEM_READ_WRITE |
 		CL_MEM_HOST_NO_ACCESS, dbg_size, NULL);
 	buf_ht[0] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, HT_SIZE, NULL);
@@ -269,22 +265,6 @@ size_t select_work_size_blake(void)
 	//debug("Blake: work size %zd\n", work_size);
 	return work_size;
 }
-
-//static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, clBuffer<uint8_t> &buf_ht)
-//{
-//	size_t global_ws = NR_ROWS;
-//	size_t local_ws = 64;
-//	cl_int status;
-//	OCL(clSetKernelArg(k_init_ht, 0, sizeof(cl_mem), &buf_ht.DeviceData));
-//	OCL(clEnqueueNDRangeKernel(queue, k_init_ht,
-//		1,    // cl_uint  work_dim
-//		NULL, // size_t *global_work_offset
-//		&global_ws, // size_t *global_work_size
-//		&local_ws,  // size_t *local_work_size
-//		0,    // cl_uint  num_events_in_wait_list
-//		NULL, // cl_event *event_wait_list
-//		NULL));  // cl_event *event
-//}
 
 static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, cl_mem buf_ht)
 {
@@ -461,8 +441,6 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 }
 
 void ocl_silentarmy::stop(ocl_silentarmy& device_context) { /*TODO*/
-
-
 	if (device_context.oclc != nullptr) delete device_context.oclc;
 }
 
@@ -566,21 +544,15 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	OclContext *miner = device_context.oclc;
 	clFlush(miner->queue);
 
-	//C++ START
 	blake2b_state_t initialCtx;
 	zcash_blake2b_init(&initialCtx, ZCASH_HASH_LEN, PARAM_N, PARAM_K);
 	zcash_blake2b_update(&initialCtx, (const uint8_t*)context, 128, 0);
 
 	cl_mem buf_blake_st;
-	size_t		global_ws;
-	size_t              local_work_size = 64;
-	uint32_t		sol_found = 0;
-	uint64_t		*nonce_ptr;
-
-
-
 	buf_blake_st = check_clCreateBuffer(miner->_context, CL_MEM_READ_ONLY |
 		CL_MEM_COPY_HOST_PTR, sizeof(blake2b_state_s), &initialCtx);
+
+
 	for (unsigned round = 0; round < PARAM_K; round++)
 	{
 		if (round < 2)
@@ -589,26 +561,26 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 		{
 			check_clSetKernelArg(miner->k_rounds[round], 0, &buf_blake_st);
 			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round % 2]);
-			global_ws = select_work_size_blake();
+			miner->global_ws = select_work_size_blake();
 		}
 		else
 		{
 			check_clSetKernelArg(miner->k_rounds[round], 0, &miner->buf_ht[(round - 1) % 2]);
 			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round % 2]);
-			global_ws = NR_ROWS;
+			miner->global_ws = NR_ROWS;
 		}
 		check_clSetKernelArg(miner->k_rounds[round], 2, &miner->buf_dbg);
 		if (round == PARAM_K - 1)
 			check_clSetKernelArg(miner->k_rounds[round], 3, &miner->buf_sols);
 		check_clEnqueueNDRangeKernel(miner->queue, miner->k_rounds[round], 1, NULL,
-			&global_ws, &local_work_size, 0, NULL, NULL);
+			&miner->global_ws, &miner->local_work_size, 0, NULL, NULL);
 	}
 	check_clSetKernelArg(miner->k_sols, 0, &miner->buf_ht[0]);
 	check_clSetKernelArg(miner->k_sols, 1, &miner->buf_ht[1]);
 	check_clSetKernelArg(miner->k_sols, 2, &miner->buf_sols);
-	global_ws = NR_ROWS;
+	miner->global_ws = NR_ROWS;
 	check_clEnqueueNDRangeKernel(miner->queue, miner->k_sols, 1, NULL,
-		&global_ws, &local_work_size, 0, NULL, NULL);
+		&miner->global_ws, &miner->local_work_size, 0, NULL, NULL);
 	
 	
 	sols_t	*sols;

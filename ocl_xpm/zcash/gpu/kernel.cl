@@ -1,4 +1,3 @@
-const char *ocl_code = R"_mrb_(
 # 1 "input.cl"
 # 1 "<built-in>"
 # 1 "<command-line>"
@@ -31,7 +30,7 @@ __kernel
 void kernel_init_ht(__global char *ht)
 {
     uint tid = get_global_id(0);
-    *(__global uint *)(ht + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 32) = 0;
+    *(__global uint *)(ht + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 32) = 0;
 }
 # 80 "input.cl"
 uint ht_store(uint round, __global char *ht, uint i,
@@ -53,9 +52,9 @@ uint ht_store(uint round, __global char *ht, uint i,
     xi0 = (xi0 >> 16) | (xi1 << (64 - 16));
     xi1 = (xi1 >> 16) | (xi2 << (64 - 16));
     xi2 = (xi2 >> 16) | (xi3 << (64 - 16));
-    p = ht + row * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 32;
+    p = ht + row * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 32;
     cnt = atomic_inc((__global uint *)p);
-    if (cnt >= ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13))
+    if (cnt >= ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9))
         return 1;
     p += cnt * 32 + (8 + ((round) / 2) * 4);
 
@@ -369,12 +368,12 @@ void equihash_round(uint round, __global char *ht_src, __global char *ht_dst,
     uint tlid = get_local_id(0);
     __global char *p;
     uint cnt;
-    uchar first_words[((1 << (((200 / (9 + 1)) + 1) - 20)) * 13)];
+    uchar first_words[((1 << (((200 / (9 + 1)) + 1) - 20)) * 9)];
     uchar mask;
     uint i, j;
 
 
-    ushort collisions[((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 3];
+    ushort collisions[((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 3];
     uint nr_coll = 0;
     uint n;
     uint dropped_coll, dropped_stor;
@@ -387,9 +386,9 @@ void equihash_round(uint round, __global char *ht_src, __global char *ht_dst,
 
 
 
-    p = (ht_src + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 32);
+    p = (ht_src + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 32);
     cnt = *(__global uint *)p;
-    cnt = min(cnt, (uint)((1 << (((200 / (9 + 1)) + 1) - 20)) * 13));
+    cnt = min(cnt, (uint)((1 << (((200 / (9 + 1)) + 1) - 20)) * 9));
     p += xi_offset;
     for (i = 0; i < cnt; i++, p += 32)
         first_words[i] = *(__global uchar *)p;
@@ -420,14 +419,14 @@ void equihash_round(uint round, __global char *ht_src, __global char *ht_dst,
         i = collisions[n] & 0xff;
         j = collisions[n] >> 8;
         a = (__global ulong *)
-            (ht_src + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 32 + i * 32 + xi_offset);
+            (ht_src + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 32 + i * 32 + xi_offset);
         b = (__global ulong *)
-            (ht_src + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 32 + j * 32 + xi_offset);
+            (ht_src + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 32 + j * 32 + xi_offset);
  dropped_stor += xor_and_store(round, ht_dst, tid, i, j, a, b);
       }
     if (round < 8)
 
- *(__global uint *)(ht_src + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 32) = 0;
+ *(__global uint *)(ht_src + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 32) = 0;
 
 
 
@@ -455,7 +454,7 @@ void kernel_round8(__global char *ht_src, __global char *ht_dst,
 
 uint expand_ref(__global char *ht, uint xi_offset, uint row, uint slot)
 {
-    return *(__global uint *)(ht + row * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 32 +
+    return *(__global uint *)(ht + row * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 32 +
      slot * 32 + xi_offset - 4);
 }
 
@@ -531,9 +530,9 @@ void kernel_sols(__global char *ht0, __global char *ht1, __global sols_t *sols)
 
 
 
-    a = htabs[ht_i] + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 13) * 32;
+    a = htabs[ht_i] + tid * ((1 << (((200 / (9 + 1)) + 1) - 20)) * 9) * 32;
     cnt = *(__global uint *)a;
-    cnt = min(cnt, (uint)((1 << (((200 / (9 + 1)) + 1) - 20)) * 13));
+    cnt = min(cnt, (uint)((1 << (((200 / (9 + 1)) + 1) - 20)) * 9));
     coll = 0;
     a += xi_offset;
     for (i = 0; i < cnt; i++, a += 32)
@@ -554,4 +553,3 @@ void kernel_sols(__global char *ht0, __global char *ht1, __global sols_t *sols)
  potential_sol(htabs, sols, collisions[i] >> 32,
   collisions[i] & 0xffffffff);
 }
-)_mrb_";
