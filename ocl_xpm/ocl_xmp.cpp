@@ -151,7 +151,7 @@ ocl_xmp::ocl_xmp(int platf_id, int dev_id) { /*TODO*/
 }
 
 std::string ocl_xmp::getdevinfo() { /*TODO*/
-	return "TODO";
+	return "GPU_ID(" + std::to_string(device_id) + ")";
 }
 
 // STATICS START
