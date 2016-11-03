@@ -21,26 +21,29 @@
 #ifdef USE_CPU_TROMP
 #include "../cpu_tromp/cpu_tromp.hpp"
 #else
-using cpu_tromp = SolverStub;
+CREATE_SOLVER_STUB(cpu_tromp, "cpu_tromp_STUB")
 #endif
 #ifdef USE_CPU_XENONCAT
 #include "../cpu_xenoncat/cpu_xenoncat.hpp"
 #else
-using cpu_xenoncat = SolverStub1;
+CREATE_SOLVER_STUB(cpu_xenoncat, "cpu_xenoncat_STUB")
 #endif
 #ifdef USE_CUDA_TROMP
 #include "../cuda_tromp/cuda_tromp.hpp"
 #else
-using cuda_tromp = SolverStub;
+CREATE_SOLVER_STUB(cuda_tromp, "cuda_tromp_STUB")
+CREATE_SOLVER_STUB(cuda_tromp_75, "cuda_tromp_75_STUB")
 #endif
 #ifdef USE_OCL_XMP
 #include "../ocl_xpm/ocl_xmp.hpp"
-#include "../ocl_silentarmy/ocl_silentarmy.hpp"
-using open_cl_solver = ocl_silentarmy;
 #else
-using ocl_xmp = SolverStub;
+CREATE_SOLVER_STUB(ocl_xmp, "ocl_xmp_STUB")
 #endif
-
+#ifdef USE_OCL_SILENTARMY
+#include "../ocl_silentarmy/ocl_silentarmy.hpp"
+#else
+CREATE_SOLVER_STUB(ocl_silentarmy, "ocl_silentarmy_STUB")
+#endif
 
 using namespace json_spirit;
 
