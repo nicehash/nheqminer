@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << "\t\tEquihash CPU&GPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "\tThanks to Zcash developers for providing base of the code." << std::endl;
-	std::cout << "\t  Special thanks to tromp, xenoncat and eXtremal-ik7 for" << std::endl;
+	std::cout << "\t  Special thanks to tromp, xenoncat, Marc Bevand (mbevand/silentarmy) and eXtremal-ik7 for" << std::endl;
 	std::cout << "\t providing optimized CPU, CUDA and AMD equihash solvers." << std::endl;
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << std::endl;
