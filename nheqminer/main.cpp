@@ -101,11 +101,12 @@ void print_help()
 	std::cout << std::endl;
 	std::cout << "OpenCL settings" << std::endl;
 	std::cout << "\t-oi\t\tOpenCL info" << std::endl;
+	std::cout << "\t-ov [ver]\tSet OpenCL solver (0 = default silentarmy faster, 1 = xmp slower)" << std::endl;
 	std::cout << "\t-op [devices]\tSet OpenCL platform to selecd platform devices (-od)" << std::endl;
 	std::cout << "\t-od [devices]\tEnable OpenCL mining on spec. devices (specify plafrom number first -op)" << std::endl;
 	//std::cout << "\t-cb [blocks]\tNumber of blocks" << std::endl;
 	//std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
-	std::cout << "Example: -op 2 -oi 0 2" << std::endl; //-cb 12 16 -ct 64 128" << std::endl;
+	std::cout << "Example: -op 2 -od 0 2" << std::endl; //-cb 12 16 -ct 64 128" << std::endl;
 	std::cout << std::endl;
 }
 
