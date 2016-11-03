@@ -335,7 +335,7 @@ std::string ZcashJob::getSubmission(const EquihashSolution* solution)
 
 template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
 ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::ZcashMiner(int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t, 
-	int opencl_count, int opencl_platf, int* opencl_en)
+	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t)
     : minerThreads{nullptr}
 {
 	m_isActive = false;
@@ -356,9 +356,15 @@ ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::ZcashMiner(int cpu_threads, int
 
     for (int i = 0; i < opencl_count; ++i)
     {
-        OPENCLSolver* context = new OPENCLSolver(opencl_platf, opencl_en[i]);
-        // todo: save local&global work size
-        opencl_contexts.push_back(context);
+		if (opencl_t[i] < 1) opencl_t[i] = 1;
+
+		// add multiple threads if wanted
+		for (int k = 0; k < opencl_t[i]; ++i)
+		{
+			OPENCLSolver* context = new OPENCLSolver(opencl_platf, opencl_en[i]);
+			// todo: save local&global work size
+			opencl_contexts.push_back(context);
+		}
     }
     nThreads += opencl_contexts.size();
 
@@ -697,7 +703,7 @@ int benchmark_thread(int tid, Solver& extra)
 
 template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
 void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-	int opencl_count, int opencl_platf, int* opencl_en)
+	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t)
 {
 	// generate array of various nonces
 	std::srand(std::time(0));
@@ -734,15 +740,20 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 	for (int i = 0; i < opencl_count; ++i)
 	{
-		OPENCLSolver* context = new OPENCLSolver(opencl_platf, opencl_en[i]);
+		if (opencl_t[i] < 1) opencl_t[i] = 1;
 
-		// todo: save local&global work size
+		for (int k = 0; k < opencl_t[i]; ++k)
+		{
+			OPENCLSolver* context = new OPENCLSolver(opencl_platf, opencl_en[i]);
 
-		BOOST_LOG_TRIVIAL(info) << "Benchmarking OPENCL worker (" << context->getname() << ") " << context->getdevinfo();
+			// todo: save local&global work size
 
-		OPENCLSolver::start(*context); // init OPENCL before to get more accurate benchmark
+			BOOST_LOG_TRIVIAL(info) << "Benchmarking OPENCL worker (" << context->getname() << ") " << context->getdevinfo();
 
-		opencl_contexts.push_back(context);
+			OPENCLSolver::start(*context); // init OPENCL before to get more accurate benchmark
+
+			opencl_contexts.push_back(context);
+		}
 	}
 
 	if (cpu_threads < 0)
