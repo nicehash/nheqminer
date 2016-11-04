@@ -47,13 +47,14 @@ endif ()
 #add_definitions(-DUSE_CPU_TROMP)
 add_definitions(-DUSE_OCL_XMP)
 
-add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )
-set_target_properties ( xenoncat_avx1 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx1.o" )
+#add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )
+#set_target_properties ( xenoncat_avx1 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx1.o" )
 
-add_library ( xenoncat_avx2 SHARED IMPORTED GLOBAL )
-set_target_properties ( xenoncat_avx2 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx2.o" )
+#add_library ( xenoncat_avx2 SHARED IMPORTED GLOBAL )
+#set_target_properties ( xenoncat_avx2 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx2.o" )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/../../nheqminer/)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../../ocl_device_utils/)
 
 # OCL INC DIR
 include_directories(${OPENCL_INCLUDE_DIRECTORY})
@@ -129,22 +130,24 @@ set(SOURCE_FILES
     #../../cpu_xenoncat/cpu_xenoncat.hpp
     #../../cpu_xenoncat/xenoncat.cpp
 #
-	# AMD
-	../../ocl_xpm/ocl_device_utils/cl_ext.hpp
-	../../ocl_xpm/ocl_device_utils/ocl_device_utils.h
-	../../ocl_xpm/ocl_device_utils/OpenCLDevice.h
-	../../ocl_xpm/ocl_silentarmy.hpp
-	../../ocl_xpm/ocl_xmp.hpp
-	../../ocl_xpm/opencl.h
-	../../ocl_xpm/param.h
-	../../ocl_xpm/sa_blake.h
-	../../ocl_xpm/zcash/gpu/common.h
-	../../cpu_tromp/blake2/blake2bx.cpp
-	../../ocl_xpm/ocl_device_utils/ocl_device_utils.cpp
-	../../ocl_xpm/ocl_silentarmy.cpp
-	../../ocl_xpm/ocl_xmp.cpp
-	../../ocl_xpm/opencl.cpp
-	../../ocl_xpm/sa_blake.cpp
+    # AMD ocl_device_utils
+    ../../ocl_device_utils/cl_ext.hpp
+    ../../ocl_device_utils/ocl_device_utils.h
+    ../../ocl_device_utils/ocl_device_utils.cpp
+    ../../ocl_device_utils/OpenCLDevice.h
+    ../../ocl_device_utils/opencl.h
+    ../../ocl_device_utils/opencl.cpp
+    # AMD ocl_xpm
+    ../../ocl_xpm/ocl_xmp.hpp
+    ../../ocl_xpm/ocl_xmp.cpp
+    ../../ocl_xpm/zcash/gpu/common.h
+    ../../cpu_tromp/blake2/blake2bx.cpp
+    # AMD ocl_silentarmy
+    ../../ocl_silentarmy/ocl_silentarmy.hpp
+    ../../ocl_silentarmy/param.h
+    ../../ocl_silentarmy/sa_blake.h
+    ../../ocl_silentarmy/ocl_silentarmy.cpp
+    ../../ocl_silentarmy/sa_blake.cpp
     )
 
 #add_executable(${PROJECT_NAME} ${SRC_LIST})
@@ -156,4 +159,4 @@ set(LIBS ${LIBS} ${Boost_LIBRARIES} ${OPENCL_LIBRARY})
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 #target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} xenoncat_avx1 xenoncat_avx2 )
+target_link_libraries(${PROJECT_NAME} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
