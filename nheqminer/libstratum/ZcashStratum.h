@@ -30,6 +30,12 @@ CREATE_SOLVER_STUB(cpu_xenoncat, "cpu_xenoncat_STUB")
 #endif
 #ifdef USE_CUDA_TROMP
 #include "../cuda_tromp/cuda_tromp.hpp"
+
+// TODO fix this
+#ifndef WIN32
+CREATE_SOLVER_STUB(cuda_tromp_75, "cuda_tromp_75_STUB")
+#endif
+
 #else
 CREATE_SOLVER_STUB(cuda_tromp, "cuda_tromp_STUB")
 CREATE_SOLVER_STUB(cuda_tromp_75, "cuda_tromp_75_STUB")
