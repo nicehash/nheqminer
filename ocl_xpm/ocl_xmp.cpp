@@ -204,7 +204,7 @@ void ocl_xmp::start(ocl_xmp& device_context) {
 
 	for (size_t i = 0; i < gpus.size(); i++) {
 		char kernelName[64];
-		sprintf(kernelName, "equiw200k9_gpu%u_%u.bin", (unsigned)i);
+		sprintf(kernelName, "equiw200k9_gpu%u.bin", (unsigned)i);
 		if (!clCompileKernel(gContext[i],
 			gpus[i],
 			kernelName,

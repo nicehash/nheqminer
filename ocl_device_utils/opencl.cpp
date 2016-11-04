@@ -85,7 +85,7 @@ bool clCompileKernel(cl_context gContext,
       try {
         stream.open(i);
       } catch (std::system_error& e) {
-        fprintf(stderr, "<error> %s\n", e.code().message());
+		fprintf(stderr, "<error> %s\n", e.code().message().c_str());
         return false;
       }
       std::string str((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
