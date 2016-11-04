@@ -836,3 +836,42 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 //                            int opencl_count, int opencl_platf, int* opencl_en) {
 //    ZMinerSSE2::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en);
 //}
+
+
+
+// ocl_xmp
+// gcc static undefined reference workaround
+void ZMinerAVXCUDA80_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
+    ZMinerAVXCUDA80_XMP::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
+}
+void ZMinerSSE2CUDA80_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
+    ZMinerSSE2CUDA80_XMP::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
+}
+void ZMinerAVXCUDA75_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
+    ZMinerAVXCUDA75_XMP::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
+}
+void ZMinerSSE2CUDA75_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
+    ZMinerSSE2CUDA75_XMP::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
+}
+// ocl_silentarmy
+void ZMinerAVXCUDA80_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
+    ZMinerAVXCUDA80_SA::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
+}
+void ZMinerSSE2CUDA80_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
+    ZMinerSSE2CUDA80_SA::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
+}
+void ZMinerAVXCUDA75_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
+    ZMinerAVXCUDA75_SA::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
+}
+void ZMinerSSE2CUDA75_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
+    ZMinerSSE2CUDA75_SA::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
+}
+
