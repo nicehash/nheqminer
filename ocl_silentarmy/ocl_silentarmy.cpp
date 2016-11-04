@@ -528,6 +528,7 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 		}
 	}
 	free(sols);
+	hashdonef();
 }
 
 // STATICS END
