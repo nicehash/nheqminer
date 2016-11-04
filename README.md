@@ -61,6 +61,8 @@ Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, OCL_XMP, OCL_SILENTARMY
    - `sudo apt-get install cmake build-essential libboost-all-dev`
    - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
    - `cd nheqminer/Linux_cmake/nheqminer_AMD && cmake . -DOPENCL_LIBRARY=/usr/lib/x86_64-linux-gnu/libOpenCL.so -DOPENCL_INCLUDE_DIRECTORY=/opt/AMDAPPSDK-3.0/include && make -j $(nproc)`
+   - `cp ../../3rdparty/amd_bins_linux/* -r .`
+   - `cp ../../3rdparty/amd_silentarmy_kernels/* -r .`
 
    
 
