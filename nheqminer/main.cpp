@@ -7,7 +7,13 @@
 
 #include "libstratum/StratumClient.h"
 
+#if defined(USE_OCL_XMP) || defined(USE_OCL_SILENTARMY)
 #include "../ocl_device_utils/ocl_device_utils.h"
+#else 
+class ocl_device_utils {
+	static ocl_device_utils::print_opencl_devices() {  }
+};
+#endif
 
 #include <thread>
 #include <chrono>
