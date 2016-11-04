@@ -516,14 +516,17 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 
 	clReleaseMemObject(buf_blake_st);
 
-	for (unsigned sol_i = 0; sol_i < miner->sols->nr; sol_i++)
+	for (unsigned sol_i = 0; sol_i < miner->sols->nr; sol_i++) {
 		verify_sol(miner->sols, sol_i);
+		if (cancelf()) return;
+	}
 
 	uint8_t proof[COMPRESSED_PROOFSIZE * 2];
 	for (uint32_t i = 0; i < miner->sols->nr; i++) {
 		if (miner->sols->valid[i]) {
 			compress(proof, (uint32_t *)(miner->sols->values[i]), 1 << PARAM_K);
 			solutionf(std::vector<uint32_t>(0), 1344, proof);
+			if (cancelf()) return;
 		}
 	}
 	hashdonef();
