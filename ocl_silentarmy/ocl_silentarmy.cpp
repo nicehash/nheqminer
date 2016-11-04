@@ -494,6 +494,8 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 			check_clSetKernelArg(miner->k_rounds[round], 3, &miner->buf_sols);
 		check_clEnqueueNDRangeKernel(miner->queue, miner->k_rounds[round], 1, NULL,
 			&miner->global_ws, &miner->local_work_size, 0, NULL, NULL);
+		// cancel function
+		if (cancelf()) return;
 	}
 	check_clSetKernelArg(miner->k_sols, 0, &miner->buf_ht[0]);
 	check_clSetKernelArg(miner->k_sols, 1, &miner->buf_ht[1]);
@@ -518,7 +520,6 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 
 	for (unsigned sol_i = 0; sol_i < miner->sols->nr; sol_i++) {
 		verify_sol(miner->sols, sol_i);
-		if (cancelf()) return;
 	}
 
 	uint8_t proof[COMPRESSED_PROOFSIZE * 2];
@@ -526,7 +527,6 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 		if (miner->sols->valid[i]) {
 			compress(proof, (uint32_t *)(miner->sols->values[i]), 1 << PARAM_K);
 			solutionf(std::vector<uint32_t>(0), 1344, proof);
-			if (cancelf()) return;
 		}
 	}
 	hashdonef();
