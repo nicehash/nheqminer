@@ -66,12 +66,15 @@ struct OclContext {
 	size_t global_ws;
 	size_t local_work_size = 64;
 
+	sols_t	*sols;
+
 	bool init(cl_device_id dev, unsigned threadsNum, unsigned threadsPerBlock);
 	
 	~OclContext() {
 		clReleaseMemObject(buf_dbg);
 		clReleaseMemObject(buf_ht[0]);
 		clReleaseMemObject(buf_ht[1]);
+		free(sols);
 	}
 };
 
@@ -109,6 +112,8 @@ bool OclContext::init(
 		sprintf(kernelName, "kernel_round%d", i);
 		k_rounds[i] = clCreateKernel(_program, kernelName, &error);
 	}
+
+	sols = (sols_t *)malloc(sizeof(*sols));
 
 	k_sols = clCreateKernel(_program, "kernel_sols", &error);
 	return true;
@@ -496,38 +501,31 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	miner->global_ws = NR_ROWS;
 	check_clEnqueueNDRangeKernel(miner->queue, miner->k_sols, 1, NULL,
 		&miner->global_ws, &miner->local_work_size, 0, NULL, NULL);
-	
-	
-	sols_t	*sols;
-	uint32_t	nr_valid_sols;
-	sols = (sols_t *)malloc(sizeof(*sols));
 
 	check_clEnqueueReadBuffer(miner->queue, miner->buf_sols,
 		CL_TRUE,	// cl_bool	blocking_read
 		0,		// size_t	offset
-		sizeof(*sols),	// size_t	size
-		sols,	// void		*ptr
+		sizeof(*miner->sols),	// size_t	size
+		miner->sols,	// void		*ptr
 		0,		// cl_uint	num_events_in_wait_list
 		NULL,	// cl_event	*event_wait_list
 		NULL);	// cl_event	*event
 
-	if (sols->nr > MAX_SOLS)
-		sols->nr = MAX_SOLS;
+	if (miner->sols->nr > MAX_SOLS)
+		miner->sols->nr = MAX_SOLS;
 
 	clReleaseMemObject(buf_blake_st);
 
-	for (unsigned sol_i = 0; sol_i < sols->nr; sol_i++)
-		verify_sol(sols, sol_i);
-
+	for (unsigned sol_i = 0; sol_i < miner->sols->nr; sol_i++)
+		verify_sol(miner->sols, sol_i);
 
 	uint8_t proof[COMPRESSED_PROOFSIZE * 2];
-	for (uint32_t i = 0; i < sols->nr; i++) {
-		if (sols->valid[i]) {
-			compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
+	for (uint32_t i = 0; i < miner->sols->nr; i++) {
+		if (miner->sols->valid[i]) {
+			compress(proof, (uint32_t *)(miner->sols->values[i]), 1 << PARAM_K);
 			solutionf(std::vector<uint32_t>(0), 1344, proof);
 		}
 	}
-	free(sols);
 	hashdonef();
 }
 
