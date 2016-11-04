@@ -21,9 +21,7 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build. You will hav
 
 Work in progress.
 
-Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP
-
-Work in progress (OCL_XMP)
+Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, OCL_XMP, OCL_SILENTARMY
 
 ## Linux (Ubuntu 14.04 / 16.04) Build CPU_XENONCAT:
 
@@ -52,6 +50,19 @@ Work in progress (OCL_XMP)
    - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
    - `cd nheqminer/Linux_cmake/nheqminer_cuda_tromp && cmake . && make -j $(nproc)`
    - or specify your compute version for example 50 like so `cd nheqminer/Linux_cmake/nheqminer_cuda_tromp && cmake COMPUTE=50 . && make`
+
+## Linux (16.04) Build OCL_XMP, OCL_SILENTARMY:
+
+ - Open terminal and run the following commands:
+   - [AMD APP SDK](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/)
+   - and make sure you have the [AMD drivers](http://support.amd.com/en-us/download) installed
+   - install them to the default paths
+   - `sudo apt-get install mesa-common-dev`
+   - `sudo apt-get install cmake build-essential libboost-all-dev`
+   - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
+   - `cd nheqminer/Linux_cmake/nheqminer_AMD && cmake . -DOPENCL_LIBRARY=/usr/lib/x86_64-linux-gnu/libOpenCL.so -DOPENCL_INCLUDE_DIRECTORY=/opt/AMDAPPSDK-3.0/include && make -j $(nproc)`
+
+   
 
 # Run instructions:
 
