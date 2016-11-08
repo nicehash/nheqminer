@@ -25,11 +25,11 @@ struct equi;
 
 struct eq_cuda_context
 {
-	int threadsperblock;
-	int totalblocks;
-	int device_id;
 	equi* eq;
 	equi* device_eq;
+	int device_id;
+	int threadsperblock;
+	int totalblocks;
 	uint32_t *heap0, *heap1;
 	void* sol_memory;
 	proof* solutions;

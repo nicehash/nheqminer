@@ -464,6 +464,7 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 
 void ocl_silentarmy::stop(ocl_silentarmy& device_context) {
 	if (device_context.oclc != nullptr) delete device_context.oclc;
+	device_context.oclc = nullptr;
 }
 
 void ocl_silentarmy::solve(const char *tequihash_header,
@@ -475,8 +476,10 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	std::function<void(void)> hashdonef,
 	ocl_silentarmy& device_context) {
 
-	unsigned char context[140];
-	memset(context, 0, 140);
+	unsigned char context[140] = { 0 };
+	if (!device_context.is_init_success || device_context.oclc == nullptr)
+		return;
+
 	memcpy(context, tequihash_header, tequihash_header_len);
 	memcpy(context + tequihash_header_len, nonce, nonce_len);
 

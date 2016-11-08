@@ -38,7 +38,7 @@
 
 
 
-
+// clBuffer<blake2b_state>
 
 template<typename T>
 class clBuffer {

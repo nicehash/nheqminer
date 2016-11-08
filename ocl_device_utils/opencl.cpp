@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <stdio.h>
+#include <system_error>
 
 extern cl_platform_id gPlatform;
 // extern cl_program gProgram;
@@ -57,7 +58,7 @@ bool clInitialize(int requiredPlatform, std::vector<cl_device_id> &gpus)
   
   
   if (platformIdx == -1) {
-    printf("<error> platform %s not exists\n", requiredPlatform);
+    printf("<error> platform %d not exists\n", requiredPlatform);
     return false;
   }
   
@@ -95,8 +96,7 @@ bool clCompileKernel(cl_context gContext,
 //   const unsigned char *binaries[64];
   
   if(!testfile) {
-    
-    
+
     printf("<info> compiling ...\n");
     
     std::string sourceFile;
@@ -106,13 +106,13 @@ bool clCompileKernel(cl_context gContext,
       try {
         stream.open(i);
       } catch (std::system_error& e) {
-		fprintf(stderr, "<error> %s\n", e.code().message().c_str());
+        fprintf(stderr, "<error> %s\n", e.code().message().c_str());
         return false;
       }
       std::string str((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
       sourceFile.append(str);
     }
-    
+
     printf("<info> source: %u bytes\n", (unsigned)sourceFile.size());
     if(sourceFile.size() < 1){
       fprintf(stderr, "<error> source files not found or empty\n");
