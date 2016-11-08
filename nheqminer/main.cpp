@@ -81,6 +81,8 @@ extern "C" void stratum_sigint_handler(int signum)
 	if (scSigAVXC75_SA) scSigAVXC75_SA->disconnect();
 	if (scSigSSE2C75_SA) scSigSSE2C75_SA->disconnect();
 	if (scSigAVXCSA80_SA) scSigAVXCSA80_SA->disconnect();
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	exit(0);
 }
 
 void print_help()
