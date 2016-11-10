@@ -90,7 +90,7 @@ Under Ubuntu open a terminal and run the following commands:
   - `cmake -DXENON=1 ..`
   - `make`
 
-Note: for the fastest miner, it is recommended to use `cmake -DXENON=2 ..`
+Note: for the fastest miner, it is recommended to use `cmake -DXENON=1 ..`
 
 ## Windows cmake **recommended** (Tested on Fedora 23):
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
