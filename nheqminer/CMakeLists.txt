@@ -5,6 +5,8 @@ option(STATIC_BUILD "Build with static libraries on Linux")
 option(XENON "Build options with xenoncat")
 option(MARCH "GCC options for architecture (default: native)")
 option(MOPT "GCC options for optimization (default: -O3)")
+option(NONINTEL "Set true if running on non-intel architectures")
+
 
 project(nheqminer)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -79,6 +81,17 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	endif()
 endif()
 
+if (NONINTEL)
+	add_definitions("-D__NONINTEL__")
+	set (TROMPBLAKE "trompequihash/blake2-ref")
+	set (TROMPBLAKESOURCES "trompequihash/blake2-ref/blake2b-ref.c")
+	set (TROMPBLAKEHEADERS "${TROMPBLAKE}/blake2-impl.h" "${TROMPBLAKE}/blake2.h")
+else()
+	set (TROMPBLAKE "trompequihash/blake2")
+	set (TROMPBLAKESOURCES "${TROMPBLAKE}/blake2bx.cpp")
+	set (TROMPBLAKEHEADERS "${TROMPBLAKE}/blake2-config.h" "${TROMPBLAKE}/blake2-impl.h" "${TROMPBLAKE}/blake2-round.h" "${TROMPBLAKE}/blake2.h" "${TROMPBLAKE}/blake2b-load-sse2.h" "${TROMPBLAKE}/blake2b-load-sse41.h" "${TROMPBLAKE}/blake2b-round.h")
+endif()
+
 if (STATIC_BUILD)
 	set(Boost_USE_STATIC_LIBS   ON)
 else()
@@ -127,7 +140,10 @@ set(SOURCE_FILES
     libstratum/ZcashStratum.cpp
     primitives/block.cpp
     speed.cpp
-    trompequihash/blake2/blake2bx.cpp
+    ${TROMPBLAKESOURCES}
+#    trompequihash/blake2/blake2bx.cpp
+#    trompequihash/blake2-ref/blake2xb-ref.c
+#    trompequihash/blake2-ref/blake2b-ref.c
     uint256.cpp
     utilstrencodings.cpp
 
@@ -163,13 +179,7 @@ set(SOURCE_FILES
     streams.h
     support/allocators/zeroafterfree.h
     tinyformat.h
-    trompequihash/blake2/blake2-config.h
-    trompequihash/blake2/blake2-impl.h
-    trompequihash/blake2/blake2-round.h
-    trompequihash/blake2/blake2.h
-    trompequihash/blake2/blake2b-load-sse2.h
-    trompequihash/blake2/blake2b-load-sse41.h
-    trompequihash/blake2/blake2b-round.h
+    ${TROMPBLAKEHEADERS}
     trompequihash/equi.h
     trompequihash/equi_miner.h
     trompequihash/equi_miner2.h
@@ -202,10 +212,13 @@ endif()
 
 set(LIBS ${LIBS} ${Threads_LIBRARIES} ${Boost_LIBRARIES})
 
+get_directory_property( DirDefs COMPILE_DEFINITIONS )
+
 message("-- CXXFLAGS: ${CMAKE_CXX_FLAGS}")
 message("-- LIBS: ${LIBS}")
 message("-- XENON: ${XENON}")
 message("-- XENONCAT: ${XENONCAT}")
+message( "COMPILE_DEFINITIONS = ${DirDefs}" )
 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${dirs})

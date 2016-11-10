@@ -1,7 +1,11 @@
 // Equihash solver
 // Copyright (c) 2016-2016 John Tromp
 
+#ifdef __NONINTEL__
+#include "blake2-ref/blake2.h"
+#else
 #include "blake2/blake2.h"
+#endif
 #ifdef __APPLE__
 #include "osx_barrier.h"
 #include <machine/endian.h>

@@ -558,7 +558,7 @@ int detect_avx (void) {
 		return equiengine;
 	}
 	// if not set on commandline, auto-detect it!
-#if defined(__GNUC__) || defined(__MINGW32__)
+#if (!defined(__NONINTEL__)) && (defined(__GNUC__) || defined(__MINGW32__))
 #ifndef __clang__
 	if (__builtin_cpu_supports("avx2")) {
 		return 2;
