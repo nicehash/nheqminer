@@ -175,6 +175,7 @@ cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" -DCMAKE_TOOLCHAIN_FILE=../toolch
 
 Linux on Raspberry PI (Docker: kaffepanna/alpine-armv7-qemu):
 ```
+Host: apt-get install qemu qemu-user-static binfmt-support
 cmake -DNONINTEL=1 -DSTATIC_BUILD=1 -DMARCH="-Wall" ..
 ```
 
