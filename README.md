@@ -92,10 +92,9 @@ Under Ubuntu open a terminal and run the following commands:
 
 Note: for the fastest miner, it is recommended to use `cmake -DXENON=2 ..`
 
-## Windows cmake **recommended** (Tested on Fedora 22):
+## Windows cmake **recommended** (Tested on Fedora 23):
 You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
 Under Fedora open a terminal and run the following commands:
-
   - `sudo dnf install mingw64-winpthreads-static mingw64-boost-static cmake make git`
   - `git clone --recursive https://github.com/kost/nheqminer.git`
   - `cd nheqminer/nheqminer`
@@ -126,6 +125,28 @@ Under Mac open a terminal and run the following commands:
   - `cmake -DXENON=1 -DSTATIC_BUILD=1 ..`
   - `make`
   
+## Linux cmake on Raspberry PI (Tested on Raspberry PI 2):
+You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
+Under Raspbian open a terminal and run the following commands:
+  - `sudo apt-get install git cmake build-essential libboost-all-dev`
+  - `git clone --recursive https://github.com/kost/nheqminer.git`
+  - `cd nheqminer/nheqminer`
+  - `mkdir build`
+  - `cd build`
+  - `cmake -DNONINTEL=1 ..`
+  - `make`
+
+## Linux cmake on Raspberry PI (Tested on Alpine on Raspberry PI):
+You should have **CMake** installed (2.8 minimal version), boost (install from the repositories or download boost manually build and install it manually), download the sources manually or via git. 
+Under Alpine open a terminal and run the following commands:
+  - `sudo apk add --update git cmake make gcc g++ libc-dev boost-dev`
+  - `git clone --recursive https://github.com/kost/nheqminer.git`
+  - `cd nheqminer/nheqminer`
+  - `mkdir build`
+  - `cd build`
+  - `cmake -DNONINTEL=1 -DSTATIC_BUILD=1 ..`
+  - `make`
+
 ## Windows (Microsoft Visual Studio - needs tweaking):
 Windows builds made by us are available here: https://github.com/kost/nheqminer/releases
 
@@ -147,9 +168,14 @@ Mac OS X:
 cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" ..
 ```
 
-Windows (on Fedora 22 with MingW):
+Windows (on Fedora 23 with MingW) (Docker: fedora:23):
 ```
 cmake -DXENON=1 -DSTATIC_BUILD=1 -DMARCH="-m64" -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw64.cmake ..
+```
+
+Linux on Raspberry PI (Docker: kaffepanna/alpine-armv7-qemu):
+```
+cmake -DNONINTEL=1 -DSTATIC_BUILD=1 -DMARCH="-Wall" ..
 ```
 
 
