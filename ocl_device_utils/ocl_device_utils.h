@@ -29,6 +29,7 @@ private:
 	static bool _hasQueried;
 	static std::vector<std::string> _platformNames;
 	static std::vector<PrintInfo> _devicesPlatformsDevices;
+	static std::vector<cl::Device> _AllDevices;
 
 	static std::string StringnNullTerminatorFix(const std::string& str);
 };

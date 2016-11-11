@@ -7,6 +7,27 @@
 extern cl_platform_id gPlatform;
 // extern cl_program gProgram;
 
+std::vector<cl_device_id> GetAllDevices()
+{
+	std::vector<cl_device_id> retval;
+	retval.reserve(8);
+
+	cl_platform_id platforms[64];
+	cl_uint numPlatforms;
+	cl_int rc = clGetPlatformIDs(sizeof(platforms) / sizeof(cl_platform_id), platforms, &numPlatforms);
+
+	for (cl_uint i = 0; i < numPlatforms; i++) {
+		cl_uint numDevices = 0;
+		cl_device_id devices[64];
+		rc = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU | CL_DEVICE_TYPE_ACCELERATOR, sizeof(devices) / sizeof(cl_device_id), devices, &numDevices);
+		for (cl_uint n = 0; n < numDevices; n++) {
+			retval.push_back(devices[n]);
+		}
+	}
+
+	return retval;
+}
+
 bool clInitialize(int requiredPlatform, std::vector<cl_device_id> &gpus)
 {
   cl_platform_id platforms[64];

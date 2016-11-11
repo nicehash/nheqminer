@@ -34,10 +34,8 @@ void CPU_TROMP::solve(const char *tequihash_header,
 	if (cancelf()) return;
 
 	eq.digitK(0);
-
-	for (unsigned s = 0; s < eq.nsols; s++)
-	{
-		std::vector<uint32_t> index_vector(PROOFSIZE);
+	std::vector<uint32_t> index_vector(PROOFSIZE);
+	for (unsigned s = 0; s < eq.nsols; s++) {
 		for (u32 i = 0; i < PROOFSIZE; i++) {
 			index_vector[i] = eq.sols[s][i];
 		}

@@ -84,7 +84,7 @@ uint ht_store(uint round, __global char *ht, uint i,
     __global char       *p;
     uint                cnt;
 #if NR_ROWS_LOG == 16
-    if (!(round % 2))
+    if (!(round & 1))
 	row = (xi0 & 0xffff);
     else
 	// if we have in hex: "ab cd ef..." (little endian xi0) then this
@@ -94,21 +94,21 @@ uint ht_store(uint round, __global char *ht, uint i,
 	row = ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
 	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
 #elif NR_ROWS_LOG == 18
-    if (!(round % 2))
+    if (!(round & 1))
 	row = (xi0 & 0xffff) | ((xi0 & 0xc00000) >> 6);
     else
 	row = ((xi0 & 0xc0000) >> 2) |
 	    ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
 	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
 #elif NR_ROWS_LOG == 19
-    if (!(round % 2))
+    if (!(round & 1))
 	row = (xi0 & 0xffff) | ((xi0 & 0xe00000) >> 5);
     else
 	row = ((xi0 & 0xe0000) >> 1) |
 	    ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
 	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
 #elif NR_ROWS_LOG == 20
-    if (!(round % 2))
+    if (!(round & 1))
 	row = (xi0 & 0xffff) | ((xi0 & 0xf00000) >> 4);
     else
 	row = ((xi0 & 0xf0000) >> 0) |
@@ -137,16 +137,22 @@ uint ht_store(uint round, __global char *ht, uint i,
     else if (round == 2)
       {
 	// store 20 bytes
-	*(__global ulong *)(p + 0) = xi0;
-	*(__global ulong *)(p + 8) = xi1;
-	*(__global uint *)(p + 16) = xi2;
+	*(__global uint *)(p + 0) = xi0;
+	*(__global ulong *)(p + 4) = (xi0 >> 32) | (xi1 << 32);
+	*(__global ulong *)(p + 12) = (xi1 >> 32) | (xi2 << 32);
       }
-    else if (round == 3 || round == 4)
+    else if (round == 3)
+      {
+	// store 16 bytes
+	*(__global uint *)(p + 0) = xi0;
+	*(__global ulong *)(p + 4) = (xi0 >> 32) | (xi1 << 32);
+	*(__global uint *)(p + 12) = (xi1 >> 32);
+      }
+    else if (round == 4)
       {
 	// store 16 bytes
 	*(__global ulong *)(p + 0) = xi0;
 	*(__global ulong *)(p + 8) = xi1;
-
       }
     else if (round == 5)
       {
@@ -157,7 +163,8 @@ uint ht_store(uint round, __global char *ht, uint i,
     else if (round == 6 || round == 7)
       {
 	// store 8 bytes
-	*(__global ulong *)(p + 0) = xi0;
+	*(__global uint *)(p + 0) = xi0;
+	*(__global uint *)(p + 4) = (xi0 >> 32);
       }
     else if (round == 8)
       {
@@ -220,7 +227,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
         // mix in length of data
         v[12] ^= ZCASH_BLOCK_HEADER_LEN + 4 /* length of "i" */;
         // last block
-        v[14] ^= -1;
+        v[14] ^= (ulong)-1;
 
         // round 1
         mix(v[0], v[4], v[8],  v[12], 0, word1);
@@ -403,6 +410,25 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 #endif
 
 /*
+** Access a half-aligned long, that is a long aligned on a 4-byte boundary.
+*/
+ulong half_aligned_long(__global ulong *p, uint offset)
+{
+    return
+    (((ulong)*(__global uint *)((__global char *)p + offset + 0)) << 0) |
+    (((ulong)*(__global uint *)((__global char *)p + offset + 4)) << 32);
+}
+
+/*
+** Access a well-aligned int.
+*/
+uint well_aligned_int(__global ulong *_p, uint offset)
+{
+    __global char *p = (__global char *)_p;
+    return *(__global uint *)(p + offset);
+}
+
+/*
 ** XOR a pair of Xi values computed at "round - 1" and store the result in the
 ** hash table being built for "round". Note that when building the table for
 ** even rounds we need to skip 1 padding byte present in the "round - 1" table
@@ -436,15 +462,15 @@ uint xor_and_store(uint round, __global char *ht_dst, uint row,
     else if (round == 3)
       {
 	// xor 20 bytes
-	xi0 = *a++ ^ *b++;
-	xi1 = *a++ ^ *b++;
-	xi2 = *(__global uint *)a ^ *(__global uint *)b;
+	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
+	xi1 = half_aligned_long(a, 8) ^ half_aligned_long(b, 8);
+	xi2 = well_aligned_int(a, 16) ^ well_aligned_int(b, 16);
       }
     else if (round == 4 || round == 5)
       {
 	// xor 16 bytes
-	xi0 = *a++ ^ *b++;
-	xi1 = *a ^ *b;
+	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
+	xi1 = half_aligned_long(a, 8) ^ half_aligned_long(b, 8);
 	xi2 = 0;
 	if (round == 4)
 	  {
@@ -469,7 +495,7 @@ uint xor_and_store(uint round, __global char *ht_dst, uint row,
     else if (round == 7 || round == 8)
       {
 	// xor 8 bytes
-	xi0 = *a ^ *b;
+	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
 	xi1 = 0;
 	xi2 = 0;
 	if (round == 8)
@@ -508,18 +534,19 @@ void equihash_round(uint round, __global char *ht_src, __global char *ht_dst,
     ushort		collisions[NR_SLOTS * 3];
     uint                nr_coll = 0;
     uint                n;
-    uint                dropped_coll, dropped_stor;
+    uint		dropped_coll = 0;
+    uint		dropped_stor = 0;
     __global ulong      *a, *b;
     uint		xi_offset;
     // read first words of Xi from the previous (round - 1) hash table
     xi_offset = xi_offset_for_round(round - 1);
     // the mask is also computed to read data from the previous round
 #if NR_ROWS_LOG == 16
-    mask = ((!(round % 2)) ? 0x0f : 0xf0);
+    mask = ((!(round & 1)) ? 0x0f : 0xf0);
 #elif NR_ROWS_LOG == 18
-    mask = ((!(round % 2)) ? 0x03 : 0x30);
+    mask = ((!(round & 1)) ? 0x03 : 0x30);
 #elif NR_ROWS_LOG == 19
-    mask = ((!(round % 2)) ? 0x01 : 0x10);
+    mask = ((!(round & 1)) ? 0x01 : 0x10);
 #elif NR_ROWS_LOG == 20
     mask = 0; /* we can vastly simplify the code below */
 #else
@@ -528,14 +555,18 @@ void equihash_round(uint round, __global char *ht_src, __global char *ht_dst,
     p = (ht_src + tid * NR_SLOTS * SLOT_LEN);
     cnt = *(__global uint *)p;
     cnt = min(cnt, (uint)NR_SLOTS); // handle possible overflow in prev. round
+    if (!cnt)
+	// no elements in row, no collisions
+	return ;
+#if NR_ROWS_LOG != 20 || !OPTIM_SIMPLIFY_ROUND
     p += xi_offset;
     for (i = 0; i < cnt; i++, p += SLOT_LEN)
         first_words[i] = *(__global uchar *)p;
+#endif
     // find collisions
-    nr_coll = 0;
-    dropped_coll = 0;
     for (i = 0; i < cnt; i++)
         for (j = i + 1; j < cnt; j++)
+#if NR_ROWS_LOG != 20 || !OPTIM_SIMPLIFY_ROUND
             if ((first_words[i] & mask) ==
 		    (first_words[j] & mask))
               {
@@ -552,11 +583,13 @@ void equihash_round(uint round, __global char *ht_src, __global char *ht_dst,
 #endif
               }
     // XOR colliding pairs of Xi
-    dropped_stor = 0;
     for (n = 0; n < nr_coll; n++)
       {
         i = collisions[n] & 0xff;
         j = collisions[n] >> 8;
+#else
+      {
+#endif
         a = (__global ulong *)
             (ht_src + tid * NR_SLOTS * SLOT_LEN + i * SLOT_LEN + xi_offset);
         b = (__global ulong *)
@@ -603,14 +636,13 @@ void kernel_round8(__global char *ht_src, __global char *ht_dst,
 
 uint expand_ref(__global char *ht, uint xi_offset, uint row, uint slot)
 {
-    return *(__global uint *)(ht + row * NR_SLOTS * SLOT_LEN +
-	    slot * SLOT_LEN + xi_offset - 4);
+    return *(__global uint *)(ht + row * NR_SLOTS * SLOT_LEN + slot * SLOT_LEN + xi_offset - 4);
 }
 
 void expand_refs(__global uint *ins, uint nr_inputs, __global char **htabs,
 	uint round)
 {
-    __global char	*ht = htabs[round % 2];
+    __global char	*ht = htabs[round & 1];
     uint		i = nr_inputs - 1;
     uint		j = nr_inputs * 2 - 1;
     uint		xi_offset = xi_offset_for_round(round);
@@ -662,7 +694,7 @@ void kernel_sols(__global char *ht0, __global char *ht1, __global sols_t *sols)
 {
     uint		tid = get_global_id(0);
     __global char	*htabs[2] = { ht0, ht1 };
-    uint		ht_i = (PARAM_K - 1) % 2; // table filled at last round
+    uint		ht_i = (PARAM_K - 1) & 1; // table filled at last round
     uint		cnt;
     uint		xi_offset = xi_offset_for_round(PARAM_K - 1);
     uint		i, j;

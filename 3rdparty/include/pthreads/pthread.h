@@ -249,7 +249,7 @@ enum {
 #    define NEED_ERRNO
 #    define NEED_SEM
 #  endif
-#  if defined(__MINGW64__)
+#  if defined(__MINGW64__) || !defined(_CRT_NO_TIME_T)
 #    define HAVE_STRUCT_TIMESPEC
 #    define HAVE_MODE_T
 #  elif defined(_UWIN) || defined(__MINGW32__)

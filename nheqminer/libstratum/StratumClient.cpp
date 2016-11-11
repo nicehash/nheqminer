@@ -426,8 +426,12 @@ template class StratumClient<ZMinerAVXCUDA80_XMP, ZcashJob, EquihashSolution>;
 template class StratumClient<ZMinerSSE2CUDA80_XMP, ZcashJob, EquihashSolution>;
 template class StratumClient<ZMinerAVXCUDA75_XMP, ZcashJob, EquihashSolution>;
 template class StratumClient<ZMinerSSE2CUDA75_XMP, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerAVXCUDASA80_XMP, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerSSE2CUDASA80_XMP, ZcashJob, EquihashSolution>;
 // Silentarmy
 template class StratumClient<ZMinerAVXCUDA80_SA, ZcashJob, EquihashSolution>;
 template class StratumClient<ZMinerSSE2CUDA80_SA, ZcashJob, EquihashSolution>;
 template class StratumClient<ZMinerAVXCUDA75_SA, ZcashJob, EquihashSolution>;
 template class StratumClient<ZMinerSSE2CUDA75_SA, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerAVXCUDASA80_SA, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerSSE2CUDASA80_SA, ZcashJob, EquihashSolution>;

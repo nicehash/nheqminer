@@ -1,3 +1,5 @@
+#pragma once
+
 #define PARAM_N				200
 #define PARAM_K				9
 #define PREFIX                          (PARAM_N / (PARAM_K + 1))
@@ -60,10 +62,3 @@
 
 // An (uncompressed) solution stores (1 << PARAM_K) 32-bit values
 #define SOL_SIZE			((1 << PARAM_K) * 4)
-typedef struct	sols_s
-{
-    uint	nr;
-    uint	likely_invalids;
-    uchar	valid[MAX_SOLS];
-    uint	values[MAX_SOLS][(1 << PARAM_K)];
-}		sols_t;

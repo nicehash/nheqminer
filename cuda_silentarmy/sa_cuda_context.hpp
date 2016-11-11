@@ -1,3 +1,5 @@
+#pragma once
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -8,6 +10,7 @@
 #define _SNPRINTF snprintf
 #endif
 
+
 #define checkCudaErrors(call)								\
 do {														\
 	cudaError_t err = call;									\
@@ -16,26 +19,21 @@ do {														\
         _SNPRINTF(errorBuff, sizeof(errorBuff) - 1,			\
 			"CUDA error '%s' in func '%s' line %d",			\
 			cudaGetErrorString(err), __FUNCTION__, __LINE__);	\
-			fprintf(stderr, "%s\n", errorBuff);\
 		}														\
 } while (0)
-//throw std::runtime_error(errorBuff);				\
 
-struct equi;
 
-struct eq_cuda_context
+struct c_context;
+
+struct sa_cuda_context
 {
 	int threadsperblock;
 	int totalblocks;
 	int device_id;
-	equi* eq;
-	equi* device_eq;
-	uint32_t *heap0, *heap1;
-	void* sol_memory;
-	proof* solutions;
+	c_context* eq;
 
-	eq_cuda_context(int tpb, int blocks, int id);
-	~eq_cuda_context();
+	sa_cuda_context(int tpb, int blocks, int id);
+	~sa_cuda_context();
 
 	void solve(const char *tequihash_header,
 		unsigned int tequihash_header_len,

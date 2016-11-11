@@ -25,7 +25,7 @@ base_uint<BITS>& base_uint<BITS>::operator<<=(unsigned int shift)
     for (int i = 0; i < WIDTH; i++)
         pn[i] = 0;
     int k = shift / 32;
-    shift = shift % 32;
+    shift = shift & 31;
     for (int i = 0; i < WIDTH; i++) {
         if (i + k + 1 < WIDTH && shift != 0)
             pn[i + k + 1] |= (a.pn[i] >> (32 - shift));
@@ -42,7 +42,7 @@ base_uint<BITS>& base_uint<BITS>::operator>>=(unsigned int shift)
     for (int i = 0; i < WIDTH; i++)
         pn[i] = 0;
     int k = shift / 32;
-    shift = shift % 32;
+    shift = shift & 31;
     for (int i = 0; i < WIDTH; i++) {
         if (i - k - 1 >= 0 && shift != 0)
             pn[i - k - 1] |= (a.pn[i] << (32 - shift));

@@ -96,12 +96,10 @@ bool OclContext::init(
 	size_t              dbg_size = 1;
 #endif
 
-	buf_dbg = check_clCreateBuffer(_context, CL_MEM_READ_WRITE |
-		CL_MEM_HOST_NO_ACCESS, dbg_size, NULL);
+	buf_dbg = check_clCreateBuffer(_context, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, dbg_size, NULL);
 	buf_ht[0] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, HT_SIZE, NULL);
 	buf_ht[1] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, HT_SIZE, NULL);
-	buf_sols = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, sizeof(sols_t),
-		NULL);
+	buf_sols = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, sizeof(sols_t), NULL);
 
 
 	fprintf(stderr, "Hash tables will use %.1f MB\n", 2.0 * HT_SIZE / 1e6);
@@ -362,86 +360,107 @@ ocl_silentarmy::ocl_silentarmy(int platf_id, int dev_id) {
 }
 
 std::string ocl_silentarmy::getdevinfo() {
-	/*TODO get name*/
-	return "GPU_ID(" + std::to_string(device_id)+ ")";
+	static auto devices = GetAllDevices();
+	auto device = devices[device_id];
+	std::vector<char> name(256, 0);
+	size_t nActualSize = 0;
+	std::string gpu_name;
+
+	cl_int rc = clGetDeviceInfo(device, CL_DEVICE_NAME, name.size(), &name[0], &nActualSize);
+
+	gpu_name.assign(&name[0], nActualSize);
+
+	return "GPU_ID( " + gpu_name + ")";
 }
 
 // STATICS START
-int ocl_silentarmy::getcount() { /*TODO*/
-	return 0;
+int ocl_silentarmy::getcount() {
+	static auto devices = GetAllDevices();
+	return devices.size();
 }
 
-void ocl_silentarmy::getinfo(int platf_id, int d_id, std::string& gpu_name, int& sm_count, std::string& version) { /*TODO*/ }
+void ocl_silentarmy::getinfo(int platf_id, int d_id, std::string& gpu_name, int& sm_count, std::string& version) { 
+	static auto devices = GetAllDevices();
+
+	if (devices.size() <= d_id) {
+		return;
+	}
+	auto device = devices[d_id];
+
+	std::vector<char> name(256, 0);
+	cl_uint compute_units = 0;
+
+	size_t nActualSize = 0;
+	cl_int rc = clGetDeviceInfo(device, CL_DEVICE_NAME, name.size(), &name[0], &nActualSize);
+
+	if (rc == CL_SUCCESS) {
+		gpu_name.assign(&name[0], nActualSize);
+	}
+
+	rc = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(cl_uint), &compute_units, &nActualSize);
+	if (rc == CL_SUCCESS) {
+		sm_count = (int)compute_units;
+	}
+
+	memset(&name[0], 0, name.size());
+	rc = clGetDeviceInfo(device, CL_DEVICE_VERSION, name.size(), &name[0], &nActualSize);
+	if (rc == CL_SUCCESS) {
+		version.assign(&name[0], nActualSize);
+	}
+}
 
 void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 	/*TODO*/
 	device_context.is_init_success = false;
-	device_context.oclc = new OclContext();
+	device_context.oclc = new OclContext;
+	auto devices = GetAllDevices();
+	auto device = devices[device_context.device_id];
 
-	std::vector<cl_device_id> allGpus;
-	if (!clInitialize(device_context.platform_id, allGpus)) {
-		return;
-	}
-
-	// this is kinda stupid but it works
-	std::vector<cl_device_id> gpus;
-	for (unsigned i = 0; i < allGpus.size(); ++i) {
-		if (i == device_context.device_id) {
-			printf("Using device %d as GPU %d\n", i, (int)gpus.size());
-			device_context.oclc->_dev_id = allGpus[i];
-			gpus.push_back(allGpus[i]);
-		}
-	}
-
-	if (!gpus.size()){
-		printf("Device id %d not found\n", device_context.device_id);
-		return;
-	}
+	size_t nActualSize = 0;
+	cl_platform_id platform_id = nullptr;
+	cl_int rc = clGetDeviceInfo(device, CL_DEVICE_PLATFORM, sizeof(cl_platform_id), &platform_id, &nActualSize);
+	
+	device_context.oclc->_dev_id = device;
+	device_context.oclc->platform_id = platform_id;
 
 	// context create
-	for (unsigned i = 0; i < gpus.size(); i++) {
-		cl_context_properties props[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)device_context.oclc->platform_id, 0 };
-		cl_int error;
-		device_context.oclc->_context = clCreateContext(NULL, 1, &gpus[i], 0, 0, &error);
-		//OCLR(error, false);
-		if (cl_int err = error) {
-			printf("OpenCL error: %d at %s:%d\n", err, __FILE__, __LINE__);
-			return;
-		}
+	cl_context_properties props[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)device_context.oclc->platform_id, 0 };
+	cl_int error;
+	device_context.oclc->_context = clCreateContext(NULL, 1, &device, 0, 0, &error);
+	//OCLR(error, false);
+	if (cl_int err = error) {
+		printf("OpenCL error: %d at %s:%d\n", err, __FILE__, __LINE__);
+		return;
 	}
 
-	std::vector<cl_int> binstatus;
-	binstatus.resize(gpus.size());
+	cl_int binstatus;
 
-	for (size_t i = 0; i < gpus.size(); i++) {
-		char kernelName[64];
-		sprintf(kernelName, "silentarmy_gpu%u.bin", (unsigned)i);
-		if (!clCompileKernel(device_context.oclc->_context,
-			gpus[i],
-			kernelName,
-			{ "zcash/gpu/kernel.cl" },
-			"",
-			&binstatus[i],
-			&device_context.oclc->_program)) {
-			return;
-		}
+	char kernelName[64];
+	sprintf(kernelName, "silentarmy_gpu_%u.bin", (unsigned)device_context.device_id);
+	if (!clCompileKernel(device_context.oclc->_context,
+		device,
+		kernelName,
+		{ "zcash/gpu/kernel.cl" },
+		"",
+		&binstatus,
+		&device_context.oclc->_program)) {
+		return;
 	}
 
-	for (unsigned i = 0; i < gpus.size(); ++i) {
-		if (binstatus[i] == CL_SUCCESS) {
-			if (!device_context.oclc->init(gpus[i], device_context.threadsNum, device_context.wokrsize)) {
-				printf("Init failed");
-				return;
-			}
-		}
-		else {
-			printf("GPU %d: failed to load kernel\n", i);
+	if (binstatus == CL_SUCCESS) {
+		if (!device_context.oclc->init(device, device_context.threadsNum, device_context.wokrsize)) {
+			printf("Init failed");
 			return;
 		}
+	} else {
+		printf("GPU %d: failed to load kernel\n", device_context.device_id);
+		return;
 	}
 
 	device_context.is_init_success = true;
 }
+
+#include <iostream>
 
 void ocl_silentarmy::stop(ocl_silentarmy& device_context) {
 	if (device_context.oclc != nullptr) delete device_context.oclc;
@@ -475,18 +494,19 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 
 	for (unsigned round = 0; round < PARAM_K; round++)
 	{
-		if (round < 2)
-			init_ht(miner->queue, miner->k_init_ht, miner->buf_ht[round % 2]);
+		if (round < 2) {
+			init_ht(miner->queue, miner->k_init_ht, miner->buf_ht[round & 1]);
+		}
 		if (!round)
 		{
 			check_clSetKernelArg(miner->k_rounds[round], 0, &buf_blake_st);
-			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round % 2]);
+			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round & 1]);
 			miner->global_ws = select_work_size_blake();
 		}
 		else
 		{
-			check_clSetKernelArg(miner->k_rounds[round], 0, &miner->buf_ht[(round - 1) % 2]);
-			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round % 2]);
+			check_clSetKernelArg(miner->k_rounds[round], 0, &miner->buf_ht[(round - 1) & 1]);
+			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round & 1]);
 			miner->global_ws = NR_ROWS;
 		}
 		check_clSetKernelArg(miner->k_rounds[round], 2, &miner->buf_dbg);
