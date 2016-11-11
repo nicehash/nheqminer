@@ -30,15 +30,8 @@ CREATE_SOLVER_STUB(cpu_xenoncat, "cpu_xenoncat_STUB")
 #endif
 #ifdef USE_CUDA_TROMP
 #include "../cuda_tromp/cuda_tromp.hpp"
-
-// TODO fix this
-#ifndef WIN32
-CREATE_SOLVER_STUB(cuda_tromp_75, "cuda_tromp_75_STUB")
-#endif
-
 #else
-CREATE_SOLVER_STUB(cuda_tromp, "cuda_tromp_STUB")
-CREATE_SOLVER_STUB(cuda_tromp_75, "cuda_tromp_75_STUB")
+CREATE_SOLVER_STUB(cpu_tromp, "cuda_tromp_STUB")
 #endif
 #ifdef USE_OCL_XMP
 #include "../ocl_xpm/ocl_xmp.hpp"
@@ -156,45 +149,34 @@ public:
 
 // 8 combos make sure not to go beyond this
 // ocl_xmp
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVXCUDA80_XMP;
-typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2CUDA80_XMP;
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_xmp> ZMinerAVXCUDA75_XMP;
-typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_xmp> ZMinerSSE2CUDA75_XMP;
-typedef ZcashMiner<cpu_tromp, cuda_sa_solver, ocl_xmp> ZMinerSSE2CUDASA80_XMP;
-typedef ZcashMiner<cpu_xenoncat, cuda_sa_solver, ocl_xmp> ZMinerAVXCUDASA80_XMP;
-
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVXCUDA_XMP;
+typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2CUDA_XMP;
+typedef ZcashMiner<cpu_xenoncat, cuda_sa_solver, ocl_xmp> ZMinerAVXCUDASA_XMP;
+typedef ZcashMiner<cpu_tromp, cuda_sa_solver, ocl_xmp> ZMinerSSE2CUDASA_XMP;
 // ocl_silentarmy
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_silentarmy> ZMinerAVXCUDA80_SA;
-typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_silentarmy> ZMinerSSE2CUDA80_SA;
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_silentarmy> ZMinerAVXCUDA75_SA;
-typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_silentarmy> ZMinerSSE2CUDA75_SA;
-typedef ZcashMiner<cpu_tromp, cuda_sa_solver, ocl_silentarmy> ZMinerSSE2CUDASA80_SA;
-typedef ZcashMiner<cpu_xenoncat, cuda_sa_solver, ocl_silentarmy> ZMinerAVXCUDASA80_SA;
+typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_silentarmy> ZMinerAVXCUDA_SA;
+typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_silentarmy> ZMinerSSE2CUDA_SA;
+typedef ZcashMiner<cpu_xenoncat, cuda_sa_solver, ocl_silentarmy> ZMinerAVXCUDASA_SA;
+typedef ZcashMiner<cpu_tromp, cuda_sa_solver, ocl_silentarmy> ZMinerSSE2CUDASA_SA;
+
+// gcc static undefined reference workaround
 
 // ocl_xmp
-// gcc static undefined reference workaround
-void ZMinerAVXCUDA80_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+void ZMinerAVXCUDA_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
     int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerSSE2CUDA80_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+void ZMinerSSE2CUDA_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
     int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerAVXCUDA75_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+void ZMinerAVXCUDASA_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
     int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerSSE2CUDA75_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+void ZMinerSSE2CUDASA_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
     int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerAVXCUDASA80_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerSSE2CUDASA80_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
+
 // ocl_silentarmy
-void ZMinerAVXCUDA80_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+void ZMinerAVXCUDA_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
     int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerSSE2CUDA80_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+void ZMinerSSE2CUDA_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
     int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerAVXCUDA75_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+void ZMinerAVXCUDASA_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
     int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerSSE2CUDA75_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
+void ZMinerSSE2CUDASA_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
     int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerAVXCUDASA80_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
-void ZMinerSSE2CUDASA80_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t);
