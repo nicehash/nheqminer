@@ -238,13 +238,13 @@ int main(int argc, char* argv[])
 #endif
 
 	std::cout << std::endl;
-	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
-	std::cout << "\t\tEquihash CPU&GPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
+	std::cout << "\t==========================================================" << std::endl;
+	std::cout << "\t\tEquihash CPU & GPU Miner v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "\tThanks to Zcash developers for providing base of the code." << std::endl;
-	std::cout << "\t       Special thanks to tromp, xenoncat, mbevand "<< std::endl;
-	std::cout << "\t          maz and eXtremal-ik7 for providing " << std::endl;
+	std::cout << "\t  Special thanks to nicehash, tromp, xenoncat, mbevand, "<< std::endl;
+	std::cout << "\t        maztheman and eXtremal-ik7 for providing " << std::endl;
 	std::cout << "\t      optimized CPU, CUDA and AMD equihash solvers." << std::endl;
-	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
+	std::cout << "\t==========================================================" << std::endl;
 	std::cout << std::endl;
 
 	std::string location = "equihash.eu.nicehash.com:3357";

@@ -1,5 +1,6 @@
 # Donation
-If you like what im doing consider donating BTC to 18KXbLfgVt9zLxEuboPCmjpuvLL7VtjPhm
+If you like what im doing consider donating BTC to 18KXbLfgVt9zLxEuboPCmjpuvLL7VtjPhm (maztheman)
+and/or 1AJdfCpLWPNoAMDfHF1wD5y8VgKSSTHxPo (tpruvot)
 
 # Build instructions:
 
@@ -13,8 +14,7 @@ Windows builds made by us are available here: https://github.com/nicehash/nheqmi
 Download and install:
 - [AMD APP SDK](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/) (if not needed remove **USE_OCL_XMP** from **nheqminer** Preprocessor definitions under Properties > C/C++ > Preprocessor)
 - [CUDA SDK](https://developer.nvidia.com/cuda-downloads) (if not needed remove **USE_CUDA_TROMP** from **nheqminer** Preprocessor definitions under Properties > C/C++ > Preprocessor)
-- Visual Studio 2015 Community: https://www.visualstudio.com/post-download-vs/?sku=community&clcid=0x409&telem=ga
-- Visual Studio Update 3 installed
+- Tested with Visual Studio 2013 Update 4 and 5 installed
 - 64 bit version only
 
 Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build. You will have to build ReleaseSSE2 cpu_tromp project first, then Release7.5 cuda_tromp project, then select Release and build all.
