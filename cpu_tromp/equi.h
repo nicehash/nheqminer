@@ -46,6 +46,8 @@ typedef unsigned char uchar;
 
 typedef u32 proof[PROOFSIZE];
 
+#define constexpr const
+
 void setheader(blake2b_state *ctx, const char *header, const u32 headerLen, const char* nce, const u32 nonceLen) {
   uint32_t le_N = WN;
   uint32_t le_K = WK;

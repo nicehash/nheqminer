@@ -49,7 +49,7 @@ __constant__ ulong blake_iv[] =
 __global__
 void kernel_init_ht(char *ht)
 {
-	static uint stride = NR_SLOTS * SLOT_LEN;//(((1 << (((200 / (9 + 1)) + 1) - 20)) * 6) * 32);
+	const uint stride = NR_SLOTS * SLOT_LEN;//(((1 << (((200 / (9 + 1)) + 1) - 20)) * 6) * 32);
 	uint tid = blockIdx.x * blockDim.x + threadIdx.x;
 	for (uint i = tid; i < NR_ROWS; i += (gridDim.x * blockDim.x)) {
 		*(uint*)(ht + i * stride) = 0;
@@ -399,6 +399,9 @@ __device__ uint xor_and_store(uint round, char *ht_dst, uint row, uint slot_a, u
 */
 __device__ void equihash_round(uint round, char *ht_src, char *ht_dst, uint *debug)
 {
+	const uint size = NR_ROWS;
+	const uint stride = NR_SLOTS * SLOT_LEN;
+
 	uint                tid = blockIdx.x * blockDim.x + threadIdx.x;
 	char				*p;
 	uint                cnt;
@@ -406,8 +409,6 @@ __device__ void equihash_round(uint round, char *ht_src, char *ht_dst, uint *deb
 	uint				dropped_stor = 0;
 	ulong				*a, *b;
 	uint				xi_offset;
-	static uint			size = NR_ROWS;
-	static uint			stride = NR_SLOTS * SLOT_LEN;
 	xi_offset = (8 + ((round - 1) / 2) * 4);
 
 	for (uint ii = tid; ii < size; ii += (blockDim.x * gridDim.x)) {

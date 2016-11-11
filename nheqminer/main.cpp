@@ -49,9 +49,9 @@ namespace keywords = boost::log::keywords;
 
 int use_avx = 0;
 int use_avx2 = 0;
-int use_old_cuda = 1;
+int use_old_cuda = 0;
 int use_old_xmp = 0;
-int use_cuda_sa = 0;
+int use_cuda_sa = 1;
 
 // _XMP
 static ZcashStratumClientAVXCUDA80_XMP* scSigAVXC80_XMP = nullptr;
