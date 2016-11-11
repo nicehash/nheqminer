@@ -31,7 +31,12 @@ CREATE_SOLVER_STUB(cpu_xenoncat, "cpu_xenoncat_STUB")
 #ifdef USE_CUDA_TROMP
 #include "../cuda_tromp/cuda_tromp.hpp"
 #else
-CREATE_SOLVER_STUB(cpu_tromp, "cuda_tromp_STUB")
+CREATE_SOLVER_STUB(cuda_tromp, "cuda_tromp_STUB")
+#endif
+#ifdef USE_CUDA_SA
+#include "../cuda_silentarmy/cuda_silentarmy.hpp"
+#else
+CREATE_SOLVER_STUB(cuda_sa_solver, "cuda_silentarmy_STUB")
 #endif
 #ifdef USE_OCL_XMP
 #include "../ocl_xpm/ocl_xmp.hpp"
@@ -43,8 +48,6 @@ CREATE_SOLVER_STUB(ocl_xmp, "ocl_xmp_STUB")
 #else
 CREATE_SOLVER_STUB(ocl_silentarmy, "ocl_silentarmy_STUB")
 #endif
-
-#include "../cuda_silentarmy/cuda_silentarmy.hpp"
 
 using namespace json_spirit;
 
