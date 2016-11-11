@@ -23,10 +23,10 @@
 #define COMPRESSED_PROOFSIZE ((COLLISION_BIT_LENGTH+1)*PROOFSIZE*4/(8*sizeof(uint32_t)))
 
 
-typedef unsigned int uint;
-typedef unsigned char uchar;
-typedef unsigned long long  ulong;
-typedef unsigned short ushort;
+typedef uint32_t uint;
+typedef uint8_t uchar;
+typedef uint64_t ulong;
+typedef uint16_t ushort;
 typedef uint32_t u32;
 
 typedef struct sols_s

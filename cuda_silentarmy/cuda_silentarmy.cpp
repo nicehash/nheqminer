@@ -25,8 +25,8 @@ std::string cuda_sa_solver::getdevinfo()
 
 int cuda_sa_solver::getcount()
 {
-	int device_count;
-	checkCudaErrors(cudaGetDeviceCount(&device_count));
+	int device_count = 0;
+	cudaGetDeviceCount(&device_count);
 	return device_count;
 }
 

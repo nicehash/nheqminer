@@ -30,8 +30,8 @@ std::string SOLVER_NAME::getdevinfo()
 
 int SOLVER_NAME::getcount()
 {
-	int device_count;
-	checkCudaErrors(cudaGetDeviceCount(&device_count));
+	int device_count = 0;
+	cudaGetDeviceCount(&device_count);
 	return device_count;
 }
 
