@@ -449,6 +449,10 @@ int main(int argc, char* argv[])
 				return 0;
 			}
 
+			if (location.find("stratum+tcp://") != std::string::npos) {
+				location = location.substr(14);
+			}
+
 			size_t delim = location.find(':');
 			std::string host = delim != std::string::npos ? location.substr(0, delim) : location;
 			std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
