@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
 	std::cout << "\t\tEquihash CPU & GPU Miner v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "\tThanks to Zcash developers for providing base of the code." << std::endl;
 	std::cout << "\t  Special thanks to nicehash, tromp, xenoncat, mbevand, "<< std::endl;
-	std::cout << "\t        maztheman and eXtremal-ik7 for providing " << std::endl;
+	std::cout << "\t     maztheman, krnlx and eXtremal-ik7 for providing " << std::endl;
 	std::cout << "\t      optimized CPU, CUDA and AMD equihash solvers." << std::endl;
 	std::cout << "\t==========================================================" << std::endl;
 	std::cout << std::endl;
