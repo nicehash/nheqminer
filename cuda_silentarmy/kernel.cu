@@ -12,11 +12,8 @@
 #include "param.h"
 #include "sa_blake.h"
 
-
-
 #define THRD 64
 #define BLK (NR_ROWS/THRD)
-
 
 #define WN PARAM_N
 #define WK PARAM_K
@@ -29,6 +26,12 @@
 #define DIGITBITS (WN/(NDIGITS))
 #define PROOFSIZE (1u<<WK)
 #define COMPRESSED_PROOFSIZE ((COLLISION_BIT_LENGTH+1)*PROOFSIZE*4/(8*sizeof(uint32_t)))
+
+#ifdef __INTELLISENSE__
+#define atomicAdd(p,v) *(p) += v
+#define atomicSub(p,v) *(p) -= v
+#define min(a,b) (a > b ? b : a)
+#endif
 
 typedef uint32_t uint;
 typedef uint8_t uchar;
@@ -74,18 +77,14 @@ typedef uint32_t u32;
 #error "unsupported NR_ROWS_LOG"
 #endif
 
-
-
-
-__constant__ ulong blake_iv[] =
-{
+__constant__ ulong blake_iv[] = {
 	0x6a09e667f3bcc908, 0xbb67ae8584caa73b,
 	0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
 	0x510e527fade682d1, 0x9b05688c2b3e6c1f,
 	0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
 };
 
-//OPENCL TO CUDA
+// OPENCL TO CUDA
 
 #define __global
 #define __local __shared__
@@ -94,8 +93,7 @@ __constant__ ulong blake_iv[] =
 #define get_local_id(F) (threadIdx.x)
 #define get_local_size(F) (blockDim.x)
 #define barrier(F) __syncthreads()
-
-//#define barrier(F) __threadfence()
+//#define barrier(F) __threadfence_block()
 
 #define atomic_add(A,X) atomicAdd(A,X)
 #define atomic_inc(A) atomic_add(A,1)
@@ -104,113 +102,105 @@ __constant__ ulong blake_iv[] =
 __global__
 void kernel_init_ht(__global char *ht, __global uint *rowCounters)
 {
-    rowCounters[get_global_id(0)] = 0;
+	rowCounters[get_global_id(0)] = 0;
 }
 
 
-__device__ uint ht_store(uint round, char *ht, uint i, ulong xi0, ulong xi1, ulong xi2, ulong xi3,uint *rowCounters)
+__device__ uint ht_store(uint round, char *ht, uint i, ulong xi0, ulong xi1, ulong xi2, ulong xi3, uint *rowCounters)
 {
-	    uint    row;
-    __global char       *p;
-    uint                cnt;
+	__global char *p;
+	uint row;
+	uint cnt;
 #if NR_ROWS_LOG == 16
-    if (!(round % 2))
-	row = (xi0 & 0xffff);
-    else
+	if (!(round & 1))
+		row = (xi0 & 0xffff);
+	else
 	// if we have in hex: "ab cd ef..." (little endian xi0) then this
 	// formula computes the row as 0xdebc. it skips the 'a' nibble as it
 	// is part of the PREFIX. The Xi will be stored starting with "ef...";
 	// 'e' will be considered padding and 'f' is part of the current PREFIX
-	row = ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
-	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
+		row = ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
+		((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
 #elif NR_ROWS_LOG == 18
-    if (!(round % 2))
-	row = (xi0 & 0xffff) | ((xi0 & 0xc00000) >> 6);
-    else
-	row = ((xi0 & 0xc0000) >> 2) |
-	    ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
-	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
+	if (!(round & 1))
+		row = (xi0 & 0xffff) | ((xi0 & 0xc00000) >> 6);
+	else
+		row = ((xi0 & 0xc0000) >> 2) |
+		((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
+		((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
 #elif NR_ROWS_LOG == 19
-    if (!(round % 2))
-	row = (xi0 & 0xffff) | ((xi0 & 0xe00000) >> 5);
-    else
-	row = ((xi0 & 0xe0000) >> 1) |
-	    ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
-	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
+	if (!(round & 1))
+		row = (xi0 & 0xffff) | ((xi0 & 0xe00000) >> 5);
+	else
+		row = ((xi0 & 0xe0000) >> 1) |
+			((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
+			((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
 #elif NR_ROWS_LOG == 20
-    if (!(round % 2))
-	row = (xi0 & 0xffff) | ((xi0 & 0xf00000) >> 4);
-    else
-	row = ((xi0 & 0xf0000) >> 0) |
-	    ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
-	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
+	if (!(round & 1))
+		row = (xi0 & 0xffff) | ((xi0 & 0xf00000) >> 4);
+	else
+		row = ((xi0 & 0xf0000) >> 0) |
+			((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
+			((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
 #else
 #error "unsupported NR_ROWS_LOG"
 #endif
-    xi0 = (xi0 >> 16) | (xi1 << (64 - 16));
-    xi1 = (xi1 >> 16) | (xi2 << (64 - 16));
-    xi2 = (xi2 >> 16) | (xi3 << (64 - 16));
-    p = ht + row * NR_SLOTS * SLOT_LEN;
-    uint rowIdx = row/ROWS_PER_UINT;
-    uint rowOffset = BITS_PER_ROW*(row%ROWS_PER_UINT);
-    uint xcnt = atomic_add(rowCounters + rowIdx, 1 << rowOffset);
-    xcnt = (xcnt >> rowOffset) & ROW_MASK;
-    cnt = xcnt;
-     if (cnt >= NR_SLOTS)
-       {
- 	// avoid overflows
- 	atomic_sub(rowCounters + rowIdx, 1 << rowOffset);
-  	return 1;
-       }
+	xi0 = (xi0 >> 16) | (xi1 << (64 - 16));
+	xi1 = (xi1 >> 16) | (xi2 << (64 - 16));
+	xi2 = (xi2 >> 16) | (xi3 << (64 - 16));
+	p = ht + row * NR_SLOTS * SLOT_LEN;
+	uint rowIdx = row/ROWS_PER_UINT;
+	uint rowOffset = BITS_PER_ROW*(row%ROWS_PER_UINT);
+	uint xcnt = atomic_add(rowCounters + rowIdx, 1 << rowOffset);
+	xcnt = (xcnt >> rowOffset) & ROW_MASK;
+	cnt = xcnt;
+	if (cnt >= NR_SLOTS) {
+		// avoid overflows
+		atomic_sub(rowCounters + rowIdx, 1 << rowOffset);
+		return 1;
+	}
 
-    p += cnt * SLOT_LEN + xi_offset_for_round(round);
-    // store "i" (always 4 bytes before Xi)
-    *(__global uint *)(p - 4) = i;
-    if (round == 0 || round == 1)
-      {
-	// store 24 bytes
-	*(__global ulong *)(p + 0) = xi0;
-	*(__global ulong *)(p + 8) = xi1;
-	*(__global ulong *)(p + 16) = xi2;
-      }
-    else if (round == 2)
-      {
-	// store 20 bytes
-	*(__global uint *)(p + 0) = xi0;
-	*(__global ulong *)(p + 4) = (xi0 >> 32) | (xi1 << 32);
-	*(__global ulong *)(p + 12) = (xi1 >> 32) | (xi2 << 32);
-      }
-    else if (round == 3)
-      {
-	// store 16 bytes
-	*(__global uint *)(p + 0) = xi0;
-	*(__global ulong *)(p + 4) = (xi0 >> 32) | (xi1 << 32);
-	*(__global uint *)(p + 12) = (xi1 >> 32);
-      }
-    else if (round == 4)
-      {
-	// store 16 bytes
-	*(__global ulong *)(p + 0) = xi0;
-	*(__global ulong *)(p + 8) = xi1;
-      }
-    else if (round == 5)
-      {
-	// store 12 bytes
-	*(__global ulong *)(p + 0) = xi0;
-	*(__global uint *)(p + 8) = xi1;
-      }
-    else if (round == 6 || round == 7)
-      {
-	// store 8 bytes
-	*(__global uint *)(p + 0) = xi0;
-	*(__global uint *)(p + 4) = (xi0 >> 32);
-      }
-    else if (round == 8)
-      {
-	// store 4 bytes
-	*(__global uint *)(p + 0) = xi0;
-      }
-    return 0;
+	p += cnt * SLOT_LEN + xi_offset_for_round(round);
+	// store "i" (always 4 bytes before Xi)
+	*(__global uint *)(p - 4) = i;
+	if (round == 0 || round == 1) {
+		// store 24 bytes
+		*(__global ulong *)(p + 0) = xi0;
+		*(__global ulong *)(p + 8) = xi1;
+		*(__global ulong *)(p + 16) = xi2;
+	}
+	else if (round == 2) {
+		// store 20 bytes
+		*(__global uint *)(p + 0) = xi0;
+		*(__global ulong *)(p + 4) = (xi0 >> 32) | (xi1 << 32);
+		*(__global ulong *)(p + 12) = (xi1 >> 32) | (xi2 << 32);
+	}
+	else if (round == 3) {
+		// store 16 bytes
+		*(__global uint *)(p + 0) = xi0;
+		*(__global ulong *)(p + 4) = (xi0 >> 32) | (xi1 << 32);
+		*(__global uint *)(p + 12) = (xi1 >> 32);
+	}
+	else if (round == 4) {
+		// store 16 bytes
+		*(__global ulong *)(p + 0) = xi0;
+		*(__global ulong *)(p + 8) = xi1;
+	}
+	else if (round == 5) {
+		// store 12 bytes
+		*(__global ulong *)(p + 0) = xi0;
+		*(__global uint *)(p + 8) = xi1;
+	}
+	else if (round == 6 || round == 7) {
+		// store 8 bytes
+		*(__global uint *)(p + 0) = xi0;
+		*(__global uint *)(p + 4) = (xi0 >> 32);
+	}
+	else if (round == 8) {
+		// store 4 bytes
+		*(__global uint *)(p + 0) = xi0;
+	}
+	return 0;
 }
 
 
@@ -230,14 +220,15 @@ __global__
 void kernel_round0(__global ulong *blake_state, __global char *ht,
 	__global uint *rowCounters, __global uint *debug)
 {
-    uint                tid = get_global_id(0);
-    ulong               v[16];
-    uint                inputs_per_thread = NR_INPUTS / get_global_size(0);
-    uint                input = tid * inputs_per_thread;
-    uint                input_end = (tid + 1) * inputs_per_thread;
-    uint                dropped = 0;
-    while (input < input_end)
-      {
+	uint tid = get_global_id(0);
+	ulong v[16];
+	uint inputs_per_thread = NR_INPUTS / get_global_size(0);
+	uint input = tid * inputs_per_thread;
+	uint input_end = (tid + 1) * inputs_per_thread;
+	uint dropped = 0;
+
+	while (input < input_end)
+	{
 	// shift "i" to occupy the high 32 bits of the second ulong word in the
 	// message block
 	ulong word1 = (ulong)input << 32;
@@ -390,6 +381,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 		h[1],
 		h[2],
 		h[3], rowCounters);
+
 	dropped += ht_store(0, ht, input * 2 + 1,
 		(h[3] >> 8) | (h[4] << (64 - 8)),
 		(h[4] >> 8) | (h[5] << (64 - 8)),
@@ -400,15 +392,15 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 #endif
 
 	input++;
-      }
+	}
 #ifdef ENABLE_DEBUG
-    debug[tid * 2] = 0;
-    debug[tid * 2 + 1] = dropped;
+	debug[tid * 2] = 0;
+	debug[tid * 2 + 1] = dropped;
 #endif
 }
 
-
-__device__ ulong half_aligned_long(ulong *p, uint offset)
+__device__
+ulong half_aligned_long(ulong *p, uint offset)
 {
 	return
 		(((ulong)*(uint *)((char *)p + offset + 0)) << 0) |
@@ -418,7 +410,8 @@ __device__ ulong half_aligned_long(ulong *p, uint offset)
 /*
 ** Access a well-aligned int.
 */
-__device__ uint well_aligned_int(ulong *_p, uint offset)
+__device__
+uint well_aligned_int(ulong *_p, uint offset)
 {
 	char *p = (char *)_p;
 	return *(uint *)(p + offset);
@@ -439,80 +432,71 @@ uint xor_and_store(uint round, __global char *ht_dst, uint row,
 	uint slot_a, uint slot_b, __global ulong *a, __global ulong *b,
 	__global uint *rowCounters)
 {
-    ulong xi0, xi1, xi2;
+	ulong xi0, xi1, xi2;
 #if NR_ROWS_LOG >= 16 && NR_ROWS_LOG <= 20
-    // Note: for NR_ROWS_LOG == 20, for odd rounds, we could optimize by not
-    // storing the byte containing bits from the previous PREFIX block for
-    if (round == 1 || round == 2)
-      {
-	// xor 24 bytes
-	xi0 = *(a++) ^ *(b++);
-	xi1 = *(a++) ^ *(b++);
-	xi2 = *a ^ *b;
-	if (round == 2)
-	  {
-	    // skip padding byte
-	    xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
-	    xi1 = (xi1 >> 8) | (xi2 << (64 - 8));
-	    xi2 = (xi2 >> 8);
-	  }
-      }
-    else if (round == 3)
-      {
-	// xor 20 bytes
-	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
-	xi1 = half_aligned_long(a, 8) ^ half_aligned_long(b, 8);
-	xi2 = well_aligned_int(a, 16) ^ well_aligned_int(b, 16);
-      }
-    else if (round == 4 || round == 5)
-      {
-	// xor 16 bytes
-	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
-	xi1 = half_aligned_long(a, 8) ^ half_aligned_long(b, 8);
-	xi2 = 0;
-	if (round == 4)
-	  {
-	    // skip padding byte
-	    xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
-	    xi1 = (xi1 >> 8);
-	  }
-      }
-    else if (round == 6)
-      {
-	// xor 12 bytes
-	xi0 = *a++ ^ *b++;
-	xi1 = *(__global uint *)a ^ *(__global uint *)b;
-	xi2 = 0;
-	if (round == 6)
-	  {
-	    // skip padding byte
-	    xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
-	    xi1 = (xi1 >> 8);
-	  }
-      }
-    else if (round == 7 || round == 8)
-      {
-	// xor 8 bytes
-	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
-	xi1 = 0;
-	xi2 = 0;
-	if (round == 8)
-	  {
-	    // skip padding byte
-	    xi0 = (xi0 >> 8);
-	  }
-      }
-    // invalid solutions (which start happenning in round 5) have duplicate
-    // inputs and xor to zero, so discard them
-    if (!xi0 && !xi1)
+	// Note: for NR_ROWS_LOG == 20, for odd rounds, we could optimize by not
+	// storing the byte containing bits from the previous PREFIX block for
+	if (round == 1 || round == 2)
+	{
+		// xor 24 bytes
+		xi0 = *(a++) ^ *(b++);
+		xi1 = *(a++) ^ *(b++);
+		xi2 = *a ^ *b;
+		if (round == 2) {
+			// skip padding byte
+			xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
+			xi1 = (xi1 >> 8) | (xi2 << (64 - 8));
+			xi2 = (xi2 >> 8);
+		}
+	}
+	else if (round == 3) {
+		// xor 20 bytes
+		xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
+		xi1 = half_aligned_long(a, 8) ^ half_aligned_long(b, 8);
+		xi2 = well_aligned_int(a, 16) ^ well_aligned_int(b, 16);
+	}
+	else if (round == 4 || round == 5) {
+		// xor 16 bytes
+		xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
+		xi1 = half_aligned_long(a, 8) ^ half_aligned_long(b, 8);
+		xi2 = 0;
+		if (round == 4) {
+			// skip padding byte
+			xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
+			xi1 = (xi1 >> 8);
+		}
+	}
+	else if (round == 6) {
+		// xor 12 bytes
+		xi0 = *a++ ^ *b++;
+		xi1 = *(__global uint *)a ^ *(__global uint *)b;
+		xi2 = 0;
+		if (round == 6) {
+			// skip padding byte
+			xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
+			xi1 = (xi1 >> 8);
+		}
+	}
+	else if (round == 7 || round == 8) {
+		// xor 8 bytes
+		xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
+		xi1 = 0;
+		xi2 = 0;
+		if (round == 8) {
+			// skip padding byte
+			xi0 = (xi0 >> 8);
+		}
+	}
+	// invalid solutions (which start happenning in round 5) have duplicate
+	// inputs and xor to zero, so discard them
+	if (!xi0 && !xi1)
 	return 0;
 #else
 #error "unsupported NR_ROWS_LOG"
 #endif
-    return ht_store(round, ht_dst, ENCODE_INPUTS(row, slot_a, slot_b),
-	    xi0, xi1, xi2, 0, rowCounters);
+	return ht_store(round, ht_dst, ENCODE_INPUTS(row, slot_a, slot_b),
+		xi0, xi1, xi2, 0, rowCounters);
 }
-
 
 /*
 ** Execute one Equihash round. Read from ht_src, XOR colliding pairs of Xi,
@@ -529,128 +513,118 @@ void equihash_round(uint round,
 	__global uint *rowCountersSrc,
 	__global uint *rowCountersDst)
 {
-    uint		tid = get_global_id(0);
-    uint		tlid = get_local_id(0);
-    __global char	*p;
-    uint		cnt;
-    uchar	*first_words = &first_words_data[(NR_SLOTS)*tlid];
-    uchar		mask;
-    uint		i, j;
-    // NR_SLOTS is already oversized (by a factor of OVERHEAD), but we want to
-    // make it even larger
+	uint		tid = get_global_id(0);
+	uint		tlid = get_local_id(0);
+	__global char	*p;
+	uint		cnt;
+	uchar	*first_words = &first_words_data[(NR_SLOTS)*tlid];
+	uchar		mask;
+	uint		i, j;
+	// NR_SLOTS is already oversized (by a factor of OVERHEAD), but we want to
+	// make it even larger
 #ifdef ENABLE_DEBUG
 	uint dropped_coll = 0;
-	uint dropped_stor = 0;
 #endif
+	uint dropped_stor = 0;
 	__global ulong	*a, *b;
-    uint		xi_offset;
-    // read first words of Xi from the previous (round - 1) hash table
-    xi_offset = xi_offset_for_round(round - 1);
-    // the mask is also computed to read data from the previous round
+	// read first words of Xi from the previous (round - 1) hash table
+	uint xi_offset = xi_offset_for_round(round - 1);
+	// the mask is also computed to read data from the previous round
 #if NR_ROWS_LOG == 16
-    mask = ((!(round % 2)) ? 0x0f : 0xf0);
+	mask = ((!(round % 2)) ? 0x0f : 0xf0);
 #elif NR_ROWS_LOG == 18
-    mask = ((!(round % 2)) ? 0x03 : 0x30);
+	mask = ((!(round % 2)) ? 0x03 : 0x30);
 #elif NR_ROWS_LOG == 19
-    mask = ((!(round % 2)) ? 0x01 : 0x10);
+	mask = ((!(round % 2)) ? 0x01 : 0x10);
 #elif NR_ROWS_LOG == 20
-    mask = 0; /* we can vastly simplify the code below */
+	mask = 0; /* we can vastly simplify the code below */
 #else
 #error "unsupported NR_ROWS_LOG"
 #endif
-    uint thCollNum = 0;
-    *collisionsNum = 0;
-    //barrier(CLK_LOCAL_MEM_FENCE);
-    p = (ht_src + tid * NR_SLOTS * SLOT_LEN);
-    uint rowIdx = tid/ROWS_PER_UINT;
-    uint rowOffset = BITS_PER_ROW*(tid%ROWS_PER_UINT);
-    cnt = (rowCountersSrc[rowIdx] >> rowOffset) & ROW_MASK;
-    cnt = min(cnt, (uint)NR_SLOTS); // handle possible overflow in prev. round
-    if (!cnt)
+	uint thCollNum = 0;
+	*collisionsNum = 0;
+	//barrier(CLK_LOCAL_MEM_FENCE);
+	p = (ht_src + tid * NR_SLOTS * SLOT_LEN);
+	uint rowIdx = tid/ROWS_PER_UINT;
+	uint rowOffset = BITS_PER_ROW*(tid%ROWS_PER_UINT);
+
+	cnt = (rowCountersSrc[rowIdx] >> rowOffset) & ROW_MASK;
+	cnt = min(cnt, (uint)NR_SLOTS); // handle possible overflow in prev. round
 	// no elements in row, no collisions
-	goto part2;
-    p += xi_offset;
-    for (i = 0; i < cnt; i++, p += SLOT_LEN)
+	if (!cnt) goto part2;
+
+	p += xi_offset;
+	for (i = 0; i < cnt; i++, p += SLOT_LEN)
 	first_words[i] = (*(__global uchar *)p) & mask;
-    // find collisions
-    for (i = 0; i < cnt-1 && thCollNum < COLL_DATA_SIZE_PER_TH; i++)
-      {
-	uchar data_i = first_words[i];
-	uint collision = (tid << 10) | (i << 5) | (i + 1);
-	for (j = i+1; (j+4) < cnt;)
-	  {
-	      {
-		uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-		if (isColl)
-		  {
-		    thCollNum++;
-		    uint index = atomic_inc(collisionsNum);
-		    collisionsData[index] = collision;
-		  }
-		collision++;
-		j++;
-	      }
-	      {
-		uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-		if (isColl)
-		  {
-		    thCollNum++;
-		    uint index = atomic_inc(collisionsNum);
-		    collisionsData[index] = collision;
-		  }
-		collision++;
-		j++;
-	      }
-	      {
-		uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-		if (isColl)
-		  {
-		    thCollNum++;
-		    uint index = atomic_inc(collisionsNum);
-		    collisionsData[index] = collision;
-		  }
-		collision++;
-		j++;
-	      }
-	      {
-		uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-		if (isColl)
-		  {
-		    thCollNum++;
-		    uint index = atomic_inc(collisionsNum);
-		    collisionsData[index] = collision;
-		  }
-		collision++;
-		j++;
-	      }
-	  }
-	for (; j < cnt; j++)
-	  {
-	    uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-	    if (isColl)
-	      {
-		thCollNum++;
-		uint index = atomic_inc(collisionsNum);
-		collisionsData[index] = collision;
-	      }
-	    collision++;
-	  }
-      }
+	// find collisions
+	for (i = 0; i < cnt-1 && thCollNum < COLL_DATA_SIZE_PER_TH; i++)
+	{
+		uchar data_i = first_words[i];
+		uint collision = (tid << 10) | (i << 5) | (i + 1);
+		for (j = i+1; (j+4) < cnt;)
+		{{
+			uint isColl = ((data_i == first_words[j]) ? 1 : 0);
+			if (isColl) {
+				thCollNum++;
+				uint index = atomic_inc(collisionsNum);
+				collisionsData[index] = collision;
+			}
+			collision++;
+			j++;
+		}{
+			uint isColl = ((data_i == first_words[j]) ? 1 : 0);
+			if (isColl) {
+				thCollNum++;
+				uint index = atomic_inc(collisionsNum);
+				collisionsData[index] = collision;
+			}
+			collision++;
+			j++;
+		}{
+			uint isColl = ((data_i == first_words[j]) ? 1 : 0);
+			if (isColl) {
+				thCollNum++;
+				uint index = atomic_inc(collisionsNum);
+				collisionsData[index] = collision;
+			}
+			collision++;
+			j++;
+		}{
+			uint isColl = ((data_i == first_words[j]) ? 1 : 0);
+			if (isColl) {
+				thCollNum++;
+				uint index = atomic_inc(collisionsNum);
+				collisionsData[index] = collision;
+			}
+			collision++;
+			j++;
+		}} // for
+
+		for (; j < cnt; j++)
+		{
+			uint isColl = ((data_i == first_words[j]) ? 1 : 0);
+			if (isColl) {
+				thCollNum++;
+				uint index = atomic_inc(collisionsNum);
+				collisionsData[index] = collision;
+			}
+			collision++;
+		}
+	}
 
 part2:
-    barrier(CLK_LOCAL_MEM_FENCE);
-    uint totalCollisions = *collisionsNum;
-    for (uint index = tlid; index < totalCollisions; index += get_local_size(0))
-      {
-	uint collision = collisionsData[index];
-	uint collisionThreadId = collision >> 10;
-	uint i = (collision >> 5) & 0x1F;
-	uint j = collision & 0x1F;
-	__global char *ptr = ht_src + collisionThreadId * NR_SLOTS * SLOT_LEN +
-	    xi_offset;
-	a = (__global ulong *)(ptr + i * SLOT_LEN);
-	b = (__global ulong *)(ptr + j * SLOT_LEN);
-	dropped_stor += xor_and_store(round, ht_dst, collisionThreadId, i, j,
+	barrier(CLK_LOCAL_MEM_FENCE);
+	uint totalCollisions = *collisionsNum;
+	for (uint index = tlid; index < totalCollisions; index += get_local_size(0))
+	{
+		uint collision = collisionsData[index];
+		uint collisionThreadId = collision >> 10;
+		uint i = (collision >> 5) & 0x1F;
+		uint j = collision & 0x1F;
+		__global char *ptr = ht_src + collisionThreadId * NR_SLOTS * SLOT_LEN + xi_offset;
+		a = (__global ulong *)(ptr + i * SLOT_LEN);
+		b = (__global ulong *)(ptr + j * SLOT_LEN);
+		dropped_stor += xor_and_store(round, ht_dst, collisionThreadId, i, j,
 		a, b, rowCountersDst);
 	}
 #ifdef ENABLE_DEBUG
@@ -660,20 +634,19 @@ part2:
 }
 
 
-
 /*
 ** This defines kernel_round1, kernel_round2, ..., kernel_round7.
 */
 #define KERNEL_ROUND(N) \
 __global__ void kernel_round ## N(__global char *ht_src, __global char *ht_dst, \
 	__global uint *rowCountersSrc, __global uint *rowCountersDst, \
-       	__global uint *debug) \
+	__global uint *debug) \
 { \
-    __local uchar first_words_data[(NR_SLOTS)*THRD]; \
-    __local uint    collisionsData[COLL_DATA_SIZE_PER_TH * THRD];\
-    __local uint    collisionsNum; \
-    equihash_round(N, ht_src, ht_dst, debug, first_words_data, collisionsData, \
-	    &collisionsNum, rowCountersSrc, rowCountersDst); \
+	__local uchar first_words_data[(NR_SLOTS)*THRD]; \
+	__local uint collisionsData[COLL_DATA_SIZE_PER_TH * THRD]; \
+	__local uint collisionsNum; \
+	equihash_round(N, ht_src, ht_dst, debug, first_words_data, collisionsData, \
+		&collisionsNum, rowCountersSrc, rowCountersDst); \
 }
 KERNEL_ROUND(1)
 KERNEL_ROUND(2)
@@ -690,56 +663,52 @@ void kernel_round8(__global char *ht_src, __global char *ht_dst,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst,
 	__global uint *debug, __global sols_t *sols)
 {
-    uint		tid = get_global_id(0);
-    __local uchar	first_words_data[(NR_SLOTS)*THRD];
-    __local uint    collisionsData[COLL_DATA_SIZE_PER_TH * THRD];
-    __local uint	collisionsNum;
-    equihash_round(8, ht_src, ht_dst, debug, first_words_data, collisionsData,
-	    &collisionsNum, rowCountersSrc, rowCountersDst);
-    if (!tid)
-	sols->nr = sols->likely_invalids = 0;
+	uint tid = get_global_id(0);
+	__local uchar	first_words_data[(NR_SLOTS)*THRD];
+	__local uint    collisionsData[COLL_DATA_SIZE_PER_TH * THRD];
+	__local uint	collisionsNum;
+	equihash_round(8, ht_src, ht_dst, debug, first_words_data, collisionsData,
+		&collisionsNum, rowCountersSrc, rowCountersDst);
+	if (!tid)
+		sols->nr = sols->likely_invalids = 0;
 }
 
 
 __device__ 
 uint expand_ref(__global char *ht, uint xi_offset, uint row, uint slot)
 {
-    return *(__global uint *)(ht + row * NR_SLOTS * SLOT_LEN +
-	    slot * SLOT_LEN + xi_offset - 4);
+	return *(__global uint *)(ht + row * NR_SLOTS * SLOT_LEN +
+		slot * SLOT_LEN + xi_offset - 4);
 }
-
 
 __device__ 
 uint expand_refs(uint *ins, uint nr_inputs, __global char **htabs,
 	uint round)
 {
-    __global char	*ht = htabs[round % 2];
-    uint		i = nr_inputs - 1;
-    uint		j = nr_inputs * 2 - 1;
-    uint		xi_offset = xi_offset_for_round(round);
-    int			dup_to_watch = -1;
-    do
-      {
-	ins[j] = expand_ref(ht, xi_offset,
+	__global char *ht = htabs[round % 2];
+	uint i = nr_inputs - 1;
+	uint j = nr_inputs * 2 - 1;
+	uint xi_offset = xi_offset_for_round(round);
+	int  dup_to_watch = -1;
+	do {
+		ins[j] = expand_ref(ht, xi_offset,
 		DECODE_ROW(ins[i]), DECODE_SLOT1(ins[i]));
-	ins[j - 1] = expand_ref(ht, xi_offset,
+		ins[j - 1] = expand_ref(ht, xi_offset,
 		DECODE_ROW(ins[i]), DECODE_SLOT0(ins[i]));
-	if (!round)
-	  {
-	    if (dup_to_watch == -1)
-		dup_to_watch = ins[j];
-	    else if (ins[j] == dup_to_watch || ins[j - 1] == dup_to_watch)
-		return 0;
-	  }
-	if (!i)
-	    break ;
-	i--;
-	j -= 2;
-      }
-    while (1);
-    return 1;
+		if (!round) {
+		if (dup_to_watch == -1)
+			dup_to_watch = ins[j];
+		else if (ins[j] == dup_to_watch || ins[j - 1] == dup_to_watch)
+			return 0;
+		}
+		if (!i)
+			break ;
+		i--;
+		j -= 2;
+	}
+	while (1);
+	return 1;
 }
-
 
 /*
 ** Verify if a potential solution is in fact valid.
@@ -748,29 +717,29 @@ __device__
 void potential_sol(__global char **htabs, __global sols_t *sols,
 	uint ref0, uint ref1)
 {
-    uint	nr_values;
-    uint	values_tmp[(1 << PARAM_K)];
-    uint	sol_i;
-    uint	i;
-    nr_values = 0;
-    values_tmp[nr_values++] = ref0;
-    values_tmp[nr_values++] = ref1;
-    uint round = PARAM_K - 1;
-    do
-      {
-	round--;
-	if (!expand_refs(values_tmp, nr_values, htabs, round))
-	    return ;
-	nr_values *= 2;
-      }
-    while (round > 0);
-    // solution appears valid, copy it to sols
-    sol_i = atomic_inc(&sols->nr);
-    if (sol_i >= MAX_SOLS)
-	return ;
-    for (i = 0; i < (1 << PARAM_K); i++)
-	sols->values[sol_i][i] = values_tmp[i];
-    sols->valid[sol_i] = 1;
+	uint nr_values;
+	uint values_tmp[(1 << PARAM_K)];
+	uint sol_i;
+	uint i;
+	nr_values = 0;
+	values_tmp[nr_values++] = ref0;
+	values_tmp[nr_values++] = ref1;
+	uint round = PARAM_K - 1;
+
+	do {
+		round--;
+		if (!expand_refs(values_tmp, nr_values, htabs, round))
+			return;
+		nr_values *= 2;
+	} while (round > 0);
+
+	// solution appears valid, copy it to sols
+	sol_i = atomic_inc(&sols->nr);
+	if (sol_i >= MAX_SOLS)
+		return ;
+	for (i = 0; i < (1 << PARAM_K); i++)
+		sols->values[sol_i][i] = values_tmp[i];
+	sols->valid[sol_i] = 1;
 }
 
 
@@ -781,50 +750,48 @@ __global__
 void kernel_sols(__global char *ht0, __global char *ht1, __global sols_t *sols,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst)
 {
-    uint		tid = get_global_id(0);
-    __global char	*htabs[2] = { ht0, ht1 };
-    __global char	*hcounters[2] = { (char *)rowCountersSrc, (char *)rowCountersDst };
-    uint		ht_i = (PARAM_K - 1) % 2; // table filled at last round
-    uint		cnt;
-    uint		xi_offset = xi_offset_for_round(PARAM_K - 1);
-    uint		i, j;
-    __global char	*a, *b;
-    uint		ref_i, ref_j;
-    // it's ok for the collisions array to be so small, as if it fills up
-    // the potential solutions are likely invalid (many duplicate inputs)
-    ulong		collisions;
+	uint tid = get_global_id(0);
+	__global char	*htabs[2] = { ht0, ht1 };
+	//  __global char	*hcounters[2] = { (char *)rowCountersSrc, (char *)rowCountersDst };
+	uint ht_i = (PARAM_K - 1) % 2; // table filled at last round
+	uint cnt;
+	uint xi_offset = xi_offset_for_round(PARAM_K - 1);
+	uint i, j;
+	__global char	*a, *b;
+	uint ref_i, ref_j;
+	// it's ok for the collisions array to be so small, as if it fills up
+	// the potential solutions are likely invalid (many duplicate inputs)
+	ulong collisions;
 #if NR_ROWS_LOG >= 16 && NR_ROWS_LOG <= 20
-    // in the final hash table, we are looking for a match on both the bits
-    // part of the previous PREFIX colliding bits, and the last PREFIX bits.
-    uint		mask = 0xffffff;
+	// in the final hash table, we are looking for a match on both the bits
+	// part of the previous PREFIX colliding bits, and the last PREFIX bits.
+	uint mask = 0xffffff;
 #else
 #error "unsupported NR_ROWS_LOG"
 #endif
-    a = htabs[ht_i] + tid * NR_SLOTS * SLOT_LEN;
-    uint rowIdx = tid/ROWS_PER_UINT;
-    uint rowOffset = BITS_PER_ROW*(tid%ROWS_PER_UINT);
-    cnt = (rowCountersSrc[rowIdx] >> rowOffset) & ROW_MASK;
-    cnt = min(cnt, (uint)NR_SLOTS); // handle possible overflow in last round
-    a += xi_offset;
-    for (i = 0; i < cnt; i++, a += SLOT_LEN)
-      {
-	uint a_data = ((*(__global uint *)a) & mask);
-	ref_i = *(__global uint *)(a - 4);
-	for (j = i + 1, b = a + SLOT_LEN; j < cnt; j++, b += SLOT_LEN)
-	  {
-	    if (a_data == ((*(__global uint *)b) & mask))
-	      {
-		ref_j = *(__global uint *)(b - 4);
-		collisions = ((ulong)ref_i << 32) | ref_j;
-		goto exit1;
-	      }
-	  }
-      }
-    return;
-
+	a = htabs[ht_i] + tid * NR_SLOTS * SLOT_LEN;
+	uint rowIdx = tid/ROWS_PER_UINT;
+	uint rowOffset = BITS_PER_ROW*(tid%ROWS_PER_UINT);
+	cnt = (rowCountersSrc[rowIdx] >> rowOffset) & ROW_MASK;
+	cnt = min(cnt, (uint)NR_SLOTS); // handle possible overflow in last round
+	a += xi_offset;
+	for (i = 0; i < cnt; i++, a += SLOT_LEN)
+	{
+		uint a_data = ((*(__global uint *)a) & mask);
+		ref_i = *(__global uint *)(a - 4);
+		for (j = i + 1, b = a + SLOT_LEN; j < cnt; j++, b += SLOT_LEN)
+		{
+			if (a_data == ((*(__global uint *)b) & mask))
+			{
+				ref_j = *(__global uint *)(b - 4);
+				collisions = ((ulong)ref_i << 32) | ref_j;
+				goto exit1;
+			}
+		}
+	}
+	return;
 exit1:
-    potential_sol(htabs, sols, collisions >> 32, collisions & 0xffffffff);
-
+	potential_sol(htabs, sols, collisions >> 32, collisions & 0xffffffff);
 }
 
 struct __align__(64) c_context {
@@ -833,7 +800,6 @@ struct __align__(64) c_context {
 	sols_t	*sols;
 	u32 nthreads;
 	size_t global_ws;
-
 
 	c_context(const u32 n_threads) {
 		nthreads = n_threads;
@@ -847,10 +813,10 @@ struct __align__(64) c_context {
 };
 
 
-
+__host__
 static size_t select_work_size_blake(void)
 {
-	size_t              work_size =
+	size_t work_size =
 		64 * /* thread per wavefront */
 		BLAKE_WPS * /* wavefront per simd */
 		4 * /* simd per compute unit */
@@ -864,11 +830,12 @@ static size_t select_work_size_blake(void)
 	return work_size;
 }
 
+__host__
 static void sort_pair(uint32_t *a, uint32_t len)
 {
-	uint32_t    *b = a + len;
-	uint32_t     tmp, need_sorting = 0;
-	for (uint32_t i = 0; i < len; i++)
+	uint32_t *b = a + len;
+	uint32_t tmp, need_sorting = 0;
+	for (uint32_t i = 0; i < len; i++) {
 		if (need_sorting || a[i] > b[i])
 		{
 			need_sorting = 1;
@@ -878,8 +845,10 @@ static void sort_pair(uint32_t *a, uint32_t len)
 		}
 		else if (a[i] < b[i])
 			return;
+	}
 }
 
+__host__
 static uint32_t verify_sol(sols_t *sols, unsigned sol_i)
 {
 	uint32_t  *inputs = sols->values[sol_i];
@@ -910,6 +879,7 @@ static uint32_t verify_sol(sols_t *sols, unsigned sol_i)
 	return 1;
 }
 
+__host__
 static void compress(uint8_t *out, uint32_t *inputs, uint32_t n)
 {
 	uint32_t byte_pos = 0;
@@ -947,6 +917,7 @@ static void compress(uint8_t *out, uint32_t *inputs, uint32_t n)
 	}
 }
 
+__host__
 sa_cuda_context::sa_cuda_context(int tpb, int blocks, int id)
 	: threadsperblock(tpb), totalblocks(blocks), device_id(id)
 {
@@ -957,9 +928,9 @@ sa_cuda_context::sa_cuda_context(int tpb, int blocks, int id)
 
 	eq = new c_context(threadsperblock * totalblocks);
 #ifdef ENABLE_DEBUG
-	size_t              dbg_size = NR_ROWS;
+	size_t dbg_size = NR_ROWS;
 #else
-	size_t              dbg_size = 1;
+	size_t dbg_size = 1;
 #endif
 
 	checkCudaErrors(cudaMalloc((void**)&eq->buf_dbg, dbg_size));
@@ -972,6 +943,7 @@ sa_cuda_context::sa_cuda_context(int tpb, int blocks, int id)
 	eq->sols = (sols_t *)malloc(sizeof(*eq->sols));
 }
 
+__host__
 sa_cuda_context::~sa_cuda_context()
 {
 	checkCudaErrors(cudaSetDevice(device_id));
@@ -979,6 +951,7 @@ sa_cuda_context::~sa_cuda_context()
 	delete eq;
 }
 
+__host__
 void sa_cuda_context::solve(const char * tequihash_header, unsigned int tequihash_header_len, const char * nonce, unsigned int nonce_len, std::function<bool()> cancelf, std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf, std::function<void(void)> hashdonef)
 {
 	checkCudaErrors(cudaSetDevice(device_id));
@@ -990,7 +963,7 @@ void sa_cuda_context::solve(const char * tequihash_header, unsigned int tequihas
 	//printf("NR_SLOTS=%d NR_ROWS=%d\n",NR_SLOTS,NR_ROWS);
 	c_context *miner = eq;
 	
-	//FUNCTION<<<totalblocks, threadsperblock>>>(ARGUMENTS)
+	// FUNCTION <<<totalblocks, threadsperblock>>> (ARGUMENTS)
 
 	blake2b_state_t initialCtx;
 	zcash_blake2b_init(&initialCtx, ZCASH_HASH_LEN, PARAM_N, PARAM_K);
@@ -1000,59 +973,70 @@ void sa_cuda_context::solve(const char * tequihash_header, unsigned int tequihas
 	checkCudaErrors(cudaMalloc((void**)&buf_blake_st, sizeof(blake2b_state_s)));
 	checkCudaErrors(cudaMemcpy(buf_blake_st, &initialCtx, sizeof(blake2b_state_s), cudaMemcpyHostToDevice));
 	
-	for (unsigned round = 0; round < PARAM_K; round++) {
+	for (unsigned rnd = 0; rnd < PARAM_K; rnd++) {
 //		if (round < 2) {
-			//every round
-			checkCudaErrors(cudaMemset(miner->rowCounters[round % 2],0,NR_ROWS));
-//			kernel_init_ht<<<NR_ROWS / ROWS_PER_UINT / 256, 256>>>(miner->buf_ht[round & 1],(uint*)miner->rowCounters[round % 2]);
-//			printf("%d %d %d\n",NR_ROWS / ROWS_PER_UINT / 256, NR_ROWS,ROWS_PER_UINT);
+			// every round
+			checkCudaErrors(cudaMemset(miner->rowCounters[rnd % 2], 0, NR_ROWS));
+//			kernel_init_ht <<<NR_ROWS / ROWS_PER_UINT / 256, 256>>> (miner->buf_ht[round & 1], (uint*)miner->rowCounters[round % 2]);
+//			printf("%d %d %d\n",NR_ROWS / ROWS_PER_UINT / 256, NR_ROWS, ROWS_PER_UINT);
 //			exit(-1);
 //		}
-		if (!round)	{
+		if (!rnd)	{
 			miner->global_ws = select_work_size_blake();
 		} else {
 			miner->global_ws = NR_ROWS;
 		}
 		// cancel function
-		switch (round) {
+		switch (rnd) {
 		case 0:
-			kernel_round0<<<NR_INPUTS/THRD,THRD>>>((ulong*)buf_blake_st, miner->buf_ht[round & 1], (uint*)miner->rowCounters[round % 2],(uint*)miner->buf_dbg);
-//			printf("%d %d\n",totalblocks, NR_INPUTS);
-//                        exit(-1);
+			kernel_round0 <<<NR_INPUTS/THRD,THRD>>>
+				((ulong*)buf_blake_st, miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg);
+			//printf("%d %d\n",totalblocks, NR_INPUTS);
+			//exit(-1);
 			break;
 		case 1:
-			kernel_round1<<<BLK,THRD>>>(miner->buf_ht[(round - 1) & 1], miner->buf_ht[round & 1],(uint*)miner->rowCounters[(round - 1) % 2],(uint*)miner->rowCounters[round % 2], (uint*)miner->buf_dbg);
+			kernel_round1 <<<BLK,THRD>>>
+				(miner->buf_ht[(rnd - 1) & 1], miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[(rnd - 1) % 2], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg);
 			//exit(0);
 			break;
 		case 2:
-			kernel_round2<<<BLK,THRD>>>(miner->buf_ht[(round - 1) & 1], miner->buf_ht[round & 1], (uint*)miner->rowCounters[(round - 1) % 2],(uint*)miner->rowCounters[round % 2], (uint*)miner->buf_dbg);
-//			exit(0);
+			kernel_round2 <<<BLK,THRD>>>
+				(miner->buf_ht[(rnd - 1) & 1], miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[(rnd - 1) % 2], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg);
+			//exit(0);
 			break;
 		case 3:
-			kernel_round3<<<BLK,THRD>>>(miner->buf_ht[(round - 1) & 1], miner->buf_ht[round & 1],(uint*)miner->rowCounters[(round - 1) % 2],(uint*)miner->rowCounters[round % 2], (uint*)miner->buf_dbg);
+			kernel_round3 <<<BLK,THRD>>>
+				(miner->buf_ht[(rnd - 1) & 1], miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[(rnd - 1) % 2], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg);
 			break;
 		case 4:
-			kernel_round4<<<BLK,THRD>>>(miner->buf_ht[(round - 1) & 1], miner->buf_ht[round & 1],(uint*)miner->rowCounters[(round - 1) % 2],(uint*)miner->rowCounters[round % 2], (uint*)miner->buf_dbg);
+			kernel_round4 <<<BLK,THRD>>>
+				(miner->buf_ht[(rnd - 1) & 1], miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[(rnd - 1) % 2], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg);
 			break;
 		case 5:
-			kernel_round5<<<BLK,THRD>>>(miner->buf_ht[(round - 1) & 1], miner->buf_ht[round & 1],(uint*)miner->rowCounters[(round - 1) % 2],(uint*)miner->rowCounters[round % 2], (uint*)miner->buf_dbg);
-//exit(0);
+			kernel_round5 <<<BLK,THRD>>>
+				(miner->buf_ht[(rnd - 1) & 1], miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[(rnd - 1) % 2], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg);
+			//exit(0);
 			break;
 		case 6:
-			kernel_round6<<<BLK,THRD>>>(miner->buf_ht[(round - 1) & 1], miner->buf_ht[round & 1],(uint*)miner->rowCounters[(round - 1) % 2],(uint*)miner->rowCounters[round % 2], (uint*)miner->buf_dbg);
-	//	exit(0);
+			kernel_round6 <<<BLK,THRD>>>
+				(miner->buf_ht[(rnd - 1) & 1], miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[(rnd - 1) % 2], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg);
+			//exit(0);
 			break;
 		case 7:
-			kernel_round7<<<BLK,THRD>>>(miner->buf_ht[(round - 1) & 1], miner->buf_ht[round & 1],(uint*)miner->rowCounters[(round - 1) % 2],(uint*)miner->rowCounters[round % 2], (uint*)miner->buf_dbg);
-//			exit(0);
+			kernel_round7 <<<BLK,THRD>>>
+				(miner->buf_ht[(rnd - 1) & 1], miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[(rnd - 1) % 2], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg);
+			//exit(0);
 			break;
 		case 8:
-			kernel_round8<<<BLK,THRD>>>(miner->buf_ht[(round - 1) & 1], miner->buf_ht[round & 1],(uint*)miner->rowCounters[(round - 1) % 2],(uint*)miner->rowCounters[round % 2], (uint*)miner->buf_dbg, (sols_t*)miner->buf_sols);
+			kernel_round8 <<<BLK,THRD>>>
+				(miner->buf_ht[(rnd - 1) & 1], miner->buf_ht[rnd & 1], (uint*)miner->rowCounters[(rnd - 1) % 2], (uint*)miner->rowCounters[rnd % 2], (uint*)miner->buf_dbg, (sols_t*)miner->buf_sols);
 			break;
 		}
 		if (cancelf()) return;
 	}
-	kernel_sols<<<NR_ROWS/32,32>>>(miner->buf_ht[0], miner->buf_ht[1], (sols_t*)miner->buf_sols,(uint*)miner->rowCounters[0],(uint*)miner->rowCounters[1]);
+
+	kernel_sols <<<NR_ROWS/32,32>>>
+		(miner->buf_ht[0], miner->buf_ht[1], (sols_t*)miner->buf_sols, (uint*)miner->rowCounters[0], (uint*)miner->rowCounters[1]);
 
 	checkCudaErrors(cudaMemcpy(miner->sols, miner->buf_sols, sizeof(*miner->sols), cudaMemcpyDeviceToHost));
 
