@@ -152,6 +152,7 @@
     <CudaCompile Include="kernel.cu">
       <MaxRegCount Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </MaxRegCount>
+      <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Release|x64'">compute_52,sm_52;compute_50,sm_50;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
