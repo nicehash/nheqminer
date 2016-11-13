@@ -119,14 +119,31 @@ void print_help()
 
 void print_cuda_info()
 {
-	int num_devices = cuda_tromp::getcount();
+	int num_devices = 0;
+	// todo: move whole print_cuda_info in cuda lib ?
+	// cmake only builds with a single one
+#ifdef USE_CUDA_SA
+	if (use_cuda_sa == 1)
+		num_devices = cuda_sa_solver::getcount();
+#endif
+#ifdef USE_CUDA_TROMP
+	if (use_cuda_sa == 0)
+		num_devices = cuda_tromp::getcount();
+#endif
 
 	std::cout << "Number of CUDA devices found: " << num_devices << std::endl;
 
 	for (int i = 0; i < num_devices; ++i) {
 		std::string gpuname, version;
-		int smcount;
-		cuda_tromp::getinfo(0, i, gpuname, smcount, version);
+		int smcount = 0;
+#ifdef USE_CUDA_SA
+		if (use_cuda_sa == 1)
+			cuda_sa_solver::getinfo(0, i, gpuname, smcount, version);
+#endif
+#ifdef USE_CUDA_TROMP
+		if (use_cuda_sa == 0)
+			cuda_tromp::getinfo(0, i, gpuname, smcount, version);
+#endif
 		std::cout << "\t#" << i << " " << gpuname << " | SM version: " << version << " | SM count: " << smcount << std::endl;
 	}
 }
