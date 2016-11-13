@@ -66,14 +66,15 @@ static ZcashStratumClientSSE2CUDASA_SA* scSigSSE2CUSA_SA = nullptr;
 extern "C" void stratum_sigint_handler(int signum) 
 { 
 	if (scSigAVXCUDA_XMP) scSigAVXCUDA_XMP->disconnect();
-	if (scSigSSE2CUDA_XMP) scSigSSE2CUDA_XMP->disconnect();
-	if (scSigAVXCUSA_XMP) scSigAVXCUSA_XMP->disconnect();
-	if (scSigSSE2CUSA_XMP) scSigSSE2CUSA_XMP->disconnect();
-	if (scSigAVXCUDA_SA) scSigAVXCUDA_SA->disconnect();
-	if (scSigSSE2CUDA_SA) scSigSSE2CUDA_SA->disconnect();
-	if (scSigAVXCUSA_SA) scSigAVXCUSA_SA->disconnect();
-	if (scSigSSE2CUSA_SA) scSigSSE2CUSA_SA->disconnect();
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	else if (scSigSSE2CUDA_XMP) scSigSSE2CUDA_XMP->disconnect();
+	else if (scSigAVXCUSA_XMP) scSigAVXCUSA_XMP->disconnect();
+	else if (scSigSSE2CUSA_XMP) scSigSSE2CUSA_XMP->disconnect();
+	else if (scSigAVXCUDA_SA) scSigAVXCUDA_SA->disconnect();
+	else if (scSigSSE2CUDA_SA) scSigSSE2CUDA_SA->disconnect();
+	else if (scSigAVXCUSA_SA) scSigAVXCUSA_SA->disconnect();
+	else if (scSigSSE2CUSA_SA) scSigSSE2CUSA_SA->disconnect();
+	else std::cout << "warning: miner context not found" << std::endl;
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	exit(0);
 }
 
@@ -183,7 +184,7 @@ void detect_AVX_and_AVX2()
 template <typename MinerType, typename StratumType>
 void start_mining(int api_port, int cpu_threads, int cuda_device_count, int opencl_device_count, int opencl_platform,
 	const std::string& host, const std::string& port, const std::string& user, const std::string& password,
-	StratumType* handler)
+	StratumType* &handler)
 {
 	std::shared_ptr<boost::asio::io_service> io_service(new boost::asio::io_service);
 
