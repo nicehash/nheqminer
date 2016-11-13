@@ -16,7 +16,7 @@ do {														\
 	cudaError_t err = call;									\
 	if (cudaSuccess != err) {								\
 		char errorBuff[512];								\
-        _SNPRINTF(errorBuff, sizeof(errorBuff) - 1,			\
+		_SNPRINTF(errorBuff, sizeof(errorBuff) - 1,			\
 			"CUDA error '%s' in func '%s' line %d",			\
 			cudaGetErrorString(err), __FUNCTION__, __LINE__);	\
 		}														\

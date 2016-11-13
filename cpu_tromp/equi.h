@@ -46,7 +46,9 @@ typedef unsigned char uchar;
 
 typedef u32 proof[PROOFSIZE];
 
+#if _MSC_VER == 1800
 #define constexpr const
+#endif
 
 void setheader(blake2b_state *ctx, const char *header, const u32 headerLen, const char* nce, const u32 nonceLen) {
   uint32_t le_N = WN;
@@ -75,7 +77,7 @@ enum verify_code { POW_OK, POW_DUPLICATE, POW_OUT_OF_ORDER, POW_NONZERO_XOR };
 const char *errstr[] = { "OK", "duplicate index", "indices out of order", "nonzero xor" };
 
 void genhash(blake2b_state *ctx, u32 idx, uchar *hash) {
-	constexpr int hash_size = WN / 8;
+  constexpr int hash_size = WN / 8;
   blake2b_state state = *ctx;
   u32 leb = (idx / HASHESPERBLAKE);
   blake2b_update(&state, (uchar *)&leb, sizeof(u32));
