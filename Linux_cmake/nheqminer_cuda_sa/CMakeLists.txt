@@ -71,6 +71,7 @@ endif ()
 #add_definitions(-DUSE_CPU_XENONCAT)
 #add_definitions(-DUSE_CPU_TROMP)
 #add_definitions(-DUSE_CUDA_TROMP)
+add_definitions(-DUSE_CUDA_SA)
 
 #add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )
 #set_target_properties ( xenoncat_avx1 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx1.o" )

@@ -281,6 +281,11 @@ int main(int argc, char* argv[])
 	int force_cpu_ext = -1;
 	int opencl_t = 0;
 
+#ifndef USE_CUDA_SA
+	// for cmake
+	use_cuda_sa = 0;
+#endif
+
 	for (int i = 1; i < argc; ++i)
 	{
 		if (argv[i][0] != '-') continue;

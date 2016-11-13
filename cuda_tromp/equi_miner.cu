@@ -13,6 +13,9 @@
 #include <functional>
 #include <vector>
 #include <iostream>
+#ifndef _MSC_VER
+#include <mm_malloc.h>
+#endif
 
 #include "eqcuda.hpp"
 
