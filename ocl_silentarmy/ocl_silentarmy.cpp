@@ -69,13 +69,22 @@ struct OclContext {
 	sols_t	*sols;
 
 	bool init(cl_device_id dev, unsigned threadsNum, unsigned threadsPerBlock);
-	
+
+	OclContext() {
+		memset(buf_ht, 0, sizeof(buf_ht));
+		memset(rowCounters, 0, sizeof(rowCounters));
+		buf_sols = buf_dbg = NULL;
+		sols = NULL;
+	}
+
 	~OclContext() {
-		clReleaseMemObject(buf_dbg);
-		clReleaseMemObject(buf_ht[0]);
-		clReleaseMemObject(buf_ht[1]);
-		clReleaseMemObject(rowCounters[0]);
-		clReleaseMemObject(rowCounters[1]);
+		if (buf_sols) {
+			clReleaseMemObject(buf_dbg);
+			clReleaseMemObject(buf_ht[0]);
+			clReleaseMemObject(buf_ht[1]);
+			clReleaseMemObject(rowCounters[0]);
+			clReleaseMemObject(rowCounters[1]);
+		}
 		free(sols);
 	}
 };
@@ -480,7 +489,10 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	std::function<bool()> cancelf,
 	std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
 	std::function<void(void)> hashdonef,
-	ocl_silentarmy& device_context) {
+	ocl_silentarmy& device_context)
+{
+	if (!device_context.is_init_success || device_context.oclc == nullptr)
+		return;
 
 	unsigned char context[140];
 	memset(context, 0, 140);
