@@ -150,7 +150,7 @@ int ocl_device_utils::GetCountForPlatform(int platformID) {
 	for (const auto &platInfo : _devicesPlatformsDevices)
 	{
 		if (platformID == platInfo.PlatformNum) {
-			return platInfo.Devices.size();
+			return (int) platInfo.Devices.size();
 		}
 	}
 	return 0;

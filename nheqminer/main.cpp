@@ -12,6 +12,10 @@
 #define PRINT_OCL_INFO
 #endif
 
+#ifdef USE_OCL_XMP
+#pragma comment(lib,"ocl_xpm.lib")
+#endif
+
 #include <thread>
 #include <chrono>
 #include <atomic>
@@ -43,7 +47,6 @@ namespace keywords = boost::log::keywords;
 #endif
 
 // TODO:
-// fix compiler issues with standard vs2013 compiler
 // file logging
 // mingw compilation for windows (faster?)
 
@@ -64,7 +67,8 @@ static ZcashStratumClientAVXCUDASA_SA* scSigAVXCUSA_SA = nullptr;
 static ZcashStratumClientSSE2CUDASA_SA* scSigSSE2CUSA_SA = nullptr;
 
 extern "C" void stratum_sigint_handler(int signum) 
-{ 
+{
+	exit(0); // temporary until fixes...
 	if (scSigAVXCUDA_XMP) scSigAVXCUDA_XMP->disconnect();
 	else if (scSigSSE2CUDA_XMP) scSigSSE2CUDA_XMP->disconnect();
 	else if (scSigAVXCUSA_XMP) scSigAVXCUSA_XMP->disconnect();

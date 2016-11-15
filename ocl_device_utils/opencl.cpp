@@ -5,8 +5,7 @@
 #include <stdio.h>
 #include <system_error>
 
-extern cl_platform_id gPlatform;
-// extern cl_program gProgram;
+cl_platform_id gPlatform = 0;
 
 std::vector<cl_device_id> GetAllDevices()
 {

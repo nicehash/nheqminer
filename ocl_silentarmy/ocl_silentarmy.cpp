@@ -392,7 +392,7 @@ std::string ocl_silentarmy::getdevinfo() {
 // STATICS START
 int ocl_silentarmy::getcount() {
 	static auto devices = GetAllDevices();
-	return devices.size();
+	return (int) devices.size();
 }
 
 void ocl_silentarmy::getinfo(int platf_id, int d_id, std::string& gpu_name, int& sm_count, std::string& version) { 

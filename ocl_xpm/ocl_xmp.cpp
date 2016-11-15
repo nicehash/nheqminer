@@ -43,8 +43,7 @@ struct MinerInstance {
 
 cl_context gContext = 0;
 cl_program gProgram = 0;
-cl_platform_id gPlatform = 0;
-
+extern cl_platform_id gPlatform;
 
 bool MinerInstance::init(cl_context context,
 	cl_program program,
