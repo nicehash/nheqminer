@@ -18,9 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="zcash\gpu\input.cl">
-      <Filter>zcash\gpu</Filter>
-    </None>
     <None Include="zcash\gpu\kernel.cl">
       <Filter>zcash\gpu</Filter>
     </None>
