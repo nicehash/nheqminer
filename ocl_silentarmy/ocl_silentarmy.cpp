@@ -62,7 +62,7 @@ struct OclContext {
 	cl_kernel k_rounds[PARAM_K];
 	cl_kernel k_sols;
 
-	cl_mem buf_ht[2], buf_sols, buf_dbg;
+	cl_mem buf_ht[2], buf_sols, buf_dbg, rowCounters[2];
 	size_t global_ws;
 	size_t local_work_size = 64;
 
@@ -74,6 +74,8 @@ struct OclContext {
 		clReleaseMemObject(buf_dbg);
 		clReleaseMemObject(buf_ht[0]);
 		clReleaseMemObject(buf_ht[1]);
+		clReleaseMemObject(rowCounters[0]);
+		clReleaseMemObject(rowCounters[1]);
 		free(sols);
 	}
 };
@@ -100,6 +102,10 @@ bool OclContext::init(
 	buf_ht[0] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, HT_SIZE, NULL);
 	buf_ht[1] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, HT_SIZE, NULL);
 	buf_sols = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, sizeof(sols_t), NULL);
+
+	rowCounters[0] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, NR_ROWS, NULL);
+	rowCounters[1] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, NR_ROWS, NULL);
+
 
 
 	fprintf(stderr, "Hash tables will use %.1f MB\n", 2.0 * HT_SIZE / 1e6);
@@ -268,10 +274,10 @@ size_t select_work_size_blake(void)
 	return work_size;
 }
 
-static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, cl_mem buf_ht)
+static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, cl_mem buf_ht, cl_mem rowCounters)
 {
-	size_t      global_ws = NR_ROWS;
-	size_t      local_ws = 64;
+	size_t      global_ws = NR_ROWS / ROWS_PER_UINT;
+	size_t      local_ws = 256;
 	cl_int      status;
 #if 0
 	uint32_t    pat = -1;
@@ -284,6 +290,7 @@ static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, cl_mem buf_ht)
 		fatal("clEnqueueFillBuffer (%d)\n", status);
 #endif
 	status = clSetKernelArg(k_init_ht, 0, sizeof(buf_ht), &buf_ht);
+	status = clSetKernelArg(k_init_ht, 1, sizeof(rowCounters), &rowCounters);
 	if (status != CL_SUCCESS)
 		printf("clSetKernelArg (%d)\n", status);
 	check_clEnqueueNDRangeKernel(queue, k_init_ht,
@@ -464,7 +471,6 @@ void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 
 void ocl_silentarmy::stop(ocl_silentarmy& device_context) {
 	if (device_context.oclc != nullptr) delete device_context.oclc;
-	device_context.oclc = nullptr;
 }
 
 void ocl_silentarmy::solve(const char *tequihash_header,
@@ -476,10 +482,8 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	std::function<void(void)> hashdonef,
 	ocl_silentarmy& device_context) {
 
-	unsigned char context[140] = { 0 };
-	if (!device_context.is_init_success || device_context.oclc == nullptr)
-		return;
-
+	unsigned char context[140];
+	memset(context, 0, 140);
 	memcpy(context, tequihash_header, tequihash_header_len);
 	memcpy(context + tequihash_header_len, nonce, nonce_len);
 
@@ -497,24 +501,25 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 
 	for (unsigned round = 0; round < PARAM_K; round++)
 	{
-		if (round < 2) {
-			init_ht(miner->queue, miner->k_init_ht, miner->buf_ht[round & 1]);
-		}
+		init_ht(miner->queue, miner->k_init_ht, miner->buf_ht[round & 1], miner->rowCounters[round & 1]);
 		if (!round)
 		{
 			check_clSetKernelArg(miner->k_rounds[round], 0, &buf_blake_st);
 			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round & 1]);
+			check_clSetKernelArg(miner->k_rounds[round], 2, &miner->rowCounters[round & 2]);
 			miner->global_ws = select_work_size_blake();
 		}
 		else
 		{
 			check_clSetKernelArg(miner->k_rounds[round], 0, &miner->buf_ht[(round - 1) & 1]);
 			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round & 1]);
+			check_clSetKernelArg(miner->k_rounds[round], 2, &miner->rowCounters[(round - 1) & 1]);
+			check_clSetKernelArg(miner->k_rounds[round], 3, &miner->rowCounters[round & 1]);
 			miner->global_ws = NR_ROWS;
 		}
-		check_clSetKernelArg(miner->k_rounds[round], 2, &miner->buf_dbg);
+		check_clSetKernelArg(miner->k_rounds[round], round == 0 ? 3 : 4, &miner->buf_dbg);
 		if (round == PARAM_K - 1)
-			check_clSetKernelArg(miner->k_rounds[round], 3, &miner->buf_sols);
+			check_clSetKernelArg(miner->k_rounds[round], 5, &miner->buf_sols);
 		check_clEnqueueNDRangeKernel(miner->queue, miner->k_rounds[round], 1, NULL,
 			&miner->global_ws, &miner->local_work_size, 0, NULL, NULL);
 		// cancel function
@@ -523,6 +528,8 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	check_clSetKernelArg(miner->k_sols, 0, &miner->buf_ht[0]);
 	check_clSetKernelArg(miner->k_sols, 1, &miner->buf_ht[1]);
 	check_clSetKernelArg(miner->k_sols, 2, &miner->buf_sols);
+	check_clSetKernelArg(miner->k_sols, 3, &miner->rowCounters[0]);
+	check_clSetKernelArg(miner->k_sols, 4, &miner->rowCounters[1]);
 	miner->global_ws = NR_ROWS;
 	check_clEnqueueNDRangeKernel(miner->queue, miner->k_sols, 1, NULL,
 		&miner->global_ws, &miner->local_work_size, 0, NULL, NULL);
