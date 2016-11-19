@@ -940,13 +940,14 @@ sa_cuda_context::sa_cuda_context(int tpb, int blocks, int id)
 	checkCudaErrors(cudaMalloc((void**)&eq->rowCounters[0], NR_ROWS));
 	checkCudaErrors(cudaMalloc((void**)&eq->rowCounters[1], NR_ROWS));
 
-	eq->sols = (sols_t *)malloc(sizeof(*eq->sols));
+	checkCudaErrors(cudaMallocHost(&(eq->sols), sizeof(*eq->sols)));
 }
 
 __host__
 sa_cuda_context::~sa_cuda_context()
 {
 	checkCudaErrors(cudaSetDevice(device_id));
+	checkCudaErrors(cudaFreeHost(eq->sols));
 	checkCudaErrors(cudaDeviceReset());
 	delete eq;
 }
@@ -1039,6 +1040,7 @@ void sa_cuda_context::solve(const char * tequihash_header, unsigned int tequihas
 		(miner->buf_ht[0], miner->buf_ht[1], (sols_t*)miner->buf_sols, (uint*)miner->rowCounters[0], (uint*)miner->rowCounters[1]);
 
 	checkCudaErrors(cudaMemcpy(miner->sols, miner->buf_sols, sizeof(*miner->sols), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaFree(buf_blake_st));
 
 	if (miner->sols->nr > MAX_SOLS)
 		miner->sols->nr = MAX_SOLS;
