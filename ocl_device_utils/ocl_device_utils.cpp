@@ -14,26 +14,7 @@ std::vector<std::string> ocl_device_utils::_platformNames;
 std::vector<PrintInfo> ocl_device_utils::_devicesPlatformsDevices;
 std::vector<cl::Device> ocl_device_utils::_AllDevices;
 
-static std::vector<cl_device_id> GetAllDevices()
-{
-	std::vector<cl_device_id> retval;
-	retval.reserve(8);
-
-	cl_platform_id platforms[64];
-	cl_uint numPlatforms;
-	cl_int rc = clGetPlatformIDs(sizeof(platforms) / sizeof(cl_platform_id), platforms, &numPlatforms);
-
-	for (cl_uint i = 0; i < numPlatforms; i++) {
-		cl_uint numDevices = 0;
-		cl_device_id devices[64];
-		rc = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU | CL_DEVICE_TYPE_ACCELERATOR, sizeof(devices) / sizeof(cl_device_id), devices, &numDevices);
-		for (cl_uint n = 0; n < numDevices; n++) {
-			retval.push_back(devices[n]);
-		}
-	}
-
-	return retval;
-}
+std::vector<cl_device_id> GetAllDevices(); // opencl.cpp
 
 vector<Platform> ocl_device_utils::getPlatforms() {
 	vector<Platform> platforms;
@@ -82,9 +63,6 @@ bool ocl_device_utils::QueryDevices() {
 			for (auto& device : devices) {
 				_AllDevices.emplace_back(cl::Device(device));
 			}
-
-			
-
 
 			// get platforms
 			auto platforms = getPlatforms();
