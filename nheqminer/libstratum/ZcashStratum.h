@@ -30,7 +30,7 @@ CREATE_SOLVER_STUB(cpu_xenoncat, "cpu_xenoncat_STUB")
 #endif
 #ifdef USE_CUDA_TROMP
 #include "../cuda_tromp/cuda_tromp.hpp"
-
+#include "../cuda_djezo/cuda_djezo.hpp"
 // TODO fix this
 #ifndef WIN32
 CREATE_SOLVER_STUB(cuda_tromp_75, "cuda_tromp_75_STUB")
@@ -154,13 +154,13 @@ public:
 
 // 8 combos make sure not to go beyond this
 // ocl_xmp
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp> ZMinerAVXCUDA80_XMP;
-typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp> ZMinerSSE2CUDA80_XMP;
+typedef ZcashMiner<cpu_xenoncat, cuda_djezo, ocl_xmp> ZMinerAVXCUDA80_XMP;
+typedef ZcashMiner<cpu_tromp, cuda_djezo, ocl_xmp> ZMinerSSE2CUDA80_XMP;
 typedef ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_xmp> ZMinerAVXCUDA75_XMP;
 typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_xmp> ZMinerSSE2CUDA75_XMP;
 // ocl_silentarmy
-typedef ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_silentarmy> ZMinerAVXCUDA80_SA;
-typedef ZcashMiner<cpu_tromp, cuda_tromp, ocl_silentarmy> ZMinerSSE2CUDA80_SA;
+typedef ZcashMiner<cpu_xenoncat, cuda_djezo, ocl_silentarmy> ZMinerAVXCUDA80_SA;
+typedef ZcashMiner<cpu_tromp, cuda_djezo, ocl_silentarmy> ZMinerSSE2CUDA80_SA;
 typedef ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_silentarmy> ZMinerAVXCUDA75_SA;
 typedef ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_silentarmy> ZMinerSSE2CUDA75_SA;
 

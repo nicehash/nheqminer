@@ -43,13 +43,13 @@ namespace keywords = boost::log::keywords;
 #endif
 
 // TODO:
-// fix compiler issues with standard vs2013 compiler
 // file logging
 // mingw compilation for windows (faster?)
+// benchmark accuracy fix: first wait for solvers to init and then measure speed
 
 int use_avx = 0;
 int use_avx2 = 0;
-int use_old_cuda = 1;
+int use_old_cuda = 0;
 int use_old_xmp = 0;
 
 // _XMP
@@ -96,7 +96,7 @@ void print_help()
 	std::cout << std::endl;
 	std::cout << "NVIDIA CUDA settings" << std::endl;
 	std::cout << "\t-ci\t\tCUDA info" << std::endl;
-	std::cout << "\t-cv [ver]\tSet CUDA version (0 = 8.0, 1 = 7.5)" << std::endl;
+	std::cout << "\t-cv [ver]\tSet CUDA solver (0 = djeZo, 1 = tromp)" << std::endl;
 	std::cout << "\t-cd [devices]\tEnable CUDA mining on spec. devices" << std::endl;
 	std::cout << "\t-cb [blocks]\tNumber of blocks" << std::endl;
 	std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
@@ -241,16 +241,16 @@ int main(int argc, char* argv[])
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << "\t\tEquihash CPU&GPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "\tThanks to Zcash developers for providing base of the code." << std::endl;
-	std::cout << "\t       Special thanks to tromp, xenoncat, mbevand "<< std::endl;
+	std::cout << "\t    Special thanks to tromp, xenoncat, mbevand, djeZo, "<< std::endl;
 	std::cout << "\t             and eXtremal-ik7 for providing " << std::endl;
 	std::cout << "\t      optimized CPU, CUDA and AMD equihash solvers." << std::endl;
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << std::endl;
 
 	std::string location = "equihash.eu.nicehash.com:3357";
-	std::string user = "";
+	std::string user = "34HKWdzLxWBduUfJE9JxaFhoXnfC6gmePG";
 	std::string password = "x";
-	int num_threads = -1;
+	int num_threads = 0;
 	bool benchmark = false;
 	int log_level = 2;
 	int num_hashes = 200;

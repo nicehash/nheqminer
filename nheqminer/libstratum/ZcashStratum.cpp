@@ -6,7 +6,6 @@
 #include "ZcashStratum.h"
 
 #include "utilstrencodings.h"
-//#include "trompequihash/equi_miner.h"
 #include "streams.h"
 
 #include <iostream>
@@ -278,6 +277,7 @@ void static ZcashMinerThread(ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>* mi
     catch (const std::runtime_error &e)
     {
 		BOOST_LOG_CUSTOM(error, pos) << e.what();
+		exit(0);
     }
 
 	try
@@ -404,7 +404,7 @@ ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::~ZcashMiner()
 template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
 std::string ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::userAgent()
 {
-	return "equihashminer/" STANDALONE_MINER_VERSION;
+	return "nheqminer/" STANDALONE_MINER_VERSION;
 }
 
 template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
@@ -608,13 +608,13 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::failedSolution()
 }
 
 // XMP
-template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp>;
-template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp>;
+template class ZcashMiner<cpu_xenoncat, cuda_djezo, ocl_xmp>;
+template class ZcashMiner<cpu_tromp, cuda_djezo, ocl_xmp>;
 template class ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_xmp>;
 template class ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_xmp>;
 // Silentarmy
-template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_silentarmy>;
-template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_silentarmy>;
+template class ZcashMiner<cpu_xenoncat, cuda_djezo, ocl_silentarmy>;
+template class ZcashMiner<cpu_tromp, cuda_djezo, ocl_silentarmy>;
 template class ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_silentarmy>;
 template class ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_silentarmy>;
 
@@ -687,7 +687,11 @@ int benchmark_thread(int tid, Solver& extra)
 		const char *tequihash_header = (char *)&ss[0];
 		unsigned int tequihash_header_len = ss.size();
 
+		Solver::start(extra);
+
 		while (benchmark_solve_equihash<Solver>(pblock, tequihash_header, tequihash_header_len, extra)) {}
+
+		Solver::stop(extra);
 	}
 	catch (const std::runtime_error &e)
 	{
@@ -733,7 +737,7 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 		BOOST_LOG_TRIVIAL(info) << "Benchmarking CUDA worker (" << context->getname() << ") " << context->getdevinfo();
 
-		CUDASolver::start(*context); // init CUDA before to get more accurate benchmark
+		//CUDASolver::start(*context); // init CUDA before to get more accurate benchmark
 
 		cuda_contexts.push_back(context);
 	}
@@ -750,7 +754,7 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 			BOOST_LOG_TRIVIAL(info) << "Benchmarking OPENCL worker (" << context->getname() << ") " << context->getdevinfo();
 
-			OPENCLSolver::start(*context); // init OPENCL before to get more accurate benchmark
+			//OPENCLSolver::start(*context); // init OPENCL before to get more accurate benchmark
 
 			opencl_contexts.push_back(context);
 		}
@@ -768,7 +772,7 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 		CPUSolver* context = new CPUSolver();
 		context->use_opt = use_avx2;
 		BOOST_LOG_TRIVIAL(info) << "Benchmarking CPU worker (" << context->getname() << ") " << context->getdevinfo();
-		CPUSolver::start(*context);
+		//CPUSolver::start(*context);
 		cpu_contexts.push_back(context);
 	}
 
@@ -776,9 +780,7 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 	std::thread* bthreads = new std::thread[nThreads];
 
-	BOOST_LOG_TRIVIAL(info) << "Benchmark starting... this may take several minutes, please wait...";
-
-	auto start = std::chrono::high_resolution_clock::now();
+	benchmark_work.lock();
 
 	int i = 0;
 	for ( ; i < cpu_contexts.size(); ++i)
@@ -789,6 +791,13 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 	for (; i < (opencl_contexts.size() + cuda_contexts.size() + cpu_contexts.size()); ++i)
 		bthreads[i] = std::thread(boost::bind(&benchmark_thread<OPENCLSolver>, i, *opencl_contexts.at(i - cpu_contexts.size() - cuda_contexts.size())));
+
+	Sleep(1000);
+
+	BOOST_LOG_TRIVIAL(info) << "Benchmark starting... this may take several minutes, please wait...";
+
+	benchmark_work.unlock();
+	auto start = std::chrono::high_resolution_clock::now();
 
 	for (int i = 0; i < nThreads; ++i)
 		bthreads[i].join();
@@ -801,17 +810,17 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
     for (auto it = cpu_contexts.begin(); it != cpu_contexts.end(); ++it)
 	{
-		CPUSolver::stop(**it);
+		//CPUSolver::stop(**it);
 		delete (*it);
 	}
     for (auto it = cuda_contexts.begin(); it != cuda_contexts.end(); ++it)
 	{
-		CUDASolver::stop(**it);
+		//CUDASolver::stop(**it);
 		delete (*it);
 	}
     for (auto it = opencl_contexts.begin(); it != opencl_contexts.end(); ++it)
 	{
-		OPENCLSolver::stop(**it);
+		//OPENCLSolver::stop(**it);
 		delete (*it);
 	}
 	cpu_contexts.clear();

@@ -167,6 +167,9 @@
     <ClInclude Include="SolverStub.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\cuda_djezo\cuda_djezo.hpp">
+      <Filter>Header Files\solvers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
