@@ -1,7 +1,7 @@
 # Build instructions:
 
 ### Dependencies:
-  - Boost 1.54+
+  - Boost 1.62+
 
 ## Windows:
 
@@ -24,41 +24,35 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build. You will hav
 If you don't wan't to build with all solvlers you can go to **nheqminer Properties > C/C++ > Preprocessor > Preprocessor Definitions** and remove the solver you don't need.
 
 ## Linux
-
 Work in progress.
-
 Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, CUDA_DJEZO
 
-## Linux (Ubuntu 14.04 / 16.04) Build CPU_XENONCAT:
+### General instructions:
+  - Install CUDA SDK v8 (make sure you have cuda libraries in **LD_LIBRARY_PATH** and cuda toolkit bins in **PATH**)
+    - example on Ubuntu:
+    - LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64:/usr/local/cuda-8.0/lib64/stubs"
+    - PATH="$PATH:/usr/local/cuda-8.0/"
+    - PATH="$PATH:/usr/local/cuda-8.0/bin"
 
- - Open terminal and run the following commands:
-   - `sudo apt-get install cmake build-essential libboost-all-dev`
-   - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
-   - `cd nheqminer/cpu_xenoncat/Linux/asm/`
-   - `sh assemble.sh`
-   - `cd ../../../Linux_cmake/nheqminer_cpu_xenoncat`
-   - `cmake .`
-   - `make -j $(nproc)`
-
-## Linux (Ubuntu 14.04 / 16.04) Build CUDA_TROMP:
-
- - Open terminal and run the following commands:
-   - **Ubuntu 14.04**:
-     - `wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_8.0.44-1_amd64.deb`
-     - `sudo dpkg -i cuda-repo-ubuntu1404_8.0.44-1_amd64.deb`
-   - **Ubuntu 16.04**:
-     - `wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.44-1_amd64.deb`
-     - `sudo dpkg -i cuda-repo-ubuntu1604_8.0.44-1_amd64.deb`
-   - `sudo apt-get update`
-   - `sudo apt-get install cuda`
-   - `sudo apt-get install cuda-toolkit-8-0`
-   - `sudo apt-get install cmake build-essential libboost-all-dev`
-   - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
-   - `cd nheqminer/Linux_cmake/nheqminer_cuda_tromp && cmake . && make -j $(nproc)`
-   - or specify your compute version for example 50 like so `cd nheqminer/Linux_cmake/nheqminer_cuda_tromp && cmake COMPUTE=50 . && make`
-
-   
-
+  - Use Boost 1.62+ (if it is not available from the repos you will have to download and build it yourself)
+  - CMake v3.5 (if it is not available from the repos you will have to download and build it yourself)
+  - Currently support only static building (CPU_XENONCAT, CUDA_DJEZO are enabled by default, check **CMakeLists.txt** in **nheqminer** root folder)
+  - If not on Ubuntu make sure you have **fasm** installed and accessible in **PATH**
+  - After that open the terminal and run the following commands:
+    - `git clone https://github.com/nicehash/nheqminer.git`
+    - Generating asm object file:
+      - **On Ubuntu**:
+        - `cd nheqminer/cpu_xenoncat/asm_linux/`
+        - `sh assemble.sh`
+      - **bundeled fasm not compatible**:
+        - delete/replace (inside **nheqminer/cpu_xenoncat/asm_linux/** directory) with fasm binary compatible with your distro
+        - `cd nheqminer/cpu_xenoncat/asm_linux/`
+        - `sh assemble.sh`
+    - `cd ../../../`
+    - `mkdir build && cd build`
+    - `cmake ../nheqminer`
+    - `make -j $(nproc)`
+    
 # Run instructions:
 
 Parameters: 
