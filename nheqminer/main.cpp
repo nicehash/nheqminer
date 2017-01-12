@@ -45,9 +45,11 @@ namespace keywords = boost::log::keywords;
 #endif
 
 // TODO:
-// file logging
-// mingw compilation for windows (faster?)
-// benchmark accuracy fix: first wait for solvers to init and then measure speed
+// #1 file logging
+// #2 mingw compilation for windows (faster?)
+// #3 benchmark accuracy fix: first wait for solvers to init and then measure speed
+// #4 Linux fix cmake to generate all in one binary (just like Windows)
+// #5 after #4 is done add solver chooser for CPU and CUDA devices (general and per device), example: [-s 0 automatic, -s 1 solver1, -s 2 solver2, ...]
 
 int use_avx = 0;
 int use_avx2 = 0;
