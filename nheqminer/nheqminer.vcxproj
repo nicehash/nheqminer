@@ -111,6 +111,7 @@
     <ClInclude Include="amount.h" />
     <ClInclude Include="api.hpp" />
     <ClInclude Include="arith_uint256.h" />
+    <ClInclude Include="AvailableSolvers.h" />
     <ClInclude Include="compat\byteswap.h" />
     <ClInclude Include="compat\endian.h" />
     <ClInclude Include="crypto\common.h" />
@@ -127,10 +128,13 @@
     <ClInclude Include="json\json_spirit_writer_template.h" />
     <ClInclude Include="libstratum\StratumClient.h" />
     <ClInclude Include="libstratum\ZcashStratum.h" />
+    <ClInclude Include="MinerFactory.h" />
     <ClInclude Include="primitives\block.h" />
     <ClInclude Include="primitives\transaction.h" />
     <ClInclude Include="script\script.h" />
     <ClInclude Include="serialize.h" />
+    <ClInclude Include="Solver.h" />
+    <ClInclude Include="ISolver.h" />
     <ClInclude Include="SolverStub.h" />
     <ClInclude Include="speed.hpp" />
     <ClInclude Include="streams.h" />
@@ -149,6 +153,7 @@
     <ClCompile Include="amount.cpp" />
     <ClCompile Include="api.cpp" />
     <ClCompile Include="arith_uint256.cpp" />
+    <ClCompile Include="AvailableSolvers.cpp" />
     <ClCompile Include="crypto\sha256.cpp" />
     <ClCompile Include="json\json_spirit_reader.cpp">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -159,6 +164,7 @@
     <ClCompile Include="libstratum\StratumClient.cpp" />
     <ClCompile Include="libstratum\ZcashStratum.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MinerFactory.cpp" />
     <ClCompile Include="primitives\block.cpp" />
     <ClCompile Include="speed.cpp" />
     <ClCompile Include="uint256.cpp" />

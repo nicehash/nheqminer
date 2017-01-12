@@ -170,6 +170,18 @@
     <ClInclude Include="..\cuda_djezo\cuda_djezo.hpp">
       <Filter>Header Files\solvers</Filter>
     </ClInclude>
+    <ClInclude Include="Solver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ISolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AvailableSolvers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MinerFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -213,6 +225,12 @@
     </ClCompile>
     <ClCompile Include="utilstrencodings.cpp">
       <Filter>Source Files\stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="AvailableSolvers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MinerFactory.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -162,13 +162,5 @@ private:
 };
 
 
-// XMP
-typedef StratumClient<ZMinerAVXCUDA80_XMP, ZcashJob, EquihashSolution> ZcashStratumClientAVXCUDA80_XMP;
-typedef StratumClient<ZMinerSSE2CUDA80_XMP, ZcashJob, EquihashSolution> ZcashStratumClientSSE2CUDA80_XMP;
-typedef StratumClient<ZMinerAVXCUDA75_XMP, ZcashJob, EquihashSolution> ZcashStratumClientAVXCUDA75_XMP;
-typedef StratumClient<ZMinerSSE2CUDA75_XMP, ZcashJob, EquihashSolution> ZcashStratumClientSSE2CUDA75_XMP;
-// Silentarmy
-typedef StratumClient<ZMinerAVXCUDA80_SA, ZcashJob, EquihashSolution> ZcashStratumClientAVXCUDA80_SA;
-typedef StratumClient<ZMinerSSE2CUDA80_SA, ZcashJob, EquihashSolution> ZcashStratumClientSSE2CUDA80_SA;
-typedef StratumClient<ZMinerAVXCUDA75_SA, ZcashJob, EquihashSolution> ZcashStratumClientAVXCUDA75_SA;
-typedef StratumClient<ZMinerSSE2CUDA75_SA, ZcashJob, EquihashSolution> ZcashStratumClientSSE2CUDA75_SA;
+// ZcashStratumClient
+typedef StratumClient<ZcashMiner, ZcashJob, EquihashSolution> ZcashStratumClient;
