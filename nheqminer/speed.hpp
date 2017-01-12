@@ -1,6 +1,6 @@
 #pragma once
 
-#define INTERVAL_SECONDS 300 // 5 minutes
+#define INTERVAL_SECONDS 15 // 15 seconds
 
 class Speed
 {

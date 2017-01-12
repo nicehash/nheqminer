@@ -6,7 +6,6 @@
 #include "ZcashStratum.h"
 
 #include "utilstrencodings.h"
-//#include "trompequihash/equi_miner.h"
 #include "streams.h"
 
 #include <iostream>
@@ -96,10 +95,10 @@ std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
 	return ret;
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver, typename Solver>
-void static ZcashMinerThread(ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>* miner, int size, int pos, Solver& extra)
+
+void static ZcashMinerThread(ZcashMiner* miner, int size, int pos, ISolver *solver)
 {
-	BOOST_LOG_CUSTOM(info, pos) << "Starting thread #" << pos << " (" << extra.getname() << ") " << extra.getdevinfo();
+	BOOST_LOG_CUSTOM(info, pos) << "Starting thread #" << pos << " (" << solver->getname() << ") " << solver->getdevinfo();
 
     std::shared_ptr<std::mutex> m_zmt(new std::mutex);
     CBlockHeader header;
@@ -141,7 +140,7 @@ void static ZcashMinerThread(ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>* mi
 
     try {
 
-		Solver::start(extra);
+		solver->start();
 
         while (true) {
             // Wait for work
@@ -236,14 +235,13 @@ void static ZcashMinerThread(ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>* mi
 					speed.AddHash();
 				};
 
-				Solver::solve(tequihash_header,
+				solver->solve(tequihash_header,
 					tequihash_header_len,
 					(const char*)bNonce.begin(),
 					bNonce.size(),
 					cancelFun,
 					solutionFound,
-					hashDone,
-					extra);
+					hashDone);
 				
                 // Check for stop
 				if (!miner->minerThreadActive[pos])
@@ -278,18 +276,19 @@ void static ZcashMinerThread(ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>* mi
     catch (const std::runtime_error &e)
     {
 		BOOST_LOG_CUSTOM(error, pos) << e.what();
+		exit(0);
     }
 
 	try
 	{
-		Solver::stop(extra);
+		solver->stop();
 	}
 	catch (const std::runtime_error &e)
 	{
 		BOOST_LOG_CUSTOM(error, pos) << e.what();
 	}
 
-	BOOST_LOG_CUSTOM(info, pos) << "Thread #" << pos << " ended (" << extra.getname() << ")";
+	BOOST_LOG_CUSTOM(info, pos) << "Thread #" << pos << " ended (" << solver->getname() << ")";
 }
 
 ZcashJob* ZcashJob::clone() const
@@ -333,82 +332,29 @@ std::string ZcashJob::getSubmission(const EquihashSolution* solution)
     return stream.str();
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::ZcashMiner(int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t, 
-	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t)
-    : minerThreads{nullptr}
+
+ZcashMiner::ZcashMiner(const std::vector<ISolver *> &i_solvers)
+	: minerThreads{ nullptr }
 {
 	m_isActive = false;
-    nThreads = 0;
-
-    for (int i = 0; i < cuda_count; ++i)
-    {
-        CUDASolver* context = new CUDASolver(0, cuda_en[i]);
-        if (cuda_b[i] > 0)
-            context->blocks = cuda_b[i];
-        if (cuda_t[i] > 0)
-            context->threadsperblock = cuda_t[i];
-
-        cuda_contexts.push_back(context);
-    }
-    nThreads += cuda_contexts.size();
-
-
-    for (int i = 0; i < opencl_count; ++i)
-    {
-		if (opencl_t[i] < 1) opencl_t[i] = 1;
-
-		// add multiple threads if wanted
-		for (int k = 0; k < opencl_t[i]; ++k)
-		{
-			OPENCLSolver* context = new OPENCLSolver(opencl_platf, opencl_en[i]);
-			// todo: save local&global work size
-			opencl_contexts.push_back(context);
-		}
-    }
-    nThreads += opencl_contexts.size();
-
-
-
-    if (cpu_threads < 0) {
-        cpu_threads = std::thread::hardware_concurrency();
-        if (cpu_threads < 1) cpu_threads = 1;
-        else if (cuda_contexts.size() + opencl_contexts.size() > 0) --cpu_threads; // decrease number of threads if there are GPU workers
-    }
-
-
-    for (int i = 0; i < cpu_threads; ++i)
-    {
-        CPUSolver* context = new CPUSolver();
-        context->use_opt = use_avx2;
-        cpu_contexts.push_back(context);
-    }
-    nThreads += cpu_contexts.size();
-
-
-//	nThreads = cpu_contexts.size() + cuda_contexts.size() + opencl_contexts.size();
+	solvers = i_solvers;
+	nThreads = solvers.size();
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::~ZcashMiner()
+
+ZcashMiner::~ZcashMiner()
 {
     stop();
-    for (auto it = cpu_contexts.begin(); it != cpu_contexts.end(); ++it)
-        delete (*it);
-    for (auto it = cuda_contexts.begin(); it != cuda_contexts.end(); ++it)
-        delete (*it);
-	cpu_contexts.clear();
-	cuda_contexts.clear();
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-std::string ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::userAgent()
+
+std::string ZcashMiner::userAgent()
 {
-	return "equihashminer/" STANDALONE_MINER_VERSION;
+	return "nheqminer/" STANDALONE_MINER_VERSION;
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::start()
+
+void ZcashMiner::start()
 {
     if (minerThreads) {
         stop();
@@ -419,60 +365,71 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::start()
 	minerThreads = new std::thread[nThreads];
 	minerThreadActive = new bool[nThreads];
 
+	// sort solvers CPU, CUDA, OPENCL
+	std::sort(solvers.begin(), solvers.end(), [](const ISolver* a, const ISolver* b) { return a->GetType() < b->GetType(); });
 
-    // start cpu threads
-    int i = 0;
-    for ( ; i < cpu_contexts.size(); ++i)
-    {
-        minerThreadActive[i] = true;
-        minerThreads[i] = std::thread(boost::bind(&ZcashMinerThread<CPUSolver, CUDASolver, OPENCLSolver, CPUSolver>,
-            this, nThreads, i, *cpu_contexts.at(i)));
+	// start solvers
+	// #1 start cpu threads
+	// #2 start CUDA threads
+	// #3 start OPENCL threads
+	for (int i = 0; i < solvers.size(); ++i) {
+		minerThreadActive[i] = true;
+		minerThreads[i] = std::thread(boost::bind(&ZcashMinerThread, this, nThreads, i, solvers[i]));
+		if (solvers[i]->GetType() == SolverType::CPU) {
 #ifdef WIN32
-        HANDLE hThread = minerThreads[i].native_handle();
-        if (!SetThreadPriority(hThread, THREAD_PRIORITY_LOWEST))
-        {
-            BOOST_LOG_CUSTOM(warning, i) << "Failed to set low priority";
-        }
-        else
-        {
-            BOOST_LOG_CUSTOM(debug, i) << "Priority set to " << GetThreadPriority(hThread);
-        }
+			HANDLE hThread = minerThreads[i].native_handle();
+			if (!SetThreadPriority(hThread, THREAD_PRIORITY_LOWEST))
+			{
+				BOOST_LOG_CUSTOM(warning, i) << "Failed to set low priority";
+			}
+			else
+			{
+				BOOST_LOG_CUSTOM(debug, i) << "Priority set to " << GetThreadPriority(hThread);
+			}
 #else
-        // todo: linux set low priority
+			// todo: linux set low priority
 #endif
-    }
+		}
+	}
+
+    
+    
+    //for ( ; )
+    //{
+    //    
+    //}
 
 
 
-    // start CUDA threads
-    for (; i < (cpu_contexts.size() + cuda_contexts.size()); ++i)
-    {
-        minerThreadActive[i] = true;
-        minerThreads[i] = std::thread(boost::bind(&ZcashMinerThread<CPUSolver, CUDASolver, OPENCLSolver, CUDASolver>,
-            this, nThreads, i, *cuda_contexts.at(i - cpu_contexts.size())));
-    }
+    //
+    //for (; i < (cpu_contexts.size() + cuda_contexts.size()); ++i)
+    //{
+    //    minerThreadActive[i] = true;
+    //    minerThreads[i] = std::thread(boost::bind(&ZcashMinerThread<CPUSolver, CUDASolver, OPENCLSolver, CUDASolver>,
+    //        this, nThreads, i, *cuda_contexts.at(i - cpu_contexts.size())));
+    //}
 
 
 
-    // start OPENCL threads
-    for (; i < (cpu_contexts.size() + cuda_contexts.size() + opencl_contexts.size()); ++i)
-    {
-        minerThreadActive[i] = true;
-        minerThreads[i] = std::thread(boost::bind(&ZcashMinerThread<CPUSolver, CUDASolver, OPENCLSolver, OPENCLSolver>,
-            this, nThreads, i, *opencl_contexts.at(i - cpu_contexts.size() - cuda_contexts.size())));
-    }
+    //
+    //for (; i < (cpu_contexts.size() + cuda_contexts.size() + opencl_contexts.size()); ++i)
+    //{
+    //    minerThreadActive[i] = true;
+    //    minerThreads[i] = std::thread(boost::bind(&ZcashMinerThread<CPUSolver, CUDASolver, OPENCLSolver, OPENCLSolver>,
+    //        this, nThreads, i, *opencl_contexts.at(i - cpu_contexts.size() - cuda_contexts.size())));
+    //}
 
 
-    /*minerThreads = new boost::thread_group();
-    for (int i = 0; i < nThreads; i++) {
-        minerThreads->create_thread(boost::bind(&ZcashMinerThread, this, nThreads, i));
-    }*/
+    ///*minerThreads = new boost::thread_group();
+    //for (int i = 0; i < nThreads; i++) {
+    //    minerThreads->create_thread(boost::bind(&ZcashMinerThread, this, nThreads, i));
+    //}*/
 
 	speed.Reset();
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::stop()
+
+void ZcashMiner::stop()
 {
 	m_isActive = false;
 	if (minerThreads)
@@ -492,8 +449,8 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::stop()
     }*/
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::setServerNonce(const std::string& n1str)
+
+void ZcashMiner::setServerNonce(const std::string& n1str)
 {
     //auto n1str = params[1].get_str();
 	BOOST_LOG_TRIVIAL(info) << "miner | Extranonce is " << n1str;
@@ -518,8 +475,8 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::setServerNonce(const std::
     nonce2Inc <<= nonce1Bits;
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-ZcashJob* ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::parseJob(const Array& params)
+
+ZcashJob* ZcashMiner::parseJob(const Array& params)
 {
     if (params.size() < 2) {
         throw std::logic_error("Invalid job params");
@@ -571,59 +528,47 @@ ZcashJob* ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::parseJob(const Array&
     return ret;
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::setJob(ZcashJob* job)
+
+void ZcashMiner::setJob(ZcashJob* job)
 {
     NewJob(job);
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::onSolutionFound(
+
+void ZcashMiner::onSolutionFound(
         const std::function<bool(const EquihashSolution&, const std::string&)> callback)
 {
     solutionFoundCallback = callback;
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::submitSolution(const EquihashSolution& solution, const std::string& jobid)
+
+void ZcashMiner::submitSolution(const EquihashSolution& solution, const std::string& jobid)
 {
     solutionFoundCallback(solution, jobid);
 	speed.AddShare();
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::acceptedSolution(bool stale)
+
+void ZcashMiner::acceptedSolution(bool stale)
 {
 	speed.AddShareOK();
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::rejectedSolution(bool stale)
+
+void ZcashMiner::rejectedSolution(bool stale)
 {
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::failedSolution()
+
+void ZcashMiner::failedSolution()
 {
 }
-
-// XMP
-template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_xmp>;
-template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_xmp>;
-template class ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_xmp>;
-template class ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_xmp>;
-// Silentarmy
-template class ZcashMiner<cpu_xenoncat, cuda_tromp, ocl_silentarmy>;
-template class ZcashMiner<cpu_tromp, cuda_tromp, ocl_silentarmy>;
-template class ZcashMiner<cpu_xenoncat, cuda_tromp_75, ocl_silentarmy>;
-template class ZcashMiner<cpu_tromp, cuda_tromp_75, ocl_silentarmy>;
 
 std::mutex benchmark_work;
 std::vector<uint256*> benchmark_nonces;
 std::atomic_int benchmark_solutions;
 
-template <typename Solver>
-bool benchmark_solve_equihash(const CBlock& pblock, const char *tequihash_header, unsigned int tequihash_header_len, Solver& extra)
+bool benchmark_solve_equihash(const CBlock& pblock, const char *tequihash_header, unsigned int tequihash_header_len, ISolver *solver)
 {
 	benchmark_work.lock();
 	if (benchmark_nonces.empty())
@@ -658,24 +603,23 @@ bool benchmark_solve_equihash(const CBlock& pblock, const char *tequihash_header
 		++benchmark_solutions;
 	};
 
-	Solver::solve(tequihash_header,
+	solver->solve(tequihash_header,
 		tequihash_header_len,
 		(const char*)nonce->begin(),
 		nonce->size(),
 		[]() { return false; },
 		solutionFound,
-		[]() {},
-		extra);
+		[]() {}
+	);
 
 	delete nonce;
 
 	return true;
 }
 
-template <typename Solver>
-int benchmark_thread(int tid, Solver& extra)
+int benchmark_thread(int tid, ISolver *solver)
 {
-	BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " started (" << extra.getname() << ")";
+	BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " started (" << solver->getname() << ")";
 
 	try
 	{
@@ -687,7 +631,11 @@ int benchmark_thread(int tid, Solver& extra)
 		const char *tequihash_header = (char *)&ss[0];
 		unsigned int tequihash_header_len = ss.size();
 
-		while (benchmark_solve_equihash<Solver>(pblock, tequihash_header, tequihash_header_len, extra)) {}
+		solver->start();
+
+		while (benchmark_solve_equihash(pblock, tequihash_header, tequihash_header_len, solver)) {}
+
+		solver->stop();
 	}
 	catch (const std::runtime_error &e)
 	{
@@ -696,15 +644,12 @@ int benchmark_thread(int tid, Solver& extra)
 		return 0;
 	}
 
-	BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " ended (" << extra.getname() << ")";
+	BOOST_LOG_TRIVIAL(debug) << "Thread #" << tid << " ended (" << solver->getname() << ")";
 
 	return 0;
 }
 
-template <typename CPUSolver, typename CUDASolver, typename OPENCLSolver>
-void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-	int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t)
-{
+void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers) {
 	// generate array of various nonces
 	std::srand(std::time(0));
 	benchmark_nonces.push_back(new uint256());
@@ -719,76 +664,38 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 	size_t total_hashes = benchmark_nonces.size();
 
-	std::vector<CPUSolver*> cpu_contexts;
-	std::vector<CUDASolver*> cuda_contexts;
-	std::vector<OPENCLSolver*> opencl_contexts;
-
-	for (int i = 0; i < cuda_count; ++i)
-	{
-		CUDASolver* context = new CUDASolver(0, cuda_en[i]);
-		if (cuda_b[i] > 0)
-			context->blocks = cuda_b[i];
-		if (cuda_t[i] > 0)
-			context->threadsperblock = cuda_t[i];
-
-		BOOST_LOG_TRIVIAL(info) << "Benchmarking CUDA worker (" << context->getname() << ") " << context->getdevinfo();
-
-		CUDASolver::start(*context); // init CUDA before to get more accurate benchmark
-
-		cuda_contexts.push_back(context);
-	}
-
-	for (int i = 0; i < opencl_count; ++i)
-	{
-		if (opencl_t[i] < 1) opencl_t[i] = 1;
-
-		for (int k = 0; k < opencl_t[i]; ++k)
-		{
-			OPENCLSolver* context = new OPENCLSolver(opencl_platf, opencl_en[i]);
-
-			// todo: save local&global work size
-
-			BOOST_LOG_TRIVIAL(info) << "Benchmarking OPENCL worker (" << context->getname() << ") " << context->getdevinfo();
-
-			OPENCLSolver::start(*context); // init OPENCL before to get more accurate benchmark
-
-			opencl_contexts.push_back(context);
+	// log what is benchmarking
+	for (ISolver* solver : solvers) {
+		if (solver->GetType() == SolverType::CPU) {
+			BOOST_LOG_TRIVIAL(info) << "Benchmarking CPU worker (" << solver->getname() << ") " << solver->getdevinfo();
+		}
+		else if (solver->GetType() == SolverType::CUDA) {
+			BOOST_LOG_TRIVIAL(info) << "Benchmarking CUDA worker (" << solver->getname() << ") " << solver->getdevinfo();
+		}
+		else if (solver->GetType() == SolverType::OPENCL) {
+			BOOST_LOG_TRIVIAL(info) << "Benchmarking OPENCL worker (" << solver->getname() << ") " << solver->getdevinfo();
 		}
 	}
 
-	if (cpu_threads < 0)
-	{
-		cpu_threads = std::thread::hardware_concurrency();
-		if (cpu_threads < 1) cpu_threads = 1;
-		else if (cuda_contexts.size() + opencl_contexts.size() > 0) --cpu_threads; // decrease number of threads if there are GPU workers
-	}
-
-	for (int i = 0; i < cpu_threads; ++i)
-	{
-		CPUSolver* context = new CPUSolver();
-		context->use_opt = use_avx2;
-		BOOST_LOG_TRIVIAL(info) << "Benchmarking CPU worker (" << context->getname() << ") " << context->getdevinfo();
-		CPUSolver::start(*context);
-		cpu_contexts.push_back(context);
-	}
-
-	int nThreads = cpu_contexts.size() + cuda_contexts.size() + opencl_contexts.size();
-
+	int nThreads = solvers.size();
 	std::thread* bthreads = new std::thread[nThreads];
+
+	benchmark_work.lock();
+	// bind benchmark threads
+	for (int i = 0; i < solvers.size(); ++i) {
+		bthreads[i] = std::thread(boost::bind(&benchmark_thread, i, solvers[i]));
+    }
+#ifdef WIN32
+    // TODO get back to this sleep
+    Sleep(1000);
+#else
+    sleep(1);
+#endif
 
 	BOOST_LOG_TRIVIAL(info) << "Benchmark starting... this may take several minutes, please wait...";
 
+	benchmark_work.unlock();
 	auto start = std::chrono::high_resolution_clock::now();
-
-	int i = 0;
-	for ( ; i < cpu_contexts.size(); ++i)
-		bthreads[i] = std::thread(boost::bind(&benchmark_thread<CPUSolver>, i, *cpu_contexts.at(i)));
-
-	for (; i < (cuda_contexts.size() + cpu_contexts.size()); ++i)
-		bthreads[i] = std::thread(boost::bind(&benchmark_thread<CUDASolver>, i, *cuda_contexts.at(i - cpu_contexts.size())));
-
-	for (; i < (opencl_contexts.size() + cuda_contexts.size() + cpu_contexts.size()); ++i)
-		bthreads[i] = std::thread(boost::bind(&benchmark_thread<OPENCLSolver>, i, *opencl_contexts.at(i - cpu_contexts.size() - cuda_contexts.size())));
 
 	for (int i = 0; i < nThreads; ++i)
 		bthreads[i].join();
@@ -799,25 +706,6 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 
 	size_t hashes_done = total_hashes - benchmark_nonces.size();
 
-    for (auto it = cpu_contexts.begin(); it != cpu_contexts.end(); ++it)
-	{
-		CPUSolver::stop(**it);
-		delete (*it);
-	}
-    for (auto it = cuda_contexts.begin(); it != cuda_contexts.end(); ++it)
-	{
-		CUDASolver::stop(**it);
-		delete (*it);
-	}
-    for (auto it = opencl_contexts.begin(); it != opencl_contexts.end(); ++it)
-	{
-		OPENCLSolver::stop(**it);
-		delete (*it);
-	}
-	cpu_contexts.clear();
-	cuda_contexts.clear();
-	opencl_contexts.clear();
-
 	BOOST_LOG_TRIVIAL(info) << "Benchmark done!";
 	BOOST_LOG_TRIVIAL(info) << "Total time : " << msec << " ms";
 	BOOST_LOG_TRIVIAL(info) << "Total iterations: " << hashes_done;
@@ -825,53 +713,3 @@ void ZcashMiner<CPUSolver, CUDASolver, OPENCLSolver>::doBenchmark(int hashes, in
 	BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)hashes_done * 1000 / (double)msec) << " I/s";
 	BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)benchmark_solutions * 1000 / (double)msec) << " Sols/s";
 }
-
-
-//void ZMinerAVX_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-//                           int opencl_count, int opencl_platf, int* opencl_en) {
-//    ZMinerAVX::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en);
-//}
-//
-//void ZMinerSSE2_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-//                            int opencl_count, int opencl_platf, int* opencl_en) {
-//    ZMinerSSE2::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en);
-//}
-
-
-
-// ocl_xmp
-// gcc static undefined reference workaround
-void ZMinerAVXCUDA80_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
-    ZMinerAVXCUDA80_XMP::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
-}
-void ZMinerSSE2CUDA80_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
-    ZMinerSSE2CUDA80_XMP::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
-}
-void ZMinerAVXCUDA75_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
-    ZMinerAVXCUDA75_XMP::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
-}
-void ZMinerSSE2CUDA75_XMP_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
-    ZMinerSSE2CUDA75_XMP::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
-}
-// ocl_silentarmy
-void ZMinerAVXCUDA80_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
-    ZMinerAVXCUDA80_SA::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
-}
-void ZMinerSSE2CUDA80_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
-    ZMinerSSE2CUDA80_SA::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
-}
-void ZMinerAVXCUDA75_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
-    ZMinerAVXCUDA75_SA::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
-}
-void ZMinerSSE2CUDA75_SA_doBenchmark(int hashes, int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
-    int opencl_count, int opencl_platf, int* opencl_en, int* opencl_t) {
-    ZMinerSSE2CUDA75_SA::doBenchmark(hashes, cpu_threads, cuda_count, cuda_en, cuda_b, cuda_t, opencl_count, opencl_platf, opencl_en, opencl_t);
-}
-

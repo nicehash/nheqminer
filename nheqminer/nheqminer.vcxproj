@@ -84,7 +84,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;USE_CPU_TROMP;USE_CPU_XENONCAT;USE_CUDA_TROMP;USE_OCL_XMP;USE_OCL_SILENTARMY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;USE_CPU_TROMP;USE_CPU_XENONCAT;USE_CUDA_TROMP;USE_CUDA_DJEZO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <AdditionalOptions>-D_WIN32_WINNT=0x0601 %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4068;4996;4503;4267;4180;4290;4244;4800;4334;4251</DisableSpecificWarnings>
@@ -96,8 +96,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>cuda_tromp.lib;cuda_tromp_75.lib;cpu_xenoncat.lib;cpu_tromp_SSE2.lib;cpu_tromp_AVX.lib;ocl_device_utils.lib;ocl_xpm.lib;ocl_silentarmy.lib;OpenCL.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>.\trompequihash\pthreads\x64;..\3rdparty\libs\win64;$(AMDAPPSDKROOT)\lib\x86_64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cuda_djezo.lib;cuda_tromp.lib;cuda_tromp_75.lib;cpu_xenoncat.lib;cpu_tromp_SSE2.lib;cpu_tromp_AVX.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\trompequihash\pthreads\x64;..\3rdparty\libs\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LargeAddressAware>
       </LargeAddressAware>
     </Link>
@@ -105,11 +105,13 @@
   <ItemGroup>
     <ClInclude Include="..\cpu_tromp\cpu_tromp.hpp" />
     <ClInclude Include="..\cpu_xenoncat\cpu_xenoncat.hpp" />
+    <ClInclude Include="..\cuda_djezo\cuda_djezo.hpp" />
     <ClInclude Include="..\cuda_tromp\cuda_tromp.hpp" />
     <ClInclude Include="..\ocl_xpm\ocl_xmp.hpp" />
     <ClInclude Include="amount.h" />
     <ClInclude Include="api.hpp" />
     <ClInclude Include="arith_uint256.h" />
+    <ClInclude Include="AvailableSolvers.h" />
     <ClInclude Include="compat\byteswap.h" />
     <ClInclude Include="compat\endian.h" />
     <ClInclude Include="crypto\common.h" />
@@ -126,10 +128,13 @@
     <ClInclude Include="json\json_spirit_writer_template.h" />
     <ClInclude Include="libstratum\StratumClient.h" />
     <ClInclude Include="libstratum\ZcashStratum.h" />
+    <ClInclude Include="MinerFactory.h" />
     <ClInclude Include="primitives\block.h" />
     <ClInclude Include="primitives\transaction.h" />
     <ClInclude Include="script\script.h" />
     <ClInclude Include="serialize.h" />
+    <ClInclude Include="Solver.h" />
+    <ClInclude Include="ISolver.h" />
     <ClInclude Include="SolverStub.h" />
     <ClInclude Include="speed.hpp" />
     <ClInclude Include="streams.h" />
@@ -158,6 +163,7 @@
     <ClCompile Include="libstratum\StratumClient.cpp" />
     <ClCompile Include="libstratum\ZcashStratum.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MinerFactory.cpp" />
     <ClCompile Include="primitives\block.cpp" />
     <ClCompile Include="speed.cpp" />
     <ClCompile Include="uint256.cpp" />
