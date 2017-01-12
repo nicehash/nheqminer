@@ -93,15 +93,15 @@ void print_help()
 	std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
 	std::cout << "Example: -cd 0 2 -cb 12 16 -ct 64 128" << std::endl;
 	std::cout << std::endl;
-	std::cout << "OpenCL settings" << std::endl;
-	std::cout << "\t-oi\t\tOpenCL info" << std::endl;
-	std::cout << "\t-ov [ver]\tSet OpenCL solver (0 = silentarmy, 1 = xmp)" << std::endl;
-	std::cout << "\t-op [platf]\tSet OpenCL platform to selecd platform devices (-od)" << std::endl;
-	std::cout << "\t-od [devices]\tEnable OpenCL mining on spec. devices (specify plafrom number first -op)" << std::endl;
-	std::cout << "\t-ot [threads]\tSet number of threads per device" << std::endl;
-	//std::cout << "\t-cb [blocks]\tNumber of blocks" << std::endl;
-	//std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
-	std::cout << "Example: -op 2 -od 0 2" << std::endl; //-cb 12 16 -ct 64 128" << std::endl;
+	//std::cout << "OpenCL settings" << std::endl;
+	//std::cout << "\t-oi\t\tOpenCL info" << std::endl;
+	//std::cout << "\t-ov [ver]\tSet OpenCL solver (0 = silentarmy, 1 = xmp)" << std::endl;
+	//std::cout << "\t-op [platf]\tSet OpenCL platform to selecd platform devices (-od)" << std::endl;
+	//std::cout << "\t-od [devices]\tEnable OpenCL mining on spec. devices (specify plafrom number first -op)" << std::endl;
+	//std::cout << "\t-ot [threads]\tSet number of threads per device" << std::endl;
+	////std::cout << "\t-cb [blocks]\tNumber of blocks" << std::endl;
+	////std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
+	//std::cout << "Example: -op 2 -od 0 2" << std::endl; //-cb 12 16 -ct 64 128" << std::endl;
 	std::cout << std::endl;
 }
 
@@ -127,13 +127,14 @@ void print_opencl_info() {
 #endif
 }
 
+#define MAX_INSTANCES 8 * 2
 
-int cuda_enabled[8] = { 0 };
-int cuda_blocks[8] = { 0 };
-int cuda_tpb[8] = { 0 };
+int cuda_enabled[MAX_INSTANCES] = { 0 };
+int cuda_blocks[MAX_INSTANCES] = { 0 };
+int cuda_tpb[MAX_INSTANCES] = { 0 };
 
-int opencl_enabled[8] = { 0 };
-int opencl_threads[8] = { 0 };
+int opencl_enabled[MAX_INSTANCES] = { 0 };
+int opencl_threads[MAX_INSTANCES] = { 0 };
 // todo: opencl local and global worksize
 
 
