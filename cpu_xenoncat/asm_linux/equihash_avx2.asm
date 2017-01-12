@@ -1,7 +1,6 @@
 format elf64
 public EhPrepare as 'EhPrepareAVX2'
 public EhSolver as 'EhSolverAVX2'
-public testinput as 'testinputAVX2'
 
 include "struct.inc"
 include "params.inc"
@@ -14,4 +13,3 @@ include "proc_ehsolver_avx2.asm"
 
 section '.data' writeable align 64
 include "data_blake2b.asm"
-testinput file "t2.bin"

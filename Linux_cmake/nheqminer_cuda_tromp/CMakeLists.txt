@@ -17,34 +17,7 @@ endif()
 # Common
 include_directories(${nheqminer_SOURCE_DIR})
 
-#add_definitions(-DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
-# BOOST
-#find_package(Threads REQUIRED COMPONENTS)
-# compile boost staticaly
-set(Boost_USE_STATIC_LIBS ON)
-set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-#set(BUILD_SHARED_LIBRARIES OFF)
-#set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-find_package(Boost REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
-
-if (Boost_FOUND)
-  # From the offical documentation:
-  # Add include directories to the build. [...] If the SYSTEM option is given,
-  # the compiler will be told the directories are meant as system include
-  # directories on some platforms (signalling this setting might achieve effects
-  # such as the compiler skipping warnings [...])."
-  include_directories (SYSTEM ${Boost_INCLUDE_DIR})
-
-  # From the offical documentation:
-  # "Specify directories in which the linker will look for libraries. [...] Note
-  # that this command is rarely necessary. Library locations returned by
-  # find_package() and find_library() are absolute paths. Pass these absolute
-  # library file paths directly to the target_link_libraries() command. CMake
-  # will ensure the linker finds them."
-  link_directories (${Boost_LIBRARY_DIRS})
-else()
-    message("Boost_FOUND NOT FOUND")
-endif ()
+add_definitions(-DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
 
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-m64;--std=c++11;--disable-warnings;--ptxas-options=-v;-use_fast_math;-lineinfo)
 
@@ -74,6 +47,25 @@ message("CUDA FOUND")
 else()
 message("CUDA NOT FOUND")
 endif()
+
+if (Boost_FOUND)
+  # From the offical documentation:
+  # Add include directories to the build. [...] If the SYSTEM option is given,
+  # the compiler will be told the directories are meant as system include
+  # directories on some platforms (signalling this setting might achieve effects
+  # such as the compiler skipping warnings [...])."
+  include_directories (SYSTEM ${Boost_INCLUDE_DIR})
+
+  # From the offical documentation:
+  # "Specify directories in which the linker will look for libraries. [...] Note
+  # that this command is rarely necessary. Library locations returned by
+  # find_package() and find_library() are absolute paths. Pass these absolute
+  # library file paths directly to the target_link_libraries() command. CMake
+  # will ensure the linker finds them."
+  link_directories (${Boost_LIBRARY_DIRS})
+else()
+    message("Boost_FOUND NOT FOUND")
+endif ()
 
 ## Add solvers here
 #add_definitions(-DUSE_CPU_XENONCAT)
@@ -141,11 +133,11 @@ set(SOURCE_FILES
     ../../nheqminer/SolverStub.h # just a stub
 
 
-    ../../nheqminer/AvailableSolvers.h
-    ../../nheqminer/ISolver.h
-    ../../nheqminer/Solver.h
-    ../../nheqminer/MinerFactory.h
-    ../../nheqminer/MinerFactory.cpp
+        ../../nheqminer/AvailableSolvers.h
+        ../../nheqminer/ISolver.h
+        ../../nheqminer/Solver.h
+        ../../nheqminer/MinerFactory.h
+        ../../nheqminer/MinerFactory.cpp
 
 #    # cpu tromp
 #    ../../cpu_tromp/blake2/blake2bx.cpp

@@ -108,7 +108,12 @@ void print_help()
 
 void print_cuda_info()
 {
-	int num_devices = cuda_tromp::getcount();
+#if defined(USE_CUDA_DJEZO) || defined(USE_CUDA_TROMP)
+#ifdef USE_CUDA_DJEZO
+    int num_devices = cuda_djezo::getcount();
+#elif USE_CUDA_TROMP
+    int num_devices = cuda_tromp::getcount();
+#endif
 
 	std::cout << "Number of CUDA devices found: " << num_devices << std::endl;
 
@@ -123,6 +128,7 @@ void print_cuda_info()
 #endif
 		std::cout << "\t#" << i << " " << gpuname << " | SM version: " << version << " | SM count: " << smcount << std::endl;
 	}
+#endif
 }
 
 void print_opencl_info() {
