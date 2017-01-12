@@ -16,9 +16,12 @@ CREATE_SOLVER_STUB(cpu_xenoncat, "cpu_xenoncat_STUB")
 #endif
 #ifdef USE_CUDA_TROMP
 #include "../cuda_tromp/cuda_tromp.hpp"
-#include "../cuda_djezo/cuda_djezo.hpp"
 #else
 CREATE_SOLVER_STUB(cuda_tromp, "cuda_tromp_STUB")
+#endif
+#ifdef USE_CUDA_DJEZO
+#include "../cuda_djezo/cuda_djezo.hpp"
+#else
 CREATE_SOLVER_STUB(cuda_djezo, "cuda_djezo_STUB")
 #endif
 // OpenCL solvers are fropped replace with new OS solvers

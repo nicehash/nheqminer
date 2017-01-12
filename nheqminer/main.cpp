@@ -116,7 +116,11 @@ void print_cuda_info()
 	{
 		std::string gpuname, version;
 		int smcount;
-		cuda_tromp::getinfo(0, i, gpuname, smcount, version);
+#ifdef USE_CUDA_DJEZO
+        cuda_djezo::getinfo(0, i, gpuname, smcount, version);
+#elif USE_CUDA_TROMP
+        cuda_tromp::getinfo(0, i, gpuname, smcount, version);
+#endif
 		std::cout << "\t#" << i << " " << gpuname << " | SM version: " << version << " | SM count: " << smcount << std::endl;
 	}
 }
@@ -233,9 +237,8 @@ int main(int argc, char* argv[])
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << "\t\tEquihash CPU&GPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "\tThanks to Zcash developers for providing base of the code." << std::endl;
-	std::cout << "\t    Special thanks to tromp, xenoncat, mbevand, djeZo, "<< std::endl;
-	std::cout << "\t             and eXtremal-ik7 for providing " << std::endl;
-	std::cout << "\t      optimized CPU, CUDA and AMD equihash solvers." << std::endl;
+	std::cout << "\t    Special thanks to tromp, xenoncat and djeZo for providing "<< std::endl;
+	std::cout << "\t      optimized CPU and CUDA equihash solvers." << std::endl;
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << std::endl;
 
@@ -272,7 +275,7 @@ int main(int argc, char* argv[])
 				use_old_cuda = atoi(argv[++i]);
 				break;
 			case 'd':
-				while (cuda_device_count < 8 && i + 1 < argc)
+				while (cuda_device_count < MAX_INSTANCES && i + 1 < argc)
 				{
 					try
 					{
@@ -287,7 +290,7 @@ int main(int argc, char* argv[])
 				}
 				break;
 			case 'b':
-				while (cuda_bc < 8 && i + 1 < argc)
+				while (cuda_bc < MAX_INSTANCES && i + 1 < argc)
 				{
 					try
 					{
@@ -302,7 +305,7 @@ int main(int argc, char* argv[])
 				}
 				break;
 			case 't':
-				while (cuda_tbpc < 8 && i + 1 < argc)
+				while (cuda_tbpc < MAX_INSTANCES && i + 1 < argc)
 				{
 					try
 					{
@@ -319,53 +322,53 @@ int main(int argc, char* argv[])
 			}
 			break;
 		}
-		case 'o':
-		{
-			switch (argv[i][2])
-			{
-			case 'i':
-				print_opencl_info();
-				return 0;
-			case 'v':
-				use_old_xmp = atoi(argv[++i]);
-				break;
-			case 'p':
-				opencl_platform = std::stol(argv[++i]);
-				break;
-			case 'd':
-				while (opencl_device_count < 8 && i + 1 < argc)
-				{
-					try
-					{
-						opencl_enabled[opencl_device_count] = std::stol(argv[++i]);
-						++opencl_device_count;
-					}
-					catch (...)
-					{
-						--i;
-						break;
-					}
-				}
-				break;
-			case 't':
-				while (opencl_t < 8 && i + 1 < argc)
-				{
-					try
-					{
-						opencl_threads[opencl_t] = std::stol(argv[++i]);
-						++opencl_t;
-					}
-					catch (...)
-					{
-						--i;
-						break;
-					}
-				}
-				break;
-				// TODO extra parameters for OpenCL
-			}
-			break;
-		}
+		//case 'o':
+		//{
+		//	switch (argv[i][2])
+		//	{
+		//	case 'i':
+		//		print_opencl_info();
+		//		return 0;
+		//	case 'v':
+		//		use_old_xmp = atoi(argv[++i]);
+		//		break;
+		//	case 'p':
+		//		opencl_platform = std::stol(argv[++i]);
+		//		break;
+		//	case 'd':
+		//		while (opencl_device_count < 8 && i + 1 < argc)
+		//		{
+		//			try
+		//			{
+		//				opencl_enabled[opencl_device_count] = std::stol(argv[++i]);
+		//				++opencl_device_count;
+		//			}
+		//			catch (...)
+		//			{
+		//				--i;
+		//				break;
+		//			}
+		//		}
+		//		break;
+		//	case 't':
+		//		while (opencl_t < 8 && i + 1 < argc)
+		//		{
+		//			try
+		//			{
+		//				opencl_threads[opencl_t] = std::stol(argv[++i]);
+		//				++opencl_t;
+		//			}
+		//			catch (...)
+		//			{
+		//				--i;
+		//				break;
+		//			}
+		//		}
+		//		break;
+		//		// TODO extra parameters for OpenCL
+		//	}
+		//	break;
+		//}
 		case 'l':
 			location = argv[++i];
 			break;

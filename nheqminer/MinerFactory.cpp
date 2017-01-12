@@ -5,8 +5,11 @@
 extern int use_avx;
 extern int use_avx2;
 
+
+
 MinerFactory::~MinerFactory()
 {
+	ClearAllSolvers();
 }
 
 std::vector<ISolver *> MinerFactory::GenerateSolvers(int cpu_threads, int cuda_count, int* cuda_en, int* cuda_b, int* cuda_t,
@@ -44,37 +47,42 @@ std::vector<ISolver *> MinerFactory::GenerateSolvers(int cpu_threads, int cuda_c
 }
 
 void MinerFactory::ClearAllSolvers() {
+	for (ISolver * ds : _solvers) {
+		if (ds != nullptr) {
+			delete ds;
+		}
+	}
 	_solvers.clear();
 }
 
 ISolver * MinerFactory::GenCPUSolver(int use_opt) {
 	if (_use_xenoncat) {
-		_solvers.push_back(std::make_unique<CPUSolverXenoncat>(use_opt));
-		return _solvers.back().get();
+		_solvers.push_back(new CPUSolverXenoncat(use_opt));
+		return _solvers.back();
 	} else {
-		_solvers.push_back(std::make_unique<CPUSolverTromp>(use_opt));
-		return _solvers.back().get();
+		_solvers.push_back(new CPUSolverTromp(use_opt));
+		return _solvers.back();
 	}
 }
 
 ISolver * MinerFactory::GenCUDASolver(int dev_id, int blocks, int threadsperblock) {
 	if (_use_cuda_djezo) {
-		_solvers.push_back(std::make_unique<CUDASolverDjezo>(dev_id, blocks, threadsperblock));
-		return _solvers.back().get();
+		_solvers.push_back(new CUDASolverDjezo(dev_id, blocks, threadsperblock));
+		return _solvers.back();
 	}
 	else {
-		_solvers.push_back(std::make_unique<CUDASolverTromp>(dev_id, blocks, threadsperblock));
-		return _solvers.back().get();
+		_solvers.push_back(new CUDASolverTromp(dev_id, blocks, threadsperblock));
+		return _solvers.back();
 	}
 }
 
 ISolver * MinerFactory::GenOPENCLSolver(int platf_id, int dev_id) {
 	if (_use_silentarmy) {
-		_solvers.push_back(std::make_unique<OPENCLSolverSilentarmy>(platf_id, dev_id));
-		return _solvers.back().get();
+		_solvers.push_back(new OPENCLSolverSilentarmy(platf_id, dev_id));
+		return _solvers.back();
 	}
 	else {
-		_solvers.push_back(std::make_unique<OPENCLSolverXMP>(platf_id, dev_id));
-		return _solvers.back().get();
+		_solvers.push_back(new OPENCLSolverXMP(platf_id, dev_id));
+		return _solvers.back();
 	}
 }

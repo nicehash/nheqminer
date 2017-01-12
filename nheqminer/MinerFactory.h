@@ -1,7 +1,6 @@
 #pragma once
 
 #include <AvailableSolvers.h>
-#include <memory>
 
 class MinerFactory
 {
@@ -17,7 +16,7 @@ public:
 	void ClearAllSolvers();
 
 private:
-	std::vector<std::unique_ptr<ISolver>> _solvers;
+	std::vector<ISolver *> _solvers;
 
 	bool _use_xenoncat = true;
 	bool _use_cuda_djezo = true;

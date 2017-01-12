@@ -684,9 +684,13 @@ void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers) {
 	// bind benchmark threads
 	for (int i = 0; i < solvers.size(); ++i) {
 		bthreads[i] = std::thread(boost::bind(&benchmark_thread, i, solvers[i]));
-	}
-	// TODO get back to this sleep
-	Sleep(1000);
+    }
+#ifdef WIN32
+    // TODO get back to this sleep
+    Sleep(1000);
+#else
+    sleep(1);
+#endif
 
 	BOOST_LOG_TRIVIAL(info) << "Benchmark starting... this may take several minutes, please wait...";
 
