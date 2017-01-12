@@ -226,9 +226,6 @@
     <ClCompile Include="utilstrencodings.cpp">
       <Filter>Source Files\stuff</Filter>
     </ClCompile>
-    <ClCompile Include="AvailableSolvers.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MinerFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

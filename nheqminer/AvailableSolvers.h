@@ -21,6 +21,7 @@ CREATE_SOLVER_STUB(cpu_xenoncat, "cpu_xenoncat_STUB")
 CREATE_SOLVER_STUB(cuda_tromp, "cuda_tromp_STUB")
 CREATE_SOLVER_STUB(cuda_djezo, "cuda_djezo_STUB")
 #endif
+// OpenCL solvers are fropped replace with new OS solvers
 #ifdef USE_OCL_XMP
 #include "../ocl_xpm/ocl_xmp.hpp"
 #else
