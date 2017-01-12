@@ -47,14 +47,12 @@ else()
 endif ()
 
 #set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-m64;--std=c++11;--disable-warnings;--ptxas-options=-v;-use_fast_math;-lineinfo)
-
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};--disable-warnings;--ptxas-options=-v;-use_fast_math;-lineinfo)
+#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};--disable-warnings;--ptxas-options=-v;-use_fast_math;-lineinfo)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-D_FORCE_INLINES;--disable-warnings;--ptxas-options=-v;-Xptxas=-dlcm=ca;-Xptxas=-dscm=cs; -O3)
 
 add_definitions(-DHIST)
 #add_definitions(-DXINTREE)
 #add_definitions(-DUNROLL)
-
-list(APPEND CUDA_NVCC_FLAGS_RELEASE -O3)
 
 
 FIND_PACKAGE(CUDA REQUIRED)
@@ -66,7 +64,6 @@ endif(COMPUTE AND (COMPUTE GREATER 0))
 
 include_directories(${CUDA_INCLUDE_DIRS})
 
-find_package(Threads REQUIRED COMPONENTS)
 find_package(Boost REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
 
 if(CUDA_FOUND)
@@ -74,25 +71,6 @@ message("CUDA FOUND")
 else()
 message("CUDA NOT FOUND")
 endif()
-
-if (Boost_FOUND)
-  # From the offical documentation:
-  # Add include directories to the build. [...] If the SYSTEM option is given,
-  # the compiler will be told the directories are meant as system include
-  # directories on some platforms (signalling this setting might achieve effects
-  # such as the compiler skipping warnings [...])."
-  include_directories (SYSTEM ${Boost_INCLUDE_DIR})
-
-  # From the offical documentation:
-  # "Specify directories in which the linker will look for libraries. [...] Note
-  # that this command is rarely necessary. Library locations returned by
-  # find_package() and find_library() are absolute paths. Pass these absolute
-  # library file paths directly to the target_link_libraries() command. CMake
-  # will ensure the linker finds them."
-  link_directories (${Boost_LIBRARY_DIRS})
-else()
-    message("Boost_FOUND NOT FOUND")
-endif ()
 
 ## Add solvers here
 #add_definitions(-DUSE_CPU_XENONCAT)

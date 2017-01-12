@@ -8,20 +8,26 @@
 Windows builds made by us are available here: https://github.com/nicehash/nheqminer/releases
 
 Download and install:
-- [AMD APP SDK](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/) (if not needed remove **USE_OCL_XMP** from **nheqminer** Preprocessor definitions under Properties > C/C++ > Preprocessor)
-- [CUDA SDK](https://developer.nvidia.com/cuda-downloads) (if not needed remove **USE_CUDA_TROMP** from **nheqminer** Preprocessor definitions under Properties > C/C++ > Preprocessor)
+- [CUDA SDK](https://developer.nvidia.com/cuda-downloads) (if not needed remove **USE_CUDA_TROMP** and **USE_CUDA_DJEZO** from **nheqminer** Preprocessor definitions under Properties > C/C++ > Preprocessor)
 - Visual Studio 2013 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs
-- Visual Studio Update 5 installed
+- [Visual Studio Update 5](https://www.microsoft.com/en-us/download/details.aspx?id=48129) installed
 - 64 bit version only
 
 Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build. You will have to build ReleaseSSE2 cpu_tromp project first, then Release7.5 cuda_tromp project, then select Release and build all.
 
+### Enabled solvers: 
+  - USE_CPU_TROMP
+  - USE_CPU_XENONCAT
+  - USE_CUDA_TROMP
+  - USE_CUDA_DJEZO
+
+If you don't wan't to build with all solvlers you can go to **nheqminer Properties > C/C++ > Preprocessor > Preprocessor Definitions** and remove the solver you don't need.
 
 ## Linux
 
 Work in progress.
 
-Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, OCL_XMP, OCL_SILENTARMY
+Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, CUDA_DJEZO
 
 ## Linux (Ubuntu 14.04 / 16.04) Build CPU_XENONCAT:
 
@@ -50,19 +56,6 @@ Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, OCL_XMP, OCL_SILENTARMY
    - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
    - `cd nheqminer/Linux_cmake/nheqminer_cuda_tromp && cmake . && make -j $(nproc)`
    - or specify your compute version for example 50 like so `cd nheqminer/Linux_cmake/nheqminer_cuda_tromp && cmake COMPUTE=50 . && make`
-
-## Linux (16.04) Build OCL_XMP, OCL_SILENTARMY:
-
- - Open terminal and run the following commands:
-   - [AMD APP SDK](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/)
-   - and make sure you have the [AMD drivers](http://support.amd.com/en-us/download) installed
-   - install them to the default paths
-   - `sudo apt-get install mesa-common-dev`
-   - `sudo apt-get install cmake build-essential libboost-all-dev`
-   - `git clone -b Linux https://github.com/nicehash/nheqminer.git`
-   - `cd nheqminer/Linux_cmake/nheqminer_AMD && cmake . -DOPENCL_LIBRARY=/usr/lib/x86_64-linux-gnu/libOpenCL.so -DOPENCL_INCLUDE_DIRECTORY=/opt/AMDAPPSDK-3.0/include && make -j $(nproc)`
-   - `cp ../../3rdparty/amd_bins_linux/* -r .`
-   - `cp ../../3rdparty/amd_silentarmy_kernels/* -r .`
 
    
 
