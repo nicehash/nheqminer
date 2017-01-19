@@ -5,7 +5,7 @@
 
 ## Windows:
 
-Windows builds made by us are available here: https://github.com/nicehash/nheqminer/releases
+Windows builds made by us are available here: https://github.com/etherchain-org/nheqminer/releases
 
 Download and install:
 - [CUDA SDK](https://developer.nvidia.com/cuda-downloads) (if not needed remove **USE_CUDA_TROMP** and **USE_CUDA_DJEZO** from **nheqminer** Preprocessor definitions under Properties > C/C++ > Preprocessor)
@@ -80,16 +80,16 @@ Example to run benchmark on your CPU:
 
         nheqminer -b
         
-Example to mine on your CPU with your own BTC address and worker1 on NiceHash USA server:
+Example to mine on your CPU with your Zcash address and worker1 on Flypool USA server:
 
-        nheqminer -l equihash.usa.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1
+        nheqminer -l us1-zcash.flypool.org:3333 -u YOUR_Zcash_ADDRESS_HERE.worker1
 
-Example to mine on your CPU with your own BTC address and worker1 on EU server, using 6 threads:
+Example to mine on your CPU with your own Zcash address and worker1 on EU server, using 6 threads:
 
-        nheqminer -l equihash.eu.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1 -t 6
+        nheqminer -l eu1-zcash.flypool.org:3333 -u YOUR_Zcash_ADDRESS_HERE.worker1 -t 6
 
 <i>Note: if you have a 4-core CPU with hyper threading enabled (total 8 threads) it is best to run with only 6 threads (experimental benchmarks shows that best results are achieved with 75% threads utilized)</i>
 
-Example to mine on your CPU as well on your CUDA GPUs with your own BTC address and worker1 on EU server, using 6 CPU threads and 2 CUDA GPUs:
+Example to mine on your CPU as well on your CUDA GPUs with your own Zcash address and worker1 on EU server, using 6 CPU threads and 2 CUDA GPUs:
 
-        nheqminer -l equihash.eu.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1 -t 6 -cd 0 1
+        nheqminer -l eu1-zcash.flypool.org:3333 -u YOUR_Zcash_ADDRESS_HERE.worker1 -t 6 -cd 0 1
