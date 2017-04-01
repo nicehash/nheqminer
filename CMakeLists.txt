@@ -45,6 +45,13 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
     # optimizations
     add_definitions(-O2)
+else()
+    # apple
+    if(APPLE)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
+        add_definitions(-O2)
+    endif()
 endif()
 
 # Common
