@@ -6,7 +6,7 @@
 #ifndef BITCOIN_SERIALIZE_H
 #define BITCOIN_SERIALIZE_H
 
-#ifdef WIN32
+#if (defined(WIN32) || defined(__APPLE__))
 #include "compat/endian.h"
 #else
 #include <endian.h>
