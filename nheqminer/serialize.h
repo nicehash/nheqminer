@@ -652,9 +652,14 @@ void Serialize_impl(Stream& os, const std::vector<T, A>& v, int nType, int nVers
 template<typename Stream, typename T, typename A, typename V>
 void Serialize_impl(Stream& os, const std::vector<T, A>& v, int nType, int nVersion, const V&)
 {
+#if defined(__APPLE__)
+    #warning "HACK: 'error: call to 'Serialize' is ambiguous'"
+    assert(0);
+#else
     WriteCompactSize(os, v.size());
     for (typename std::vector<T, A>::const_iterator vi = v.begin(); vi != v.end(); ++vi)
         ::Serialize(os, (*vi), nType, nVersion);
+#endif
 }
 
 template<typename Stream, typename T, typename A>
