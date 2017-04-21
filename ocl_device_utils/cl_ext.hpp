@@ -164,9 +164,9 @@
 #endif // _WIN32
 
 // 
-//#if defined(USE_CL_DEVICE_FISSION)
-#include <CL/cl_ext.h> // include this for AMD topology
-//#endif
+#if defined(USE_CL_DEVICE_FISSION)
+#include <CL/cl_ext.h> // AMD topology not needed here
+#endif
 
 #if defined(__APPLE__) || defined(__MACOSX)
 #include <OpenGL/OpenGL.h>

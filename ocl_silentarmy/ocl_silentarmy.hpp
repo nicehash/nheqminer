@@ -52,8 +52,6 @@ struct DLL_OCL_SILENTARMY ocl_silentarmy
 
 	std::string getname() { return "OCL_SILENTARMY"; }
 
-	static void print_opencl_devices();
-
 private:
 	std::string m_gpu_name;
 	std::string m_version;

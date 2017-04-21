@@ -212,7 +212,7 @@ int blake2b_update(blake2b_state *S, const uint8_t *in, uint64_t inlen)
 		else // inlen <= fill
 		{
 			memcpy(S->buf + left, in, inlen);
-			S->buflen += inlen; // not enough to compress
+			S->buflen += (uint8_t) inlen; // not enough to compress
 			in += inlen;
 			inlen = 0;
 		}

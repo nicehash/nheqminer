@@ -8,17 +8,13 @@
 using namespace std;
 using namespace cl;
 
-//ocl_device_utils::ocl_device_utils()
-//{
-//}
-//
-//ocl_device_utils::~ocl_device_utils()
-//{
-//}
 
 bool ocl_device_utils::_hasQueried = false;
 std::vector<std::string> ocl_device_utils::_platformNames;
 std::vector<PrintInfo> ocl_device_utils::_devicesPlatformsDevices;
+std::vector<cl::Device> ocl_device_utils::_AllDevices;
+
+std::vector<cl_device_id> GetAllDevices(); // opencl.cpp
 
 vector<Platform> ocl_device_utils::getPlatforms() {
 	vector<Platform> platforms;
@@ -34,6 +30,11 @@ vector<Platform> ocl_device_utils::getPlatforms() {
 			throw err;
 	}
 	return platforms;
+}
+
+void ocl_device_utils::print_opencl_devices() {
+	ocl_device_utils::QueryDevices();
+	ocl_device_utils::PrintDevices();
 }
 
 vector<Device> ocl_device_utils::getDevices(vector<Platform> const& _platforms, unsigned _platformId) {
@@ -57,6 +58,12 @@ bool ocl_device_utils::QueryDevices() {
 	if (!_hasQueried) {
 		_hasQueried = true;
 		try {
+			auto devices = GetAllDevices();
+
+			for (auto& device : devices) {
+				_AllDevices.emplace_back(cl::Device(device));
+			}
+
 			// get platforms
 			auto platforms = getPlatforms();
 			if (platforms.empty()) {
@@ -121,28 +128,34 @@ int ocl_device_utils::GetCountForPlatform(int platformID) {
 	for (const auto &platInfo : _devicesPlatformsDevices)
 	{
 		if (platformID == platInfo.PlatformNum) {
-			return platInfo.Devices.size();
+			return (int) platInfo.Devices.size();
 		}
 	}
 	return 0;
 }
 
 void ocl_device_utils::PrintDevices() {
-	int allDevsCount = 0;
-	for (const auto &platInfo : _devicesPlatformsDevices) {
-		allDevsCount += platInfo.Devices.size();
-	}
-	cout << "Number of OpenCL devices found: " << allDevsCount << endl;
-	{
-		int devPlatformsComma = _devicesPlatformsDevices.size();
-		for (const auto &platInfo : _devicesPlatformsDevices) {
-			cout << "\tPlatform: " << platInfo.PlatformName << " | " << "PlatformNum: " << platInfo.PlatformNum << endl;
-			cout << "\t\tDevices: " << endl;
-			// device print
-			int devComma = platInfo.Devices.size();
-			for (const auto &dev : platInfo.Devices) {
-				cout << "\t\t\t#" << dev.DeviceID << " " << dev._CL_DEVICE_NAME << " | " << dev._CL_DEVICE_TYPE << endl;
-			}
+	cout << "Number of OpenCL devices found: " << _AllDevices.size() << endl;
+	for (unsigned int i = 0; i < _AllDevices.size(); ++i) {
+		auto& item = _AllDevices[i];
+		auto& platform = cl::Platform(item.getInfo<CL_DEVICE_PLATFORM>());
+		cout << "Device #" << i << " | " << platform.getInfo<CL_PLATFORM_NAME>() << " | " << item.getInfo<CL_DEVICE_NAME>();
+
+		switch (item.getInfo<CL_DEVICE_TYPE>()) {
+		case CL_DEVICE_TYPE_CPU:
+			cout << " | CPU";
+			break;
+		case CL_DEVICE_TYPE_GPU:
+			cout << " | GPU";
+			break;
+		case CL_DEVICE_TYPE_ACCELERATOR:
+			cout << " | ACCELERATOR";
+			break;
+		default:
+			cout << " | DEFAULT";
+			break;
 		}
+		cout << " | " << item.getInfo<CL_DEVICE_VERSION>();
+		cout << endl;
 	}
 }

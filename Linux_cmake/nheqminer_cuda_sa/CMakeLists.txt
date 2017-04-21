@@ -1,7 +1,8 @@
-project(nheqminer_cuda_tromp)
+project(nheqminer_cuda_sa)
 cmake_minimum_required(VERSION 2.8)
 
 option(ENABLE_CUDA "Enable the cuda build" ON)
+option(ENABLE_AVX  "Enable CPU (need AVX)" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -34,7 +35,7 @@ FIND_PACKAGE(CUDA REQUIRED)
 if(COMPUTE AND (COMPUTE GREATER 0))
         LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_${COMPUTE},code=sm_${COMPUTE})
 else(COMPUTE AND (COMPUTE GREATER 0))
-        set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};; -gencode arch=compute_20,code=sm_21; -gencode arch=compute_30,code=sm_30; -gencode arch=compute_35,code=sm_35; -gencode arch=compute_50,code=sm_50; -gencode arch=compute_52,code=sm_52; -gencode arch=compute_61,code=sm_61 )
+        set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};; -gencode arch=compute_52,code=sm_52; -gencode arch=compute_50,code=sm_50; -gencode arch=compute_20,code=sm_21 )
 endif(COMPUTE AND (COMPUTE GREATER 0))
 
 include_directories(${CUDA_INCLUDE_DIRS})
@@ -65,18 +66,21 @@ if (Boost_FOUND)
   link_directories (${Boost_LIBRARY_DIRS})
 else()
     message("Boost_FOUND NOT FOUND")
-endif ()
+endif()
 
 ## Add solvers here
-#add_definitions(-DUSE_CPU_XENONCAT)
 #add_definitions(-DUSE_CPU_TROMP)
-add_definitions(-DUSE_CUDA_TROMP)
+add_definitions(-DUSE_CUDA_SA)
 
-#add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )
-#set_target_properties ( xenoncat_avx1 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx1.o" )
+if(ENABLE_AVX)
+  add_definitions(-DUSE_CPU_XENONCAT)
 
-#add_library ( xenoncat_avx2 SHARED IMPORTED GLOBAL )
-#set_target_properties ( xenoncat_avx2 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx2.o" )
+  add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )
+  set_target_properties ( xenoncat_avx1 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx1.o" )
+
+  add_library ( xenoncat_avx2 SHARED IMPORTED GLOBAL )
+  set_target_properties ( xenoncat_avx2 PROPERTIES IMPORTED_LOCATION "../../cpu_xenoncat/Linux/asm/equihash_avx2.o" )
+endif(ENABLE_AVX)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/../../nheqminer/)
 
@@ -130,6 +134,7 @@ set(SOURCE_FILES
     ../../nheqminer/zcash/NoteEncryption.hpp
     ../../nheqminer/zcash/Proof.hpp
     ../../nheqminer/zcash/Zcash.h
+
     ../../nheqminer/SolverStub.h # just a stub
 
 #    # cpu tromp
@@ -146,17 +151,21 @@ set(SOURCE_FILES
 #    ../../cpu_tromp/equi.h
 #    ../../cpu_tromp/equi_miner.h
 
-#    # cpu xenocat
-#    ../../cpu_xenoncat/cpu_xenoncat.hpp
-#    ../../cpu_xenoncat/xenoncat.cpp
+     # cuda sa
+     ../../cuda_silentarmy/cuda_silentarmy.cpp
+     ../../cuda_silentarmy/kernel.cu
+     ../../cuda_silentarmy/sa_blake.cpp
 
-    # cuda tromp
-    ../../cuda_tromp/cuda_tromp.hpp
-    ../../cuda_tromp/cuda_tromp.cpp
-    ../../cuda_tromp/eqcuda.hpp
-    ../../cuda_tromp/equi_miner.cu
-    ../../cpu_tromp/blake2/blake2bx.cpp
     )
+
+if(ENABLE_AVX)
+  set(SOURCE_FILES
+     ${SOURCE_FILES}
+     # cpu xenocat
+     ../../cpu_xenoncat/cpu_xenoncat.hpp
+     ../../cpu_xenoncat/xenoncat.cpp
+  )
+endif(ENABLE_AVX)
 
 #add_executable(${PROJECT_NAME} ${SRC_LIST})
 set(LIBS ${LIBS} ${Threads_LIBRARIES} ${Boost_LIBRARIES})
@@ -168,3 +177,8 @@ set(LIBS ${LIBS} ${Threads_LIBRARIES} ${Boost_LIBRARIES})
 #target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 CUDA_ADD_EXECUTABLE(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} ${LIBS} ${CUDA_LIBRARIES} )
+
+if (ENABLE_AVX)
+  target_link_libraries(${PROJECT_NAME} ${LIBS} ${CUDA_LIBRARIES} xenoncat_avx1 xenoncat_avx2)
+endif(ENABLE_AVX)
+

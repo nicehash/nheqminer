@@ -20,6 +20,7 @@ public:
 	static bool QueryDevices();
 	static void PrintDevices();
 	static int GetCountForPlatform(int platformID);
+	static void print_opencl_devices();
 
 private:
 	static std::vector<cl::Device> getDevices(std::vector<cl::Platform> const& _platforms, unsigned _platformId);
@@ -28,6 +29,7 @@ private:
 	static bool _hasQueried;
 	static std::vector<std::string> _platformNames;
 	static std::vector<PrintInfo> _devicesPlatformsDevices;
+	static std::vector<cl::Device> _AllDevices;
 
 	static std::string StringnNullTerminatorFix(const std::string& str);
 };

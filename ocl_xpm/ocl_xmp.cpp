@@ -43,8 +43,7 @@ struct MinerInstance {
 
 cl_context gContext = 0;
 cl_program gProgram = 0;
-cl_platform_id gPlatform = 0;
-
+extern cl_platform_id gPlatform;
 
 bool MinerInstance::init(cl_context context,
 	cl_program program,
@@ -141,8 +140,6 @@ static int inline digit(cl_command_queue clQueue, cl_kernel kernel, size_t nthre
 ////statics non class END
 ////////////////////////////
 
-#include "ocl_device_utils/ocl_device_utils.h"
-
 ocl_xmp::ocl_xmp(int platf_id, int dev_id) { /*TODO*/
 	platform_id = platf_id;
 	device_id = dev_id;
@@ -153,7 +150,7 @@ ocl_xmp::ocl_xmp(int platf_id, int dev_id) { /*TODO*/
 }
 
 std::string ocl_xmp::getdevinfo() { /*TODO*/
-	return "TODO";
+	return "GPU_ID(" + std::to_string(device_id) + ")";
 }
 
 // STATICS START
@@ -206,7 +203,7 @@ void ocl_xmp::start(ocl_xmp& device_context) {
 
 	for (size_t i = 0; i < gpus.size(); i++) {
 		char kernelName[64];
-		sprintf(kernelName, "equiw200k9_gpu%u_%u.bin", (unsigned)i);
+		sprintf(kernelName, "equiw200k9_gpu%u.bin", (unsigned)i);
 		if (!clCompileKernel(gContext[i],
 			gpus[i],
 			kernelName,
@@ -304,8 +301,4 @@ void ocl_xmp::solve(const char *tequihash_header,
 	hashdonef();
 }
 
-void ocl_xmp::print_opencl_devices() {
-	ocl_device_utils::QueryDevices();
-	ocl_device_utils::PrintDevices();
-}
 // STATICS END

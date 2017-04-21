@@ -1,33 +1,21 @@
 #pragma once
+
 #ifdef _LIB
-#define DLL_OCL_XMP __declspec(dllexport)
+#define DLL_CUDA_SA __declspec(dllexport)
 #else
-#define DLL_OCL_XMP
+#define DLL_CUDA_SA
 #endif
 
-// remove after
-#include <string>
-#include <functional>
-#include <vector>
-#include <cstdint>
+struct sa_cuda_context;
 
-struct MinerInstance;
-
-struct DLL_OCL_XMP ocl_xmp
+struct DLL_CUDA_SA cuda_sa_solver
 {
-	//int threadsperblock;
+	int threadsperblock;
 	int blocks;
 	int device_id;
-	int platform_id;
+	sa_cuda_context* context;
 
-	MinerInstance* context;
-	// threads
-	unsigned threadsNum; // TMP
-	unsigned wokrsize;
-
-	bool is_init_success = false;
-
-	ocl_xmp(int platf_id, int dev_id);
+	cuda_sa_solver(int platf_id, int dev_id);
 
 	std::string getdevinfo();
 
@@ -35,9 +23,9 @@ struct DLL_OCL_XMP ocl_xmp
 
 	static void getinfo(int platf_id, int d_id, std::string& gpu_name, int& sm_count, std::string& version);
 
-	static void start(ocl_xmp& device_context);
+	static void start(cuda_sa_solver& device_context);
 
-	static void stop(ocl_xmp& device_context);
+	static void stop(cuda_sa_solver& device_context);
 
 	static void solve(const char *tequihash_header,
 		unsigned int tequihash_header_len,
@@ -46,11 +34,12 @@ struct DLL_OCL_XMP ocl_xmp
 		std::function<bool()> cancelf,
 		std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
 		std::function<void(void)> hashdonef,
-		ocl_xmp& device_context);
+		cuda_sa_solver& device_context);
 
-	std::string getname() { return "OCL_XMP"; }
+	std::string getname() { return "CUDA-SILENTARMY"; }
 
 private:
 	std::string m_gpu_name;
 	std::string m_version;
+	int m_sm_count;
 };

@@ -62,16 +62,30 @@ struct OclContext {
 	cl_kernel k_rounds[PARAM_K];
 	cl_kernel k_sols;
 
-	cl_mem buf_ht[2], buf_sols, buf_dbg;
+	cl_mem buf_ht[2], buf_sols, buf_dbg, rowCounters[2];
 	size_t global_ws;
 	size_t local_work_size = 64;
 
+	sols_t	*sols;
+
 	bool init(cl_device_id dev, unsigned threadsNum, unsigned threadsPerBlock);
-	
+
+	OclContext() {
+		memset(buf_ht, 0, sizeof(buf_ht));
+		memset(rowCounters, 0, sizeof(rowCounters));
+		buf_sols = buf_dbg = NULL;
+		sols = NULL;
+	}
+
 	~OclContext() {
-		clReleaseMemObject(buf_dbg);
-		clReleaseMemObject(buf_ht[0]);
-		clReleaseMemObject(buf_ht[1]);
+		if (buf_sols) {
+			clReleaseMemObject(buf_dbg);
+			clReleaseMemObject(buf_ht[0]);
+			clReleaseMemObject(buf_ht[1]);
+			clReleaseMemObject(rowCounters[0]);
+			clReleaseMemObject(rowCounters[1]);
+		}
+		free(sols);
 	}
 };
 
@@ -93,12 +107,14 @@ bool OclContext::init(
 	size_t              dbg_size = 1;
 #endif
 
-	buf_dbg = check_clCreateBuffer(_context, CL_MEM_READ_WRITE |
-		CL_MEM_HOST_NO_ACCESS, dbg_size, NULL);
+	buf_dbg = check_clCreateBuffer(_context, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, dbg_size, NULL);
 	buf_ht[0] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, HT_SIZE, NULL);
 	buf_ht[1] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, HT_SIZE, NULL);
-	buf_sols = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, sizeof(sols_t),
-		NULL);
+	buf_sols = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, sizeof(sols_t), NULL);
+
+	rowCounters[0] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, NR_ROWS, NULL);
+	rowCounters[1] = check_clCreateBuffer(_context, CL_MEM_READ_WRITE, NR_ROWS, NULL);
+
 
 
 	fprintf(stderr, "Hash tables will use %.1f MB\n", 2.0 * HT_SIZE / 1e6);
@@ -109,6 +125,8 @@ bool OclContext::init(
 		sprintf(kernelName, "kernel_round%d", i);
 		k_rounds[i] = clCreateKernel(_program, kernelName, &error);
 	}
+
+	sols = (sols_t *)malloc(sizeof(*sols));
 
 	k_sols = clCreateKernel(_program, "kernel_sols", &error);
 	return true;
@@ -265,10 +283,10 @@ size_t select_work_size_blake(void)
 	return work_size;
 }
 
-static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, cl_mem buf_ht)
+static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, cl_mem buf_ht, cl_mem rowCounters)
 {
-	size_t      global_ws = NR_ROWS;
-	size_t      local_ws = 64;
+	size_t      global_ws = NR_ROWS / ROWS_PER_UINT;
+	size_t      local_ws = 256;
 	cl_int      status;
 #if 0
 	uint32_t    pat = -1;
@@ -281,6 +299,7 @@ static void init_ht(cl_command_queue queue, cl_kernel k_init_ht, cl_mem buf_ht)
 		fatal("clEnqueueFillBuffer (%d)\n", status);
 #endif
 	status = clSetKernelArg(k_init_ht, 0, sizeof(buf_ht), &buf_ht);
+	status = clSetKernelArg(k_init_ht, 1, sizeof(rowCounters), &rowCounters);
 	if (status != CL_SUCCESS)
 		printf("clSetKernelArg (%d)\n", status);
 	check_clEnqueueNDRangeKernel(queue, k_init_ht,
@@ -348,97 +367,118 @@ static uint32_t verify_sol(sols_t *sols, unsigned sol_i)
 
 
 
-ocl_silentarmy::ocl_silentarmy(int platf_id, int dev_id) { /*TODO*/
+ocl_silentarmy::ocl_silentarmy(int platf_id, int dev_id) {
 	platform_id = platf_id;
 	device_id = dev_id;
 	// TODO 
 	threadsNum = 8192;
 	wokrsize = 128; // 256;
-	//threadsperblock = 128;
 }
 
-std::string ocl_silentarmy::getdevinfo() { /*TODO*/
-	return "TODO";
+std::string ocl_silentarmy::getdevinfo() {
+	static auto devices = GetAllDevices();
+	auto device = devices[device_id];
+	std::vector<char> name(256, 0);
+	size_t nActualSize = 0;
+	std::string gpu_name;
+
+	cl_int rc = clGetDeviceInfo(device, CL_DEVICE_NAME, name.size(), &name[0], &nActualSize);
+
+	gpu_name.assign(&name[0], nActualSize);
+
+	return "GPU_ID( " + gpu_name + ")";
 }
 
 // STATICS START
-int ocl_silentarmy::getcount() { /*TODO*/
-	return 0;
+int ocl_silentarmy::getcount() {
+	static auto devices = GetAllDevices();
+	return (int) devices.size();
 }
 
-void ocl_silentarmy::getinfo(int platf_id, int d_id, std::string& gpu_name, int& sm_count, std::string& version) { /*TODO*/ }
+void ocl_silentarmy::getinfo(int platf_id, int d_id, std::string& gpu_name, int& sm_count, std::string& version) { 
+	static auto devices = GetAllDevices();
+
+	if (devices.size() <= d_id) {
+		return;
+	}
+	auto device = devices[d_id];
+
+	std::vector<char> name(256, 0);
+	cl_uint compute_units = 0;
+
+	size_t nActualSize = 0;
+	cl_int rc = clGetDeviceInfo(device, CL_DEVICE_NAME, name.size(), &name[0], &nActualSize);
+
+	if (rc == CL_SUCCESS) {
+		gpu_name.assign(&name[0], nActualSize);
+	}
+
+	rc = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(cl_uint), &compute_units, &nActualSize);
+	if (rc == CL_SUCCESS) {
+		sm_count = (int)compute_units;
+	}
+
+	memset(&name[0], 0, name.size());
+	rc = clGetDeviceInfo(device, CL_DEVICE_VERSION, name.size(), &name[0], &nActualSize);
+	if (rc == CL_SUCCESS) {
+		version.assign(&name[0], nActualSize);
+	}
+}
 
 void ocl_silentarmy::start(ocl_silentarmy& device_context) {
 	/*TODO*/
 	device_context.is_init_success = false;
-	device_context.oclc = new OclContext();
+	device_context.oclc = new OclContext;
+	auto devices = GetAllDevices();
+	auto device = devices[device_context.device_id];
 
-	std::vector<cl_device_id> allGpus;
-	if (!clInitialize(device_context.platform_id, allGpus)) {
-		return;
-	}
-
-	// this is kinda stupid but it works
-	std::vector<cl_device_id> gpus;
-	for (unsigned i = 0; i < allGpus.size(); ++i) {
-		if (i == device_context.device_id) {
-			printf("Using device %d as GPU %d\n", i, (int)gpus.size());
-			device_context.oclc->_dev_id = allGpus[i];
-			gpus.push_back(allGpus[i]);
-		}
-	}
-
-	if (!gpus.size()){
-		printf("Device id %d not found\n", device_context.device_id);
-		return;
-	}
+	size_t nActualSize = 0;
+	cl_platform_id platform_id = nullptr;
+	cl_int rc = clGetDeviceInfo(device, CL_DEVICE_PLATFORM, sizeof(cl_platform_id), &platform_id, &nActualSize);
+	
+	device_context.oclc->_dev_id = device;
+	device_context.oclc->platform_id = platform_id;
 
 	// context create
-	for (unsigned i = 0; i < gpus.size(); i++) {
-		cl_context_properties props[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)device_context.oclc->platform_id, 0 };
-		cl_int error;
-		device_context.oclc->_context = clCreateContext(NULL, 1, &gpus[i], 0, 0, &error);
-		//OCLR(error, false);
-		if (cl_int err = error) {
-			printf("OpenCL error: %d at %s:%d\n", err, __FILE__, __LINE__);
-			return;
-		}
+	cl_context_properties props[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)device_context.oclc->platform_id, 0 };
+	cl_int error;
+	device_context.oclc->_context = clCreateContext(NULL, 1, &device, 0, 0, &error);
+	//OCLR(error, false);
+	if (cl_int err = error) {
+		printf("OpenCL error: %d at %s:%d\n", err, __FILE__, __LINE__);
+		return;
 	}
 
-	std::vector<cl_int> binstatus;
-	binstatus.resize(gpus.size());
+	cl_int binstatus;
 
-	for (size_t i = 0; i < gpus.size(); i++) {
-		char kernelName[64];
-		sprintf(kernelName, "silentarmy_gpu%u.bin", (unsigned)i);
-		if (!clCompileKernel(device_context.oclc->_context,
-			gpus[i],
-			kernelName,
-			{ "zcash/gpu/kernel.cl" },
-			"",
-			&binstatus[i],
-			&device_context.oclc->_program)) {
-			return;
-		}
+	char kernelName[64];
+	sprintf(kernelName, "silentarmy_gpu_%u.bin", (unsigned)device_context.device_id);
+	if (!clCompileKernel(device_context.oclc->_context,
+		device,
+		kernelName,
+		{ "zcash/gpu/kernel.cl" },
+		"",
+		&binstatus,
+		&device_context.oclc->_program)) {
+		return;
 	}
 
-	for (unsigned i = 0; i < gpus.size(); ++i) {
-		if (binstatus[i] == CL_SUCCESS) {
-			if (!device_context.oclc->init(gpus[i], device_context.threadsNum, device_context.wokrsize)) {
-				printf("Init failed");
-				return;
-			}
-		}
-		else {
-			printf("GPU %d: failed to load kernel\n", i);
+	if (binstatus == CL_SUCCESS) {
+		if (!device_context.oclc->init(device, device_context.threadsNum, device_context.wokrsize)) {
+			printf("Init failed");
 			return;
 		}
+	} else {
+		printf("GPU %d: failed to load kernel\n", device_context.device_id);
+		return;
 	}
 
 	device_context.is_init_success = true;
 }
 
-void ocl_silentarmy::stop(ocl_silentarmy& device_context) { /*TODO*/
+#include <iostream>
+
+void ocl_silentarmy::stop(ocl_silentarmy& device_context) {
 	if (device_context.oclc != nullptr) delete device_context.oclc;
 }
 
@@ -449,7 +489,10 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 	std::function<bool()> cancelf,
 	std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
 	std::function<void(void)> hashdonef,
-	ocl_silentarmy& device_context) {
+	ocl_silentarmy& device_context)
+{
+	if (!device_context.is_init_success || device_context.oclc == nullptr)
+		return;
 
 	unsigned char context[140];
 	memset(context, 0, 140);
@@ -470,68 +513,66 @@ void ocl_silentarmy::solve(const char *tequihash_header,
 
 	for (unsigned round = 0; round < PARAM_K; round++)
 	{
-		if (round < 2)
-			init_ht(miner->queue, miner->k_init_ht, miner->buf_ht[round % 2]);
+		init_ht(miner->queue, miner->k_init_ht, miner->buf_ht[round & 1], miner->rowCounters[round & 1]);
 		if (!round)
 		{
 			check_clSetKernelArg(miner->k_rounds[round], 0, &buf_blake_st);
-			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round % 2]);
+			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round & 1]);
+			check_clSetKernelArg(miner->k_rounds[round], 2, &miner->rowCounters[round & 2]);
 			miner->global_ws = select_work_size_blake();
 		}
 		else
 		{
-			check_clSetKernelArg(miner->k_rounds[round], 0, &miner->buf_ht[(round - 1) % 2]);
-			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round % 2]);
+			check_clSetKernelArg(miner->k_rounds[round], 0, &miner->buf_ht[(round - 1) & 1]);
+			check_clSetKernelArg(miner->k_rounds[round], 1, &miner->buf_ht[round & 1]);
+			check_clSetKernelArg(miner->k_rounds[round], 2, &miner->rowCounters[(round - 1) & 1]);
+			check_clSetKernelArg(miner->k_rounds[round], 3, &miner->rowCounters[round & 1]);
 			miner->global_ws = NR_ROWS;
 		}
-		check_clSetKernelArg(miner->k_rounds[round], 2, &miner->buf_dbg);
+		check_clSetKernelArg(miner->k_rounds[round], round == 0 ? 3 : 4, &miner->buf_dbg);
 		if (round == PARAM_K - 1)
-			check_clSetKernelArg(miner->k_rounds[round], 3, &miner->buf_sols);
+			check_clSetKernelArg(miner->k_rounds[round], 5, &miner->buf_sols);
 		check_clEnqueueNDRangeKernel(miner->queue, miner->k_rounds[round], 1, NULL,
 			&miner->global_ws, &miner->local_work_size, 0, NULL, NULL);
+		// cancel function
+		if (cancelf()) return;
 	}
 	check_clSetKernelArg(miner->k_sols, 0, &miner->buf_ht[0]);
 	check_clSetKernelArg(miner->k_sols, 1, &miner->buf_ht[1]);
 	check_clSetKernelArg(miner->k_sols, 2, &miner->buf_sols);
+	check_clSetKernelArg(miner->k_sols, 3, &miner->rowCounters[0]);
+	check_clSetKernelArg(miner->k_sols, 4, &miner->rowCounters[1]);
 	miner->global_ws = NR_ROWS;
 	check_clEnqueueNDRangeKernel(miner->queue, miner->k_sols, 1, NULL,
 		&miner->global_ws, &miner->local_work_size, 0, NULL, NULL);
-	
-	
-	sols_t	*sols;
-	uint32_t	nr_valid_sols;
-	sols = (sols_t *)malloc(sizeof(*sols));
 
 	check_clEnqueueReadBuffer(miner->queue, miner->buf_sols,
 		CL_TRUE,	// cl_bool	blocking_read
 		0,		// size_t	offset
-		sizeof(*sols),	// size_t	size
-		sols,	// void		*ptr
+		sizeof(*miner->sols),	// size_t	size
+		miner->sols,	// void		*ptr
 		0,		// cl_uint	num_events_in_wait_list
 		NULL,	// cl_event	*event_wait_list
 		NULL);	// cl_event	*event
 
-	if (sols->nr > MAX_SOLS)
-		sols->nr = MAX_SOLS;
+	if (miner->sols->nr > MAX_SOLS)
+		miner->sols->nr = MAX_SOLS;
 
 	clReleaseMemObject(buf_blake_st);
 
-	for (unsigned sol_i = 0; sol_i < sols->nr; sol_i++)
-		verify_sol(sols, sol_i);
-
+	for (unsigned sol_i = 0; sol_i < miner->sols->nr; sol_i++) {
+		verify_sol(miner->sols, sol_i);
+	}
 
 	uint8_t proof[COMPRESSED_PROOFSIZE * 2];
-	for (uint32_t i = 0; i < sols->nr; i++) {
-		if (sols->valid[i]) {
-			compress(proof, (uint32_t *)(sols->values[i]), 1 << PARAM_K);
+	for (uint32_t i = 0; i < miner->sols->nr; i++) {
+		if (miner->sols->valid[i]) {
+			compress(proof, (uint32_t *)(miner->sols->values[i]), 1 << PARAM_K);
 			solutionf(std::vector<uint32_t>(0), 1344, proof);
 		}
 	}
-	free(sols);
+	hashdonef();
 }
 
-void ocl_silentarmy::print_opencl_devices() {
-	/*TODO*/
-}
 // STATICS END
 

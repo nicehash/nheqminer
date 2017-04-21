@@ -3,9 +3,30 @@
 #include <vector>
 #include <memory>
 #include <stdio.h>
+#include <system_error>
 
-extern cl_platform_id gPlatform;
-// extern cl_program gProgram;
+cl_platform_id gPlatform = 0;
+
+std::vector<cl_device_id> GetAllDevices()
+{
+	std::vector<cl_device_id> retval;
+	retval.reserve(8);
+
+	cl_platform_id platforms[64];
+	cl_uint numPlatforms;
+	cl_int rc = clGetPlatformIDs(sizeof(platforms) / sizeof(cl_platform_id), platforms, &numPlatforms);
+
+	for (cl_uint i = 0; i < numPlatforms; i++) {
+		cl_uint numDevices = 0;
+		cl_device_id devices[64];
+		rc = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU | CL_DEVICE_TYPE_ACCELERATOR, sizeof(devices) / sizeof(cl_device_id), devices, &numDevices);
+		for (cl_uint n = 0; n < numDevices; n++) {
+			retval.push_back(devices[n]);
+		}
+	}
+
+	return retval;
+}
 
 bool clInitialize(int requiredPlatform, std::vector<cl_device_id> &gpus)
 {
@@ -36,7 +57,7 @@ bool clInitialize(int requiredPlatform, std::vector<cl_device_id> &gpus)
   
   
   if (platformIdx == -1) {
-    printf("<error> platform %s not exists\n", requiredPlatform);
+    printf("<error> platform %d not exists\n", requiredPlatform);
     return false;
   }
   
@@ -74,8 +95,7 @@ bool clCompileKernel(cl_context gContext,
 //   const unsigned char *binaries[64];
   
   if(!testfile) {
-    
-    
+
     printf("<info> compiling ...\n");
     
     std::string sourceFile;
@@ -85,13 +105,13 @@ bool clCompileKernel(cl_context gContext,
       try {
         stream.open(i);
       } catch (std::system_error& e) {
-        fprintf(stderr, "<error> %s\n", e.code().message());
+        fprintf(stderr, "<error> %s\n", e.code().message().c_str());
         return false;
       }
       std::string str((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
       sourceFile.append(str);
     }
-    
+
     printf("<info> source: %u bytes\n", (unsigned)sourceFile.size());
     if(sourceFile.size() < 1){
       fprintf(stderr, "<error> source files not found or empty\n");

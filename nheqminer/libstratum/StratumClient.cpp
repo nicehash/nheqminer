@@ -421,6 +421,13 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution, const
 	return true;
 }
 
-template class StratumClient<ZMinerAVX, ZcashJob, EquihashSolution>;
-template class StratumClient<ZMinerSSE2, ZcashJob, EquihashSolution>;
-
+// XMP
+template class StratumClient<ZMinerAVXCUDA_XMP, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerSSE2CUDA_XMP, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerAVXCUDASA_XMP, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerSSE2CUDASA_XMP, ZcashJob, EquihashSolution>;
+// Silent Army
+template class StratumClient<ZMinerAVXCUDA_SA, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerSSE2CUDA_SA, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerAVXCUDASA_SA, ZcashJob, EquihashSolution>;
+template class StratumClient<ZMinerSSE2CUDASA_SA, ZcashJob, EquihashSolution>;

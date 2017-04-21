@@ -7,38 +7,16 @@
     <Filter Include="zcash\gpu">
       <UniqueIdentifier>{a95c2e64-90c0-48d9-9287-46723392025d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ocl_device_utils">
-      <UniqueIdentifier>{3b452960-cd44-43c3-b425-e9ac22174656}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ocl_xmp.hpp" />
-    <ClInclude Include="opencl.h" />
     <ClInclude Include="zcash\gpu\common.h">
       <Filter>zcash\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="ocl_device_utils\ocl_device_utils.h">
-      <Filter>ocl_device_utils</Filter>
-    </ClInclude>
-    <ClInclude Include="ocl_device_utils\cl_ext.hpp">
-      <Filter>ocl_device_utils</Filter>
-    </ClInclude>
-    <ClInclude Include="ocl_device_utils\OpenCLDevice.h">
-      <Filter>ocl_device_utils</Filter>
-    </ClInclude>
-    <ClInclude Include="ocl_silentarmy.hpp" />
-    <ClInclude Include="param.h" />
-    <ClInclude Include="sa_blake.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ocl_xmp.cpp" />
-    <ClCompile Include="opencl.cpp" />
     <ClCompile Include="..\cpu_tromp\blake2\blake2bx.cpp" />
-    <ClCompile Include="ocl_device_utils\ocl_device_utils.cpp">
-      <Filter>ocl_device_utils</Filter>
-    </ClCompile>
-    <ClCompile Include="ocl_silentarmy.cpp" />
-    <ClCompile Include="sa_blake.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="zcash\gpu\equihash.cl">
