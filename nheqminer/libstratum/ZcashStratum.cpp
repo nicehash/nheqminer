@@ -516,7 +516,7 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
 
         ret->time = params[5].get_str();
         ret->clean = params[7].get_bool();
-    } /*else {
+ /*} else {
         throw std::logic_error("ZcashMiner::parseJob(): Invalid or unsupported block header version");
     } */
 
