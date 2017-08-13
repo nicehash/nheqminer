@@ -18,7 +18,7 @@ Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, CUDA_DJEZO
   - Use Boost 1.62+ (if it is not available from the repos you will have to download and build it yourself)
   - CMake v3.5 (if it is not available from the repos you will have to download and build it yourself)
   - Currently support only static building (CPU_XENONCAT, CPU_TROMP are enabled by default, check **CMakeLists.txt** in **nheqminer** root folder)
-  -
+  
   - If not on Ubuntu make sure you have **fasm** installed and accessible in **PATH**
   - After that open the terminal and run the following script:
     
