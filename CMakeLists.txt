@@ -5,11 +5,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") #  -Wall
 
 ## Enable solvers here
 #### older slower
-option(USE_CPU_TROMP "USE CPU_TROMP" OFF)
+option(USE_CPU_TROMP "USE CPU_TROMP" ON)
 option(USE_CUDA_TROMP "USE CUDA_TROMP" OFF)
 #### faster
 option(USE_CPU_XENONCAT "USE CPU_XENONCAT" ON)
-option(USE_CUDA_DJEZO "USE CUDA_DJEZO" ON)
+option(USE_CUDA_DJEZO "USE CUDA_DJEZO" OFF)
 
 ## Add solvers here
 if (USE_CPU_TROMP)
@@ -34,17 +34,17 @@ endif()
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
 #    # use native cpu features
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -fPIC")
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fPIC")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fPIC")
 
 #    # optimizations
-#    add_definitions(-O3)
+    add_definitions(-O3)
 
     # use
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
     # optimizations
-    add_definitions(-O2)
+#    add_definitions(-O2)
 endif()
 
 # Common
