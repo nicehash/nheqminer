@@ -1,3 +1,11 @@
+set(HUNTER_CONFIGURATION_TYPES Release)
+include(Hunter/HunterGate.cmake)
+HunterGate(
+        URL "https://github.com/ruslo/hunter/archive/v0.18.57.tar.gz"
+        SHA1 "435b09a4eec7fd58486bfb61efb1044ddb85c0f0"
+        LOCAL
+)
+
 project(nheqminer)
 cmake_minimum_required(VERSION 3.5)
 
@@ -51,13 +59,14 @@ endif()
 include_directories(${nheqminer_SOURCE_DIR}/nheqminer)
 
 # BOOST
+hunter_add_package(Boost COMPONENTS system log date_time filesystem thread)
 #find_package(Threads REQUIRED COMPONENTS)
 # compile boost staticaly
 set(Boost_USE_STATIC_LIBS ON)
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 #set(BUILD_SHARED_LIBRARIES OFF)
 #set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-find_package(Boost REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
+find_package(Boost CONFIG REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
 
 if (Boost_FOUND)
   # From the offical documentation:
