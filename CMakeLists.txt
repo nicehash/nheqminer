@@ -1,3 +1,11 @@
+set(HUNTER_CONFIGURATION_TYPES Release)
+include(Hunter/HunterGate.cmake)
+HunterGate(
+        URL "https://github.com/ruslo/hunter/archive/v0.18.57.tar.gz"
+        SHA1 "435b09a4eec7fd58486bfb61efb1044ddb85c0f0"
+        LOCAL
+)
+
 project(nheqminer)
 cmake_minimum_required(VERSION 3.5)
 
@@ -5,11 +13,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") #  -Wall
 
 ## Enable solvers here
 #### older slower
-option(USE_CPU_TROMP "USE CPU_TROMP" OFF)
+option(USE_CPU_TROMP "USE CPU_TROMP" ON)
 option(USE_CUDA_TROMP "USE CUDA_TROMP" OFF)
 #### faster
 option(USE_CPU_XENONCAT "USE CPU_XENONCAT" ON)
-option(USE_CUDA_DJEZO "USE CUDA_DJEZO" ON)
+option(USE_CUDA_DJEZO "USE CUDA_DJEZO" OFF)
 
 ## Add solvers here
 if (USE_CPU_TROMP)
@@ -34,30 +42,31 @@ endif()
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
 #    # use native cpu features
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -fPIC")
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fPIC")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fPIC")
 
 #    # optimizations
-#    add_definitions(-O3)
+    add_definitions(-O3)
 
     # use
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
     # optimizations
-    add_definitions(-O2)
+#    add_definitions(-O2)
 endif()
 
 # Common
 include_directories(${nheqminer_SOURCE_DIR}/nheqminer)
 
 # BOOST
+hunter_add_package(Boost COMPONENTS system log date_time filesystem thread)
 #find_package(Threads REQUIRED COMPONENTS)
 # compile boost staticaly
 set(Boost_USE_STATIC_LIBS ON)
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 #set(BUILD_SHARED_LIBRARIES OFF)
 #set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-find_package(Boost REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
+find_package(Boost CONFIG REQUIRED COMPONENTS system log_setup log date_time filesystem thread)
 
 if (Boost_FOUND)
   # From the offical documentation:
