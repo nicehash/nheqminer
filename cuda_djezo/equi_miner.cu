@@ -200,10 +200,25 @@ __device__ __forceinline__ uint4 operator^ (uint4 a, uint4 b)
 __device__ __forceinline__ uint2 ROR2(const uint2 a, const int offset) 
 {
 	uint2 result;
+#if __CUDA_ARCH__ > 300
 	{
 		asm("shf.r.wrap.b32 %0, %1, %2, %3;" : "=r"(result.x) : "r"(a.y), "r"(a.x), "r"(offset));
 		asm("shf.r.wrap.b32 %0, %1, %2, %3;" : "=r"(result.y) : "r"(a.x), "r"(a.y), "r"(offset));
 	}
+#else
+	if (!offset)
+		result = a;
+	else if (offset < 32) {
+		result.y = ((a.y >> offset) | (a.x << (32 - offset)));
+		result.x = ((a.x >> offset) | (a.y << (32 - offset)));
+	} else if (offset == 32) {
+		result.y = a.x;
+		result.x = a.y;
+	} else {
+		result.y = ((a.x >> (offset - 32)) | (a.y << (64 - offset)));
+		result.x = ((a.y >> (offset - 32)) | (a.x << (64 - offset)));
+	}
+#endif
 	return result;
 }
 
@@ -308,7 +323,11 @@ __global__ void digit_first(equi<RB, SM>* eq, u32 nonce)
 	u32* hash_h32 = (u32*)hash_h;
 
 	if (threadIdx.x < 16)
+#if __CUDA_ARCH__ > 300
 		hash_h32[threadIdx.x] = __ldca(&eq->blake_h32[threadIdx.x]);
+#else
+		hash_h32[threadIdx.x] = eq->blake_h32[threadIdx.x];
+#endif
 
 	__syncthreads();
 
