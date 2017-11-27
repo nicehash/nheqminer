@@ -1,7 +1,7 @@
 project(nheqminer)
 cmake_minimum_required(VERSION 3.5)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") #  -Wall
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -D_GLIBCXX_USE_C99 -D_GLIBCXX_USE_C99_MATH") #  -Wall
 
 ## Enable solvers here
 #### older slower
