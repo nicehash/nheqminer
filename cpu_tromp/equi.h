@@ -2,6 +2,7 @@
 // Equihash solver
 // Copyright (c) 2016-2016 John Tromp
 
+
 #include "blake2/blake2.h"
 #ifdef __APPLE__
 #include "osx_barrier.h"
@@ -131,3 +132,4 @@ int verify(u32 indices[PROOFSIZE], const char *header, const u32 headerlen, cons
   uchar hash[WN/8];
   return verifyrec(&ctx, indices, hash, WK);
 }
+

@@ -5,6 +5,8 @@
 #include "primitives/block.h"
 #include "streams.h"
 
+#include "MinerFactory.h"
+
 #include "libstratum/StratumClient.h"
 
 #if defined(USE_OCL_XMP) || defined(USE_OCL_SILENTARMY)
@@ -43,36 +45,27 @@ namespace keywords = boost::log::keywords;
 #endif
 
 // TODO:
-// fix compiler issues with standard vs2013 compiler
-// file logging
-// mingw compilation for windows (faster?)
+// #1 file logging
+// #2 mingw compilation for windows (faster?)
+// #3 benchmark accuracy fix: first wait for solvers to init and then measure speed
+// #4 Linux fix cmake to generate all in one binary (just like Windows)
+// #5 after #4 is done add solver chooser for CPU and CUDA devices (general and per device), example: [-s 0 automatic, -s 1 solver1, -s 2 solver2, ...]
 
 int use_avx = 0;
 int use_avx2 = 0;
 int use_old_cuda = 0;
 int use_old_xmp = 0;
 
-// _XMP
-static ZcashStratumClientAVXCUDA80_XMP* scSigAVXC80_XMP = nullptr;
-static ZcashStratumClientSSE2CUDA80_XMP* scSigSSE2C80_XMP = nullptr;
-static ZcashStratumClientAVXCUDA75_XMP* scSigAVXC75_XMP = nullptr;
-static ZcashStratumClientSSE2CUDA75_XMP* scSigSSE2C75_XMP = nullptr;
-// _SA
-static ZcashStratumClientAVXCUDA80_SA* scSigAVXC80_SA = nullptr;
-static ZcashStratumClientSSE2CUDA80_SA* scSigSSE2C80_SA = nullptr;
-static ZcashStratumClientAVXCUDA75_SA* scSigAVXC75_SA = nullptr;
-static ZcashStratumClientSSE2CUDA75_SA* scSigSSE2C75_SA = nullptr;
+// TODO move somwhere else
+MinerFactory *_MinerFactory = nullptr;
+
+// stratum client sig
+static ZcashStratumClient* scSig = nullptr;
 
 extern "C" void stratum_sigint_handler(int signum) 
 { 
-	if (scSigAVXC80_XMP) scSigAVXC80_XMP->disconnect();
-	if (scSigSSE2C80_XMP) scSigSSE2C80_XMP->disconnect();
-	if (scSigAVXC75_XMP) scSigAVXC75_XMP->disconnect();
-	if (scSigSSE2C75_XMP) scSigSSE2C75_XMP->disconnect();
-	if (scSigAVXC80_SA) scSigAVXC80_SA->disconnect();
-	if (scSigSSE2C80_SA) scSigSSE2C80_SA->disconnect();
-	if (scSigAVXC75_SA) scSigAVXC75_SA->disconnect();
-	if (scSigSSE2C75_SA) scSigSSE2C75_SA->disconnect();
+	if (scSig) scSig->disconnect();
+	if (_MinerFactory) _MinerFactory->ClearAllSolvers();
 }
 
 void print_help()
@@ -96,28 +89,33 @@ void print_help()
 	std::cout << std::endl;
 	std::cout << "NVIDIA CUDA settings" << std::endl;
 	std::cout << "\t-ci\t\tCUDA info" << std::endl;
-	std::cout << "\t-cv [ver]\tSet CUDA version (0 = default 8.0, 1 = 7.5)" << std::endl;
+	std::cout << "\t-cv [ver]\tSet CUDA solver (0 = djeZo, 1 = tromp)" << std::endl;
 	std::cout << "\t-cd [devices]\tEnable CUDA mining on spec. devices" << std::endl;
 	std::cout << "\t-cb [blocks]\tNumber of blocks" << std::endl;
 	std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
 	std::cout << "Example: -cd 0 2 -cb 12 16 -ct 64 128" << std::endl;
 	std::cout << std::endl;
-	std::cout << "OpenCL settings" << std::endl;
-	std::cout << "\t-oi\t\tOpenCL info" << std::endl;
-	std::cout << "\t-ov [ver]\tSet OpenCL solver (0 = silentarmy, 1 = xmp)" << std::endl;
-	std::cout << "\t-op [devices]\tSet OpenCL platform to selecd platform devices (-od)" << std::endl;
-	std::cout << "\t-od [devices]\tEnable OpenCL mining on spec. devices (specify plafrom number first -op)" << std::endl;
-	std::cout << "\t-ot [threads]\tSet number of threads per device" << std::endl;
-	//std::cout << "\t-cb [blocks]\tNumber of blocks" << std::endl;
-	//std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
-	std::cout << "Example: -op 2 -od 0 2" << std::endl; //-cb 12 16 -ct 64 128" << std::endl;
+	//std::cout << "OpenCL settings" << std::endl;
+	//std::cout << "\t-oi\t\tOpenCL info" << std::endl;
+	//std::cout << "\t-ov [ver]\tSet OpenCL solver (0 = silentarmy, 1 = xmp)" << std::endl;
+	//std::cout << "\t-op [platf]\tSet OpenCL platform to selecd platform devices (-od)" << std::endl;
+	//std::cout << "\t-od [devices]\tEnable OpenCL mining on spec. devices (specify plafrom number first -op)" << std::endl;
+	//std::cout << "\t-ot [threads]\tSet number of threads per device" << std::endl;
+	////std::cout << "\t-cb [blocks]\tNumber of blocks" << std::endl;
+	////std::cout << "\t-ct [tpb]\tNumber of threads per block" << std::endl;
+	//std::cout << "Example: -op 2 -od 0 2" << std::endl; //-cb 12 16 -ct 64 128" << std::endl;
 	std::cout << std::endl;
 }
 
 
 void print_cuda_info()
 {
-	int num_devices = cuda_tromp::getcount();
+#if defined(USE_CUDA_DJEZO) || defined(USE_CUDA_TROMP)
+#ifdef USE_CUDA_DJEZO
+    int num_devices = cuda_djezo::getcount();
+#elif USE_CUDA_TROMP
+    int num_devices = cuda_tromp::getcount();
+#endif
 
 	std::cout << "Number of CUDA devices found: " << num_devices << std::endl;
 
@@ -125,9 +123,14 @@ void print_cuda_info()
 	{
 		std::string gpuname, version;
 		int smcount;
-		cuda_tromp::getinfo(0, i, gpuname, smcount, version);
+#ifdef USE_CUDA_DJEZO
+        cuda_djezo::getinfo(0, i, gpuname, smcount, version);
+#elif USE_CUDA_TROMP
+        cuda_tromp::getinfo(0, i, gpuname, smcount, version);
+#endif
 		std::cout << "\t#" << i << " " << gpuname << " | SM version: " << version << " | SM count: " << smcount << std::endl;
 	}
+#endif
 }
 
 void print_opencl_info() {
@@ -136,13 +139,14 @@ void print_opencl_info() {
 #endif
 }
 
+#define MAX_INSTANCES 8 * 2
 
-int cuda_enabled[8] = { 0 };
-int cuda_blocks[8] = { 0 };
-int cuda_tpb[8] = { 0 };
+int cuda_enabled[MAX_INSTANCES] = { 0 };
+int cuda_blocks[MAX_INSTANCES] = { 0 };
+int cuda_tpb[MAX_INSTANCES] = { 0 };
 
-int opencl_enabled[8] = { 0 };
-int opencl_threads[8] = { 0 };
+int opencl_enabled[MAX_INSTANCES] = { 0 };
+int opencl_threads[MAX_INSTANCES] = { 0 };
 // todo: opencl local and global worksize
 
 
@@ -180,10 +184,10 @@ void detect_AVX_and_AVX2()
 	}
 }
 
-template <typename MinerType, typename StratumType>
-void start_mining(int api_port, int cpu_threads, int cuda_device_count, int opencl_device_count, int opencl_platform,
-	const std::string& host, const std::string& port, const std::string& user, const std::string& password,
-	StratumType* handler)
+
+void start_mining(int api_port, const std::string& host, const std::string& port,
+	const std::string& user, const std::string& password,
+	ZcashStratumClient* handler, const std::vector<ISolver *> &i_solvers)
 {
 	std::shared_ptr<boost::asio::io_service> io_service(new boost::asio::io_service);
 
@@ -197,9 +201,9 @@ void start_mining(int api_port, int cpu_threads, int cuda_device_count, int open
 			api = nullptr;
 		}
 	}
-
-	MinerType miner(cpu_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-	StratumType sc{
+	
+	ZcashMiner miner(i_solvers);
+	ZcashStratumClient sc{
 		io_service, &miner, host, port, user, password, 0, 0
 	};
 
@@ -241,16 +245,15 @@ int main(int argc, char* argv[])
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << "\t\tEquihash CPU&GPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "\tThanks to Zcash developers for providing base of the code." << std::endl;
-	std::cout << "\t       Special thanks to tromp, xenoncat, mbevand "<< std::endl;
-	std::cout << "\t             and eXtremal-ik7 for providing " << std::endl;
-	std::cout << "\t      optimized CPU, CUDA and AMD equihash solvers." << std::endl;
+	std::cout << "\t    Special thanks to tromp, xenoncat and djeZo for providing "<< std::endl;
+	std::cout << "\t      optimized CPU and CUDA equihash solvers." << std::endl;
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
 	std::cout << std::endl;
 
 	std::string location = "equihash.eu.nicehash.com:3357";
-	std::string user = "";
+	std::string user = "34HKWdzLxWBduUfJE9JxaFhoXnfC6gmePG";
 	std::string password = "x";
-	int num_threads = -1;
+	int num_threads = 0;
 	bool benchmark = false;
 	int log_level = 2;
 	int num_hashes = 200;
@@ -280,7 +283,7 @@ int main(int argc, char* argv[])
 				use_old_cuda = atoi(argv[++i]);
 				break;
 			case 'd':
-				while (cuda_device_count < 8 && i + 1 < argc)
+				while (cuda_device_count < MAX_INSTANCES && i + 1 < argc)
 				{
 					try
 					{
@@ -295,7 +298,7 @@ int main(int argc, char* argv[])
 				}
 				break;
 			case 'b':
-				while (cuda_bc < 8 && i + 1 < argc)
+				while (cuda_bc < MAX_INSTANCES && i + 1 < argc)
 				{
 					try
 					{
@@ -310,7 +313,7 @@ int main(int argc, char* argv[])
 				}
 				break;
 			case 't':
-				while (cuda_tbpc < 8 && i + 1 < argc)
+				while (cuda_tbpc < MAX_INSTANCES && i + 1 < argc)
 				{
 					try
 					{
@@ -327,53 +330,53 @@ int main(int argc, char* argv[])
 			}
 			break;
 		}
-		case 'o':
-		{
-			switch (argv[i][2])
-			{
-			case 'i':
-				print_opencl_info();
-				return 0;
-			case 'v':
-				use_old_xmp = atoi(argv[++i]);
-				break;
-			case 'p':
-				opencl_platform = std::stol(argv[++i]);
-				break;
-			case 'd':
-				while (opencl_device_count < 8 && i + 1 < argc)
-				{
-					try
-					{
-						opencl_enabled[opencl_device_count] = std::stol(argv[++i]);
-						++opencl_device_count;
-					}
-					catch (...)
-					{
-						--i;
-						break;
-					}
-				}
-				break;
-			case 't':
-				while (opencl_t < 8 && i + 1 < argc)
-				{
-					try
-					{
-						opencl_threads[opencl_t] = std::stol(argv[++i]);
-						++opencl_t;
-					}
-					catch (...)
-					{
-						--i;
-						break;
-					}
-				}
-				break;
-				// TODO extra parameters for OpenCL
-			}
-			break;
-		}
+		//case 'o':
+		//{
+		//	switch (argv[i][2])
+		//	{
+		//	case 'i':
+		//		print_opencl_info();
+		//		return 0;
+		//	case 'v':
+		//		use_old_xmp = atoi(argv[++i]);
+		//		break;
+		//	case 'p':
+		//		opencl_platform = std::stol(argv[++i]);
+		//		break;
+		//	case 'd':
+		//		while (opencl_device_count < 8 && i + 1 < argc)
+		//		{
+		//			try
+		//			{
+		//				opencl_enabled[opencl_device_count] = std::stol(argv[++i]);
+		//				++opencl_device_count;
+		//			}
+		//			catch (...)
+		//			{
+		//				--i;
+		//				break;
+		//			}
+		//		}
+		//		break;
+		//	case 't':
+		//		while (opencl_t < 8 && i + 1 < argc)
+		//		{
+		//			try
+		//			{
+		//				opencl_threads[opencl_t] = std::stol(argv[++i]);
+		//				++opencl_t;
+		//			}
+		//			catch (...)
+		//			{
+		//				--i;
+		//				break;
+		//			}
+		//		}
+		//		break;
+		//		// TODO extra parameters for OpenCL
+		//	}
+		//	break;
+		//}
 		case 'l':
 			location = argv[++i];
 			break;
@@ -445,6 +448,7 @@ int main(int argc, char* argv[])
 
 	try
 	{
+		_MinerFactory = new MinerFactory(use_avx == 1, use_old_cuda == 0, use_old_xmp == 0);
 		if (!benchmark)
 		{
 			if (user.length() == 0)
@@ -457,97 +461,14 @@ int main(int argc, char* argv[])
 			std::string host = delim != std::string::npos ? location.substr(0, delim) : location;
 			std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
 
-			if (use_old_xmp) {
-				if (use_avx)
-				{
-					if (use_old_cuda)
-					{
-						start_mining<ZMinerAVXCUDA75_XMP, ZcashStratumClientAVXCUDA75_XMP>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-							host, port, user, password, scSigAVXC75_XMP);
-					}
-					else
-					{
-						start_mining<ZMinerAVXCUDA80_XMP, ZcashStratumClientAVXCUDA80_XMP>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-							host, port, user, password, scSigAVXC80_XMP);
-					}
-				}
-				else
-				{
-					if (use_old_cuda)
-					{
-						start_mining<ZMinerSSE2CUDA75_XMP, ZcashStratumClientSSE2CUDA75_XMP>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-							host, port, user, password, scSigSSE2C75_XMP);
-					}
-					else
-					{
-						start_mining<ZMinerSSE2CUDA80_XMP, ZcashStratumClientSSE2CUDA80_XMP>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-							host, port, user, password, scSigSSE2C80_XMP);
-					}
-				}
-			}
-			else { // sarmy
-				if (use_avx)
-				{
-					if (use_old_cuda)
-					{
-						start_mining<ZMinerAVXCUDA75_SA, ZcashStratumClientAVXCUDA75_SA>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-							host, port, user, password, scSigAVXC75_SA);
-					}
-					else
-					{
-						start_mining<ZMinerAVXCUDA80_SA, ZcashStratumClientAVXCUDA80_SA>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-							host, port, user, password, scSigAVXC80_SA);
-					}
-				}
-				else
-				{
-					if (use_old_cuda)
-					{
-						start_mining<ZMinerSSE2CUDA75_SA, ZcashStratumClientSSE2CUDA75_SA>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-							host, port, user, password, scSigSSE2C75_SA);
-					}
-					else
-					{
-						start_mining<ZMinerSSE2CUDA80_SA, ZcashStratumClientSSE2CUDA80_SA>(api_port, num_threads, cuda_device_count, opencl_device_count, opencl_platform,
-							host, port, user, password, scSigSSE2C80_SA);
-					}
-				}
-			}
+			start_mining(api_port, host, port, user, password,
+				scSig,
+				_MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks,
+				cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
 		}
 		else
 		{
-			if (use_old_xmp) {
-				if (use_avx)
-				{
-					if (use_old_cuda)
-                        ZMinerAVXCUDA75_XMP_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-					else
-                        ZMinerAVXCUDA80_XMP_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-				}
-				else
-				{
-					if (use_old_cuda)
-                        ZMinerSSE2CUDA75_XMP_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-					else
-                        ZMinerSSE2CUDA80_XMP_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-				}
-			}
-			else { // sarmy
-				if (use_avx)
-				{
-					if (use_old_cuda)
-                        ZMinerAVXCUDA75_SA_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-					else
-                        ZMinerAVXCUDA80_SA_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-				}
-				else
-				{
-					if (use_old_cuda)
-                        ZMinerSSE2CUDA75_SA_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-					else
-                        ZMinerSSE2CUDA80_SA_doBenchmark(num_hashes, num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads);
-				}
-			}
+			Solvers_doBenchmark(num_hashes, _MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
 		}
 	}
 	catch (std::runtime_error& er)
