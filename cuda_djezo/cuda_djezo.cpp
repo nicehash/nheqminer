@@ -24,9 +24,9 @@ cuda_djezo::cuda_djezo(int platf_id, int dev_id)
 		major = atoi(m_version.substr(0, n).c_str());
 		minor = atoi(m_version.substr(n + 1, m_version.length() - n - 1).c_str());
 
-		if (major < 5)
+		if (major < 3)
 		{
-			throw std::runtime_error("Only CUDA devices with SM 5.0 and higher are supported.");
+			throw std::runtime_error("Only CUDA devices with SM 3.0 and higher are supported.");
 		}
 		else if (major == 5 && minor == 0)
 		{

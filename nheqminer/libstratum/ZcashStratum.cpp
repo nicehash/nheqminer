@@ -490,7 +490,7 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
     // TODO: On a LE host shouldn't this be le32toh?
     ret->header.nVersion = be32toh(version);
 
-    if (ret->header.nVersion == 4) {
+    if (ret->header.nVersion == 4 || ret->header.nVersion == 0x20000000) {
         if (params.size() < 8) {
             throw std::logic_error("Invalid job params");
         }
