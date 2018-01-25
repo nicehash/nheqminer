@@ -15,7 +15,7 @@ file(GLOB HEADERS
     )
 
 
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-D_FORCE_INLINES;--disable-warnings;--ptxas-options=-v;-Xptxas=-dlcm=ca;-Xptxas=-dscm=cs; -O3)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-D_FORCE_INLINES;--disable-warnings;--ptxas-options=-v;-Xptxas=-dlcm=ca;-Xptxas=-dscm=cs; -O3; --allow-expensive-optimizations=02;-O=3)
 
 FIND_PACKAGE(CUDA REQUIRED)
 if(COMPUTE AND (COMPUTE GREATER 0))
