@@ -53,6 +53,7 @@ namespace keywords = boost::log::keywords;
 
 int use_avx = 0;
 int use_avx2 = 0;
+int use_aes = 0;
 int use_old_cuda = 0;
 int use_old_xmp = 0;
 
@@ -61,6 +62,8 @@ MinerFactory *_MinerFactory = nullptr;
 
 // stratum client sig
 static ZcashStratumClient* scSig = nullptr;
+
+extern int32_t ASSETCHAINS_MAGIC;
 
 extern "C" void stratum_sigint_handler(int signum) 
 { 
@@ -80,6 +83,8 @@ void print_help()
 	std::cout << "\t-u [username]\tUsername (Zcash wallet address)" << std::endl;
 #endif
 	std::cout << "\t-a [port]\tLocal API port (default: 0 = do not bind)" << std::endl;
+	std::cout << "\t-v \tMine with VerusHash algorithm" << std::endl;
+	std::cout << "\t-vm [verusmagic]\tset Verus Hash magic number for support of other VerusHash chains" << std::endl;
 	std::cout << "\t-d [level]\tDebug print level (0 = print all, 5 = fatal only, default: 2)" << std::endl;
 	std::cout << "\t-b [hashes]\tRun in benchmark mode (default: 200 iterations)" << std::endl;
 	std::cout << std::endl;
@@ -248,6 +253,7 @@ int main(int argc, char* argv[])
 	std::cout << "\t    Special thanks to tromp, xenoncat and djeZo for providing "<< std::endl;
 	std::cout << "\t      optimized CPU and CUDA equihash solvers." << std::endl;
 	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
+	std::cout << "\t* with VerusHash support by veruscoin.io" << std::endl;
 	std::cout << std::endl;
 
 	std::string location = "equihash.eu.nicehash.com:3357";
@@ -265,6 +271,7 @@ int main(int argc, char* argv[])
 	int opencl_device_count = 0;
 	int force_cpu_ext = -1;
 	int opencl_t = 0;
+	bool verus_hash = false;
 
 	for (int i = 1; i < argc; ++i)
 	{
@@ -272,6 +279,7 @@ int main(int argc, char* argv[])
 
 		switch (argv[i][1])
 		{
+
 		case 'c':
 		{
 			switch (argv[i][2])
@@ -330,6 +338,33 @@ int main(int argc, char* argv[])
 			}
 			break;
 		}
+
+		case 'v':
+		{
+			verus_hash = true;
+			std::cout << "\t*** Setting hash algorithm to VerusHash" << std::endl;
+			// set to Verus Hash for Verus Coin
+			switch (argv[i][2])
+			{
+			case 'm':
+			{
+				// change the magic number for hashing
+				try
+				{
+					ASSETCHAINS_MAGIC = std::atoi(argv[++i]);
+					std::cout << "\t*Magic number for chain set to " << ASSETCHAINS_MAGIC << std::endl;
+				}
+				catch (...)
+				{
+					std::cout << "\t*-vm must be followed by the 32 bit magic number of the chain to mine, default is Verus Coin" << std::endl;
+					std::cout << "\t*miner terminating..." << std::endl;
+					return 1;
+				}
+				break;
+			}
+			break;
+		}
+
 		//case 'o':
 		//{
 		//	switch (argv[i][2])
@@ -409,12 +444,21 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	// error out on non-CPU VerusHash
+	if (cuda_device_count && verus_hash)
+	{
+		std::cout << "\t*VerusHash dow not currently support GPUs" << std::endl;
+		std::cout << "\t*miner terminating..." << std::endl;
+		return 1;
+	}
+
 	if (force_cpu_ext >= 0)
 	{
 		switch (force_cpu_ext)
 		{
 		case 1:
 			use_avx = 1;
+			use_aes = 1; // need a separate test for this, but it should accompany all avx
 			break;
 		case 2:
 			use_avx = 1;
@@ -433,7 +477,7 @@ int main(int argc, char* argv[])
         boost::log::keywords::filter = boost::log::trivial::severity >= log_level,
         boost::log::keywords::format = (
         boost::log::expressions::stream
-            << "[" << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp", "%H:%M:%S")
+			<< "[" << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp", "%H:%M:%S")
             << "][" << boost::log::expressions::attr<boost::log::attributes::current_thread_id::value_type>("ThreadID")
             << "] "  << boost::log::expressions::smessage
         )
@@ -448,27 +492,39 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		_MinerFactory = new MinerFactory(use_avx == 1, use_old_cuda == 0, use_old_xmp == 0);
-		if (!benchmark)
+		if (verus_hash)
 		{
-			if (user.length() == 0)
-			{
-				BOOST_LOG_TRIVIAL(error) << "Invalid address. Use -u to specify your address.";
-				return 0;
-			}
+			// determine how many threads
+			if (num_threads < 0) {
+				num_threads = std::thread::hardware_concurrency();
+				if (num_threads < 1) num_threads = 1;
 
-			size_t delim = location.find(':');
-			std::string host = delim != std::string::npos ? location.substr(0, delim) : location;
-			std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
-
-			start_mining(api_port, host, port, user, password,
-				scSig,
-				_MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks,
-				cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
+			// start mining with VerusHash and solver array of number of threads
 		}
 		else
 		{
-			Solvers_doBenchmark(num_hashes, _MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
+			_MinerFactory = new MinerFactory(use_avx == 1, use_old_cuda == 0, use_old_xmp == 0);
+			if (!benchmark)
+			{
+				if (user.length() == 0)
+				{
+					BOOST_LOG_TRIVIAL(error) << "Invalid address. Use -u to specify your address.";
+					return 0;
+				}
+
+				size_t delim = location.find(':');
+				std::string host = delim != std::string::npos ? location.substr(0, delim) : location;
+				std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
+
+				start_mining(api_port, host, port, user, password,
+					scSig,
+					_MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks,
+					cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
+			}
+			else
+			{
+				Solvers_doBenchmark(num_hashes, _MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
+			}
 		}
 	}
 	catch (std::runtime_error& er)

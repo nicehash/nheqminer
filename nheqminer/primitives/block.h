@@ -7,6 +7,7 @@
 #define BITCOIN_PRIMITIVES_BLOCK_H
 
 #include "primitives/transaction.h"
+#include "primitives/nonce.h"
 #include "serialize.h"
 #include "uint256.h"
 
@@ -23,13 +24,16 @@ public:
     // header
     static const size_t HEADER_SIZE=4+32+32+32+4+4+32; // excluding Equihash solution
     static const int32_t CURRENT_VERSION=4;
+    static uint256 (CBlockHeader::*hashFunction)() const;
+    static void SetHashAlgo();
+
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
     uint256 hashReserved;
     uint32_t nTime;
     uint32_t nBits;
-    uint256 nNonce;
+    CPOSNonce nNonce;
     std::vector<unsigned char> nSolution;
 
     CBlockHeader()
@@ -71,9 +75,55 @@ public:
 
     uint256 GetHash() const;
 
+    uint256 GetSHA256DHash() const;
+    static void SetSHA256DHash();
+
+    uint256 GetVerusHash() const;
+    static void SetVerusHash();
+
+    bool GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const;
+    uint256 GetVerusEntropyHash(int32_t nHeight) const;
+
+    uint256 GetVerusV2Hash() const;
+
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;
+    }
+
+    uint32_t GetVerusPOSTarget() const
+    {
+        uint32_t nBits = 0;
+
+        for (const unsigned char *p = nNonce.begin() + 3; p >= nNonce.begin(); p--)
+        {
+            nBits <<= 8;
+            nBits += *p;
+        }
+        return nBits;
+    }
+
+    bool IsVerusPOSBlock() const
+    {
+        return nNonce.IsPOSNonce();
+    }
+
+    void SetVerusPOSTarget(uint32_t nBits)
+    {
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+
+        arith_uint256 arNonce = UintToArith256(nNonce);
+
+        // printf("before svpt: %s\n", ArithToUint256(arNonce).GetHex().c_str());
+
+        arNonce = (arNonce & CPOSNonce::entropyMask) | nBits;
+
+        // printf("after clear: %s\n", ArithToUint256(arNonce).GetHex().c_str());
+
+        hashWriter << ArithToUint256(arNonce);
+        nNonce = CPOSNonce(ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | arNonce));
+
+        // printf(" after svpt: %s\n", nNonce.GetHex().c_str());
     }
 };
 
