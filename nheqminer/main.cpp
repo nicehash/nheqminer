@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
 	std::cout << std::endl;
 	std::cout << "\t==================== www.veruscoin.io ====================" << std::endl;
 	std::cout << "\tEquihash and VerusHash CPU&GPU Miner, v" STANDALONE_MINER_VERSION << std::endl;
-	std::cout << "\twith support for mining VRSC and other VerusHash coins" << std::endl << std::endl;
+	std::cout << "\twith support for mining VRSC and other VerusHash coins." << std::endl << std::endl;
 	std::cout << "\tThanks to original Nicehash developers and Zcash developers" << std::endl;
 	std::cout << "\tfor providing base of the code." << std::endl << std::endl;
 	std::cout << "\tSpecial thanks to tromp, xenoncat and djeZo for providing "<< std::endl;
