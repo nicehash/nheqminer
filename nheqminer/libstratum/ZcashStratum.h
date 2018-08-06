@@ -111,5 +111,5 @@ public:
     void failedSolution();
 };
 
-void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers);
+void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers, bool verus_hash);
 

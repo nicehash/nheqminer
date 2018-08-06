@@ -662,7 +662,7 @@ int benchmark_thread(int tid, ISolver *solver)
 	return 0;
 }
 
-void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers) {
+void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers, bool verus_hash) {
 	// generate array of various nonces
 	std::srand(std::time(0));
 	benchmark_nonces.push_back(new uint256());
@@ -681,6 +681,9 @@ void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers) {
 	for (ISolver* solver : solvers) {
 		if (solver->GetType() == SolverType::CPU) {
 			BOOST_LOG_TRIVIAL(info) << "Benchmarking CPU worker (" << solver->getname() << ") " << solver->getdevinfo();
+		}
+		else if (solver->GetType() == SolverType::VERUS_CPU_OPT) {
+			BOOST_LOG_TRIVIAL(info) << "Benchmarking VerusHash optimized CPU worker (" << solver->getname() << ") " << solver->getdevinfo();
 		}
 		else if (solver->GetType() == SolverType::CUDA) {
 			BOOST_LOG_TRIVIAL(info) << "Benchmarking CUDA worker (" << solver->getname() << ") " << solver->getdevinfo();
@@ -721,8 +724,16 @@ void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers) {
 
 	BOOST_LOG_TRIVIAL(info) << "Benchmark done!";
 	BOOST_LOG_TRIVIAL(info) << "Total time : " << msec << " ms";
-	BOOST_LOG_TRIVIAL(info) << "Total iterations: " << hashes_done;
-	BOOST_LOG_TRIVIAL(info) << "Total solutions found: " << benchmark_solutions;
-	BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)hashes_done * 1000 / (double)msec) << " I/s";
-	BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)benchmark_solutions * 1000 / (double)msec) << " Sols/s";
+	if (verus_hash)
+	{
+		BOOST_LOG_TRIVIAL(info) << "Total mega hash: " << hashes_done;
+		BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)hashes_done * 1000 / (double)msec) << " MH/s";
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(info) << "Total iterations: " << hashes_done;
+		BOOST_LOG_TRIVIAL(info) << "Total solutions found: " << benchmark_solutions;
+		BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)hashes_done * 1000 / (double)msec) << " I/s";
+		BOOST_LOG_TRIVIAL(info) << "Speed: " << ((double)benchmark_solutions * 1000 / (double)msec) << " Sols/s";
+	}
 }

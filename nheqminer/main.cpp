@@ -546,7 +546,9 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			Solvers_doBenchmark(num_hashes, _MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
+			Solvers_doBenchmark(num_hashes, 
+				_MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads),
+				verus_hash);
 		}
 	}
 	catch (std::runtime_error& er)
