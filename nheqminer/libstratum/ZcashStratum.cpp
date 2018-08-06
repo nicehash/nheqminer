@@ -616,14 +616,28 @@ bool benchmark_solve_equihash(const CBlock& pblock, const char *tequihash_header
 		++benchmark_solutions;
 	};
 
-	solver->solve(tequihash_header,
-		tequihash_header_len,
-		(const char*)nonce->begin(),
-		nonce->size(),
-		[]() { return false; },
-		solutionFound,
-		[]() {}
-	);
+	if (solver->GetType() == SolverType::VERUS_CPU_OPT)
+	{
+		// solver needs more information to prevent callouts and perform well on VerusHash
+		arith_uint256 impossibleTarget = arith_uint256();
+		solver->solve_verus((CBlockHeader &)pblock,
+			impossibleTarget,
+			[]() { return false; },
+			solutionFound,
+			[]() {}
+		);
+	}
+	else
+	{
+		solver->solve(tequihash_header,
+			tequihash_header_len,
+			(const char*)nonce->begin(),
+			nonce->size(),
+			[]() { return false; },
+			solutionFound,
+			[]() {}
+		);
+	}
 
 	delete nonce;
 

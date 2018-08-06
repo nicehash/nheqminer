@@ -68,8 +68,15 @@ extern int32_t ASSETCHAINS_MAGIC;
 
 extern "C" void stratum_sigint_handler(int signum) 
 { 
-	if (scSig) scSig->disconnect();
+	if (scSig)
+	{
+		scSig->disconnect();
+	
+		for (int i = 0; scSig->isRunning() && i < 5; i++)
+			sleep(1);
+	}
 	if (_MinerFactory) _MinerFactory->ClearAllSolvers();
+	exit(0);
 }
 
 void print_help()
@@ -279,7 +286,7 @@ int main(int argc, char* argv[])
 	std::string location = "equihash.eu.nicehash.com:3357";
 	std::string user = "34HKWdzLxWBduUfJE9JxaFhoXnfC6gmePG";
 	std::string password = "x";
-	int num_threads = 0;
+	int num_threads = 1;
 	bool benchmark = false;
 	int log_level = 2;
 	int num_hashes = 200;
@@ -519,10 +526,16 @@ int main(int argc, char* argv[])
     boost::log::core::get()->add_global_attribute("ThreadID", boost::log::attributes::current_thread_id());
 	// init_logging init END
 
-	BOOST_LOG_TRIVIAL(info) << "Using SSE2: YES";
-	BOOST_LOG_TRIVIAL(info) << "Using AVX: " << (use_avx ? "YES" : "NO");
-	BOOST_LOG_TRIVIAL(info) << "Using AVX2: " << ((use_avx2 && !verus_hash) ? "YES" : "NO");
-	BOOST_LOG_TRIVIAL(info) << "Using AES: " << ((use_aes && verus_hash) ? "YES" : "NO");
+	if (verus_hash)
+	{
+		BOOST_LOG_TRIVIAL(info) << "Using AES: " << (use_aes ? "YES" : "NO");
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(info) << "Using SSE2: YES";
+		BOOST_LOG_TRIVIAL(info) << "Using AVX: " << (use_avx ? "YES" : "NO");
+		BOOST_LOG_TRIVIAL(info) << "Using AVX2: " << ((use_avx2 && !verus_hash) ? "YES" : "NO");
+	}
 
 	try
 	{
