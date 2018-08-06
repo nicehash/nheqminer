@@ -161,7 +161,7 @@ uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL
 }
 
 // default 1024K Verus hashes for each solve call, means about 5-30 per second on most hardware CPU threads with proper instructions
-#define VERUSHASHES_PER_SOLVE 100000
+#define VERUSHASHES_PER_SOLVE 0x100000
 
 /** A writer stream (for serialization) that computes a 256-bit Verus hash. */
 class CVerusHashWriter
