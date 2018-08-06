@@ -10,11 +10,16 @@ option(USE_CUDA_TROMP "USE CUDA_TROMP" OFF)
 #### faster
 option(USE_CPU_XENONCAT "USE CPU_XENONCAT" ON)
 option(USE_CUDA_DJEZO "USE CUDA_DJEZO" ON)
+option(USE_CPU_VERUSHASH "USE CPU_VERUSHASH" ON)
 
 ## Add solvers here
 if (USE_CPU_TROMP)
     add_definitions(-DUSE_CPU_TROMP)
     message("-- USE_CPU_TROMP DEFINED")
+endif()
+if (USE_CPU_VERUSHASH)
+    add_definitions(-DUSE_CPU_VERUSHASH)
+    message("-- USE_CPU_VERUSHASH DEFINED")
 endif()
 if (USE_CPU_XENONCAT)
     add_definitions(-DUSE_CPU_XENONCAT)
@@ -33,18 +38,18 @@ endif()
 ########
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
-#    # use native cpu features
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -fPIC")
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fPIC")
+    # use native cpu features
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fPIC")
 
-#    # optimizations
-#    add_definitions(-O3)
-
-    # use
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
     # optimizations
-    add_definitions(-O2)
+    add_definitions(-O3)
+
+#    # use
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
+#    # optimizations
+#    add_definitions(-O2)
 endif()
 
 # Common
@@ -86,12 +91,16 @@ set(SOURCE_FILES
     nheqminer/api.cpp
     nheqminer/arith_uint256.cpp
     nheqminer/crypto/sha256.cpp
+    nheqminer/crypto/haraka.c
+    nheqminer/crypto/haraka_portable.c
+    nheqminer/crypto/verus_hash.cpp
     nheqminer/json/json_spirit_reader.cpp
     nheqminer/json/json_spirit_value.cpp
     nheqminer/json/json_spirit_writer.cpp
     nheqminer/libstratum/ZcashStratum.cpp
     nheqminer/main.cpp
     nheqminer/primitives/block.cpp
+    nheqminer/primitives/nonce.cpp
     nheqminer/speed.cpp
     nheqminer/uint256.cpp
     nheqminer/utilstrencodings.cpp
@@ -100,6 +109,9 @@ set(SOURCE_FILES
     nheqminer/api.hpp
     nheqminer/arith_uint256.h
     nheqminer/crypto/sha256.h
+    nheqminer/crypto/haraka.h
+    nheqminer/crypto/haraka_portable.h
+    nheqminer/crypto/verus_hash.h
     nheqminer/hash.h
     nheqminer/json/json_spirit.h
     nheqminer/json/json_spirit_error_position.h
@@ -115,6 +127,7 @@ set(SOURCE_FILES
     nheqminer/libstratum/ZcashStratum.cpp
     nheqminer/libstratum/ZcashStratum.h
     nheqminer/primitives/block.h
+    nheqminer/primitives/nonce.cpp
     nheqminer/primitives/transaction.h
     nheqminer/script/script.h
     nheqminer/serialize.h
@@ -161,6 +174,9 @@ message("-- LIBS: ${LIBS}")
 if (USE_CPU_TROMP)
     add_subdirectory(cpu_tromp)
 endif()
+if (USE_CPU_VERUSHASH)
+    add_subdirectory(cpu_verushash)
+endif()
 if (USE_CPU_XENONCAT)
     add_subdirectory(cpu_xenoncat)
 endif()
@@ -181,6 +197,9 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${LIBS} )
 # link libs
 if (USE_CPU_TROMP)
     target_link_libraries(${PROJECT_NAME} cpu_tromp)
+endif()
+if (USE_CPU_VERUSHASH)
+    target_link_libraries(${PROJECT_NAME} cpu_verushash)
 endif()
 if (USE_CPU_XENONCAT)
     add_library ( xenoncat_avx1 SHARED IMPORTED GLOBAL )

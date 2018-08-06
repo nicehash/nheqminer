@@ -9,8 +9,6 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-int32_t ASSETCHAINS_MAGIC = -497513811;
-
 JSDescription::JSDescription(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& anchor,

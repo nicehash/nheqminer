@@ -160,6 +160,9 @@ uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL
     return ss.GetHash();
 }
 
+// default 1024K Verus hashes for each solve call, means about 5-30 per second on most hardware CPU threads with proper instructions
+#define VERUSHASHES_PER_SOLVE 100000
+
 /** A writer stream (for serialization) that computes a 256-bit Verus hash. */
 class CVerusHashWriter
 {
@@ -185,8 +188,8 @@ public:
         return result;
     }
 
-    int64_t *xI64p() { return state.ExtraI64Ptr(); }
-    CVerusHash &GetState() { return state; }
+    inline int64_t *xI64p() { return state.ExtraI64Ptr(); }
+    inline CVerusHash &GetState() { return state; }
 
     template<typename T>
     CVerusHashWriter& operator<<(const T& obj) {

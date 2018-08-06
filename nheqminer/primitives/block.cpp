@@ -10,6 +10,8 @@
 #include "utilstrencodings.h"
 #include "crypto/common.h"
 
+int32_t ASSETCHAINS_MAGIC = -497513811;
+
 uint256 CBlockHeader::GetHash() const
 {
     return SerializeHash(*this);

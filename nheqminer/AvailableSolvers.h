@@ -3,7 +3,11 @@
 #include "Solver.h"
 #include "SolverStub.h"
 
-
+#ifdef USE_CPU_VERUSHASH
+#include "../cpu_verushash/cpu_verushash.hpp"
+#else
+CREATE_SOLVER_STUB(cpu_verushash, "cpu_verushash_STUB")
+#endif
 #ifdef USE_CPU_TROMP
 #include "../cpu_tromp/cpu_tromp.hpp"
 #else
@@ -41,6 +45,13 @@ CREATE_SOLVER_STUB(ocl_silentarmy, "ocl_silentarmy_STUB")
 //} // AvailableSolvers
 
 // CPU solvers
+class CPUSolverVerusHash : public SolverVerus<cpu_verushash> {
+public:
+	CPUSolverVerusHash(int use_opt) : SolverVerus<cpu_verushash>(new cpu_verushash(), SolverType::VERUS_CPU_OPT) {
+		_context->use_opt = use_opt;
+	}
+	virtual ~CPUSolverVerusHash() {}
+};
 class CPUSolverTromp : public Solver<cpu_tromp> {
 public:
 	CPUSolverTromp(int use_opt) : Solver<cpu_tromp>(new cpu_tromp(), SolverType::CPU) {

@@ -37,6 +37,7 @@ namespace src = boost::log::sources;
 namespace attrs = boost::log::attributes;
 namespace keywords = boost::log::keywords;
 
+#undef __cpuid
 #ifdef __linux__
 #define __cpuid(out, infoType)\
 	asm("cpuid": "=a" (out[0]), "=b" (out[1]), "=c" (out[2]), "=d" (out[3]): "a" (infoType));
@@ -83,10 +84,11 @@ void print_help()
 	std::cout << "\t-u [username]\tUsername (Zcash wallet address)" << std::endl;
 #endif
 	std::cout << "\t-a [port]\tLocal API port (default: 0 = do not bind)" << std::endl;
-	std::cout << "\t-v \tMine with VerusHash algorithm" << std::endl;
-	std::cout << "\t-vm [verusmagic]\tset Verus Hash magic number for support of other VerusHash chains" << std::endl;
 	std::cout << "\t-d [level]\tDebug print level (0 = print all, 5 = fatal only, default: 2)" << std::endl;
 	std::cout << "\t-b [hashes]\tRun in benchmark mode (default: 200 iterations)" << std::endl;
+	std::cout << std::endl << "VerusHash settings" << std::endl;
+	std::cout << "\t-v \t\tMine with VerusHash algorithm" << std::endl;
+	std::cout << "\t-vm [magicnum]\tset magic number for VerusHash chain other than VRSC" << std::endl;
 	std::cout << std::endl;
 	std::cout << "CPU settings" << std::endl;
 	std::cout << "\t-t [num_thrds]\tNumber of CPU threads" << std::endl;
@@ -192,7 +194,7 @@ void detect_AVX_and_AVX2()
 
 void start_mining(int api_port, const std::string& host, const std::string& port,
 	const std::string& user, const std::string& password,
-	ZcashStratumClient* handler, const std::vector<ISolver *> &i_solvers)
+	ZcashStratumClient* handler, const std::vector<ISolver *> &i_solvers, bool verus_hash)
 {
 	std::shared_ptr<boost::asio::io_service> io_service(new boost::asio::io_service);
 
@@ -226,12 +228,23 @@ void start_mining(int api_port, const std::string& host, const std::string& port
 		{
 			double allshares = speed.GetShareSpeed() * 60;
 			double accepted = speed.GetShareOKSpeed() * 60;
-			BOOST_LOG_TRIVIAL(info) << CL_YLW "Speed [" << INTERVAL_SECONDS << " sec]: " <<
-				speed.GetHashSpeed() << " I/s, " <<
-				speed.GetSolutionSpeed() << " Sols/s" <<
-				//accepted << " AS/min, " << 
-				//(allshares - accepted) << " RS/min" 
-				CL_N;
+			if (verus_hash)
+			{
+				BOOST_LOG_TRIVIAL(info) << CL_YLW "Speed [" << INTERVAL_SECONDS << " sec]: " <<
+					speed.GetHashSpeed() << " MH/s, " <<
+					//accepted << " AS/min, " << 
+					//(allshares - accepted) << " RS/min" 
+					CL_N;
+			}
+			else
+			{
+				BOOST_LOG_TRIVIAL(info) << CL_YLW "Speed [" << INTERVAL_SECONDS << " sec]: " <<
+					speed.GetHashSpeed() << " I/s, " <<
+					speed.GetSolutionSpeed() << " Sols/s" <<
+					//accepted << " AS/min, " << 
+					//(allshares - accepted) << " RS/min" 
+					CL_N;
+			}
 		}
 		if (api) while (api->poll()) {}
 	}
@@ -342,25 +355,38 @@ int main(int argc, char* argv[])
 		case 'v':
 		{
 			verus_hash = true;
-			std::cout << "\t*** Setting hash algorithm to VerusHash" << std::endl;
+			std::cout << "\t*** Setting hash algorithm to VerusHash - ";
+			CVerusHash::init();
+			if (IsCPUVerusOptimized())
+			{
+				std::cout << "\tAES OPTIMIZED";
+			}
+			else
+			{
+				std::cout << "\tNO AES DETECTED";
+			}
+			std::cout << std::endl;
+			CBlockHeader::SetVerusHash();
+
 			// set to Verus Hash for Verus Coin
 			switch (argv[i][2])
 			{
-			case 'm':
-			{
-				// change the magic number for hashing
-				try
+				case 'm':
 				{
-					ASSETCHAINS_MAGIC = std::atoi(argv[++i]);
-					std::cout << "\t*Magic number for chain set to " << ASSETCHAINS_MAGIC << std::endl;
+					// change the magic number for hashing
+					try
+					{
+						ASSETCHAINS_MAGIC = std::atoi(argv[++i]);
+						std::cout << "\t* Magic number for chain set to " << ASSETCHAINS_MAGIC << std::endl;
+					}
+					catch (...)
+					{
+						std::cout << "\t* -vm must be followed by the 32 bit magic number of the chain to mine, default is Verus Coin" << std::endl;
+						std::cout << "\t* miner terminating..." << std::endl;
+						return 1;
+					}
+					break;
 				}
-				catch (...)
-				{
-					std::cout << "\t*-vm must be followed by the 32 bit magic number of the chain to mine, default is Verus Coin" << std::endl;
-					std::cout << "\t*miner terminating..." << std::endl;
-					return 1;
-				}
-				break;
 			}
 			break;
 		}
@@ -447,7 +473,7 @@ int main(int argc, char* argv[])
 	// error out on non-CPU VerusHash
 	if (cuda_device_count && verus_hash)
 	{
-		std::cout << "\t*VerusHash dow not currently support GPUs" << std::endl;
+		std::cout << "\t*VerusHash does not currently support GPUs" << std::endl;
 		std::cout << "\t*miner terminating..." << std::endl;
 		return 1;
 	}
@@ -488,17 +514,19 @@ int main(int argc, char* argv[])
 
 	BOOST_LOG_TRIVIAL(info) << "Using SSE2: YES";
 	BOOST_LOG_TRIVIAL(info) << "Using AVX: " << (use_avx ? "YES" : "NO");
-	BOOST_LOG_TRIVIAL(info) << "Using AVX2: " << (use_avx2 ? "YES" : "NO");
+	BOOST_LOG_TRIVIAL(info) << "Using AVX2: " << ((use_avx2 && !verus_hash) ? "YES" : "NO");
+	BOOST_LOG_TRIVIAL(info) << "Using AES: " << ((use_aes && verus_hash) ? "YES" : "NO");
 
 	try
 	{
 		if (verus_hash)
 		{
 			// determine how many threads
-			if (num_threads < 0) {
+			if (num_threads < 0)
+			{
 				num_threads = std::thread::hardware_concurrency();
 				if (num_threads < 1) num_threads = 1;
-
+			}
 			// start mining with VerusHash and solver array of number of threads
 		}
 		else
@@ -519,7 +547,7 @@ int main(int argc, char* argv[])
 				start_mining(api_port, host, port, user, password,
 					scSig,
 					_MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks,
-					cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
+					cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads), verus_hash);
 			}
 			else
 			{

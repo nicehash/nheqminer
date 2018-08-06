@@ -20,6 +20,7 @@ Open **nheqminer.sln** under **nheqminer/nheqminer.sln** and build. You will hav
   - USE_CPU_XENONCAT
   - USE_CUDA_TROMP
   - USE_CUDA_DJEZO
+  - USE_CPU_VERUSHASH
 
 If you don't wan't to build with all solvlers you can go to **nheqminer Properties > C/C++ > Preprocessor > Preprocessor Definitions** and remove the solver you don't need.
 

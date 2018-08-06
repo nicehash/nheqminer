@@ -109,5 +109,4 @@ void Speed::Reset()
 	m_start = std::chrono::high_resolution_clock::now();
 }
 
-
 Speed speed(INTERVAL_SECONDS);

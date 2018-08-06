@@ -40,7 +40,7 @@ class CVerusHash
             return *this;
         }
 
-        int64_t *ExtraI64Ptr() { return (int64_t *)(curBuf + 32); }
+        inline int64_t *ExtraI64Ptr() { return (int64_t *)(curBuf + 32); }
         void ClearExtra()
         {
             if (curPos)

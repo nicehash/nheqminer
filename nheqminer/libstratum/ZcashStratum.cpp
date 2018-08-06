@@ -235,13 +235,26 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos, ISolver *solv
 					speed.AddHash();
 				};
 
-				solver->solve(tequihash_header,
-					tequihash_header_len,
-					(const char*)bNonce.begin(),
-					bNonce.size(),
-					cancelFun,
-					solutionFound,
-					hashDone);
+				if (solver->GetType() == SolverType::VERUS_CPU_OPT)
+				{
+					// solver needs more information to prevent callouts and perform well on VerusHash
+					solver->solve_verus(actualHeader,
+						actualTarget,
+						cancelFun,
+						solutionFound,
+						hashDone);
+				}
+				else
+				{
+					// solver needs more information to prevent callouts and perform well on VerusHash
+					solver->solve(tequihash_header,
+						tequihash_header_len,
+						(const char*)bNonce.begin(),
+						bNonce.size(),
+						cancelFun,
+						solutionFound,
+						hashDone);
+				}
 				
                 // Check for stop
 				if (!miner->minerThreadActive[pos])
