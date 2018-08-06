@@ -237,6 +237,7 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos, ISolver *solv
 
 				if (solver->GetType() == SolverType::VERUS_CPU_OPT)
 				{
+					actualHeader.nSolution = std::vector<unsigned char>(1344);
 					// solver needs more information to prevent callouts and perform well on VerusHash
 					solver->solve_verus(actualHeader,
 						actualTarget,
@@ -498,6 +499,22 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
     ZcashJob* ret = new ZcashJob();
     ret->job = params[0].get_str();
 
+	/*
+	std::vector<std::string> jobStrings = std::vector<std::string>();
+	std::cout << std::endl;
+	for (int i = 0; i < params.size(); i++)
+	{
+		try
+		{
+			jobStrings.push_back(params[i].get_str());
+			std::cout << jobStrings[i] << std::endl;
+		} catch (...)
+		{
+
+		}
+	}
+	*/
+
     int32_t version;
     sscanf(params[1].get_str().c_str(), "%x", &version);
     // TODO: On a LE host shouldn't this be le32toh?
@@ -620,7 +637,10 @@ bool benchmark_solve_equihash(const CBlock& pblock, const char *tequihash_header
 	{
 		// solver needs more information to prevent callouts and perform well on VerusHash
 		arith_uint256 impossibleTarget = arith_uint256();
-		solver->solve_verus((CBlockHeader &)pblock,
+		CBlockHeader actualHeader = (CBlockHeader &)pblock;
+		actualHeader.nSolution = std::vector<unsigned char>(1344);
+
+		solver->solve_verus(actualHeader,
 			impossibleTarget,
 			[]() { return false; },
 			solutionFound,
