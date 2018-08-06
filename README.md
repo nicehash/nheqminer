@@ -5,8 +5,6 @@
 
 ## Windows:
 
-Windows builds made by us are available here: https://github.com/nicehash/nheqminer/releases
-
 Download and install:
 - [CUDA SDK](https://developer.nvidia.com/cuda-downloads) (if not needed remove **USE_CUDA_TROMP** and **USE_CUDA_DJEZO** from **nheqminer** Preprocessor definitions under Properties > C/C++ > Preprocessor)
 - Visual Studio 2013 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs
