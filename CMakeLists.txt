@@ -43,7 +43,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fPIC")
 
     # optimizations
-    add_definitions(-O3)
+    add_definitions(-O2)
 
 #    # use
 #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")

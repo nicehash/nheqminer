@@ -467,7 +467,7 @@ void ZcashMiner::stop()
 void ZcashMiner::setServerNonce(const std::string& n1str)
 {
     //auto n1str = params[1].get_str();
-	BOOST_LOG_TRIVIAL(info) << "miner | Extranonce is " << n1str;
+	BOOST_LOG_TRIVIAL(info) << "miner   | Extranonce is " << n1str;
     std::vector<unsigned char> nonceData(ParseHex(n1str));
     while (nonceData.size() < 32) {
         nonceData.push_back(0);
@@ -502,25 +502,30 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
 	/*
 	std::vector<std::string> jobStrings = std::vector<std::string>();
 	std::cout << std::endl;
-	for (int i = 0; i < params.size(); i++)
+	for (int i = 0; i < params.size() - 1; i++)
 	{
 		try
 		{
 			jobStrings.push_back(params[i].get_str());
-			std::cout << jobStrings[i] << std::endl;
 		} catch (...)
 		{
 
 		}
 	}
+	if (params[params.size() - 1].get_bool())
+		jobStrings.push_back("cleanjob:true");
+	else
+		jobStrings.push_back("cleanjob:false");
+	for (int i = 0; i < params.size(); i++)
+		std::cout << jobStrings[i] << std::endl;
 	*/
 
     int32_t version;
     sscanf(params[1].get_str().c_str(), "%x", &version);
-    // TODO: On a LE host shouldn't this be le32toh?
+
     ret->header.nVersion = be32toh(version);
 
-    if (ret->header.nVersion == 4) {
+    if (ret->header.nVersion == 4 || ret->header.nVersion == 0x20000000) {
         if (params.size() < 8) {
             throw std::logic_error("Invalid job params");
         }

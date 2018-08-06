@@ -274,13 +274,15 @@ int main(int argc, char* argv[])
 #endif
 
 	std::cout << std::endl;
-	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
-	std::cout << "\t\tEquihash CPU&GPU Miner for NiceHash v" STANDALONE_MINER_VERSION << std::endl;
-	std::cout << "\tThanks to Zcash developers for providing base of the code." << std::endl;
-	std::cout << "\t    Special thanks to tromp, xenoncat and djeZo for providing "<< std::endl;
-	std::cout << "\t      optimized CPU and CUDA equihash solvers." << std::endl;
-	std::cout << "\t==================== www.nicehash.com ====================" << std::endl;
-	std::cout << "\t* with VerusHash support by veruscoin.io" << std::endl;
+	std::cout << "\t==================== www.veruscoin.io ====================" << std::endl;
+	std::cout << "\tEquihash and VerusHash CPU&GPU Miner, v" STANDALONE_MINER_VERSION << std::endl;
+	std::cout << "\twith support for mining VRSC and other VerusHash coins" << std::endl << std::endl;
+	std::cout << "\tThanks to original Nicehash developers and Zcash developers" << std::endl;
+	std::cout << "\tfor providing base of the code." << std::endl << std::endl;
+	std::cout << "\tSpecial thanks to tromp, xenoncat and djeZo for providing "<< std::endl;
+	std::cout << "\toptimized CPU and CUDA equihash solvers." << std::endl << std::endl;
+	std::cout << "\tProtocol upgrade and VerusHash CPU support by miketout." << std::endl;
+	std::cout << "\t==================== www.veruscoin.io ====================" << std::endl;
 	std::cout << std::endl;
 
 	std::string location = "equihash.eu.nicehash.com:3357";
