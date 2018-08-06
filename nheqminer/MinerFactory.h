@@ -5,8 +5,8 @@
 class MinerFactory
 {
 public:
-	MinerFactory(bool use_xenoncat, bool use_cuda_djezo, bool use_silentarmy)
-		: _use_xenoncat(use_xenoncat), _use_cuda_djezo(use_cuda_djezo), _use_silentarmy(use_silentarmy) {
+	MinerFactory(bool use_xenoncat, bool use_cuda_djezo, bool use_silentarmy, bool use_verus)
+		: _use_xenoncat(use_xenoncat), _use_cuda_djezo(use_cuda_djezo), _use_silentarmy(use_silentarmy), _use_verus(use_verus) {
 	}
 
 	~MinerFactory();
@@ -21,6 +21,7 @@ private:
 	bool _use_xenoncat = true;
 	bool _use_cuda_djezo = true;
 	bool _use_silentarmy = true;
+	bool _use_verus = false;
 
 	ISolver * GenCPUSolver(int use_opt);
 	ISolver * GenCUDASolver(int dev_id, int blocks, int threadsperblock);

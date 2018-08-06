@@ -79,9 +79,11 @@ void print_help()
 #ifndef ZCASH_POOL
 	std::cout << "\t-l [location]\tStratum server:port" << std::endl;
 	std::cout << "\t-u [username]\tUsername (bitcoinaddress)" << std::endl;
+	std::cout << "\t-p [passwd]\tpassword" << std::endl;
 #else
 	std::cout << "\t-l [location]\tLocation (eu, usa)" << std::endl;
 	std::cout << "\t-u [username]\tUsername (Zcash wallet address)" << std::endl;
+	std::cout << "\t-p [passwd]\tpassword" << std::endl;
 #endif
 	std::cout << "\t-a [port]\tLocal API port (default: 0 = do not bind)" << std::endl;
 	std::cout << "\t-d [level]\tDebug print level (0 = print all, 5 = fatal only, default: 2)" << std::endl;
@@ -188,6 +190,11 @@ void detect_AVX_and_AVX2()
 	{
 		f_7_EBX_ = data_[7][1];
 		use_avx2 = f_7_EBX_[5];
+	}
+
+	if (IsCPUVerusOptimized())
+	{
+		use_aes = true;
 	}
 }
 
@@ -355,15 +362,15 @@ int main(int argc, char* argv[])
 		case 'v':
 		{
 			verus_hash = true;
-			std::cout << "\t*** Setting hash algorithm to VerusHash - ";
+			std::cout << "Setting hash algorithm to VerusHash - ";
 			CVerusHash::init();
 			if (IsCPUVerusOptimized())
 			{
-				std::cout << "\tAES OPTIMIZED";
+				std::cout << "AES OPTIMIZED";
 			}
 			else
 			{
-				std::cout << "\tNO AES DETECTED";
+				std::cout << "NO AES DETECTED";
 			}
 			std::cout << std::endl;
 			CBlockHeader::SetVerusHash();
@@ -519,40 +526,27 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		if (verus_hash)
+		_MinerFactory = new MinerFactory(use_avx == 1, use_old_cuda == 0, use_old_xmp == 0, verus_hash);
+		if (!benchmark)
 		{
-			// determine how many threads
-			if (num_threads < 0)
+			if (user.length() == 0)
 			{
-				num_threads = std::thread::hardware_concurrency();
-				if (num_threads < 1) num_threads = 1;
+				BOOST_LOG_TRIVIAL(error) << "Invalid address. Use -u to specify your address.";
+				return 0;
 			}
-			// start mining with VerusHash and solver array of number of threads
+
+			size_t delim = location.find(':');
+			std::string host = delim != std::string::npos ? location.substr(0, delim) : location;
+			std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
+
+			start_mining(api_port, host, port, user, password,
+				scSig,
+				_MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks,
+				cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads), verus_hash);
 		}
 		else
 		{
-			_MinerFactory = new MinerFactory(use_avx == 1, use_old_cuda == 0, use_old_xmp == 0);
-			if (!benchmark)
-			{
-				if (user.length() == 0)
-				{
-					BOOST_LOG_TRIVIAL(error) << "Invalid address. Use -u to specify your address.";
-					return 0;
-				}
-
-				size_t delim = location.find(':');
-				std::string host = delim != std::string::npos ? location.substr(0, delim) : location;
-				std::string port = delim != std::string::npos ? location.substr(delim + 1) : "2142";
-
-				start_mining(api_port, host, port, user, password,
-					scSig,
-					_MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks,
-					cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads), verus_hash);
-			}
-			else
-			{
-				Solvers_doBenchmark(num_hashes, _MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
-			}
+			Solvers_doBenchmark(num_hashes, _MinerFactory->GenerateSolvers(num_threads, cuda_device_count, cuda_enabled, cuda_blocks, cuda_tpb, opencl_device_count, opencl_platform, opencl_enabled, opencl_threads));
 		}
 	}
 	catch (std::runtime_error& er)
