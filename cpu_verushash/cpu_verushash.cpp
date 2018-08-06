@@ -47,7 +47,7 @@ void cpu_verushash::solve_verus(CBlockHeader &bh,
 
 	// loop the requested number of times or until canceled. determine if we 
 	// found a winner, and send all winners found as solutions. count only one hash. 
-	// hashrate is determined by multiplying hash by 64K, with VerusHash, only
+	// hashrate is determined by multiplying hash by VERUSHASHES_PER_SOLVE, with VerusHash, only
 	// hashrate and sharerate are valid, solutionrate will equal sharerate
 	for (int64_t i; i < VERUSHASHES_PER_SOLVE; i++)
 	{
