@@ -382,7 +382,6 @@ int main(int argc, char* argv[])
 				std::cout << "NO AES DETECTED";
 			}
 			std::cout << std::endl;
-			CBlockHeader::SetVerusHash();
 
 			// set to Verus Hash for Verus Coin
 			switch (argv[i][2])
@@ -492,6 +491,11 @@ int main(int argc, char* argv[])
 		std::cout << "\t*VerusHash does not currently support GPUs" << std::endl;
 		std::cout << "\t*miner terminating..." << std::endl;
 		return 1;
+	}
+
+	if (verus_hash)
+	{
+		CBlockHeader::SetVerusHash();
 	}
 
 	if (force_cpu_ext >= 0)
