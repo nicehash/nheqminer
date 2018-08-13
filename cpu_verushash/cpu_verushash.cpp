@@ -56,6 +56,9 @@ void cpu_verushash::solve_verus(CBlockHeader &bh,
 		if (UintToArith256(curHash) > target)
 			continue;
 
+		int extraSpace = (bh.nSolution.size() % 32) - 2;
+		*((int64_t *)&(bh.nSolution.data()[bh.nSolution.size() - extraSpace])) = i;
+
 		solutionf(std::vector<uint32_t>(0), bh.nSolution.size(), bh.nSolution.data());
 		if (cancelf()) return;
 	}
