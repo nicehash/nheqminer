@@ -95,6 +95,14 @@ std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
 	return ret;
 }
 
+std::string ToHex(unsigned char ch)
+{
+	char digits[17] = "0123456789abcdef";
+	std::string s = "00";
+	s[0] = digits[ch >> 4];
+	s[1] = digits[ch & 0xf];
+	return s;
+}
 
 void static ZcashMinerThread(ZcashMiner* miner, int size, int pos, ISolver *solver)
 {
@@ -193,7 +201,14 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos, ISolver *solv
 
             // Start working
             while (true) {
-				BOOST_LOG_CUSTOM(debug, pos) << "Running Equihash solver with nNonce = " << nonce.ToString();
+				if (solver->GetType() == SolverType::VERUS_CPU_OPT)
+				{
+					BOOST_LOG_CUSTOM(debug, pos) << "Running VerusHash solver with nNonce = " << nonce.ToString();
+				}
+				else
+				{
+					BOOST_LOG_CUSTOM(debug, pos) << "Running Equihash solver with nNonce = " << nonce.ToString();
+				}
 
 				auto bNonce = ArithToUint256(nonce);
 
@@ -202,6 +217,7 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos, ISolver *solv
 				(const std::vector<uint32_t>& index_vector, size_t cbitlen, const unsigned char* compressed_sol) 
 				{
 					actualHeader.nNonce = bNonce;
+
 					if (compressed_sol)
 					{
 						actualHeader.nSolution = std::vector<unsigned char>(1344);
@@ -209,13 +225,17 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos, ISolver *solv
 							actualHeader.nSolution[i] = compressed_sol[i];
 					}
 					else
+					{
 						actualHeader.nSolution = GetMinimalFromIndices(index_vector, cbitlen);
+					}
 
 					speed.AddSolution();
 
 					BOOST_LOG_CUSTOM(debug, pos) << "Checking solution against target...";
 
 					uint256 headerhash = actualHeader.GetHash();
+					BOOST_LOG_CUSTOM(debug, pos) << std::endl << "  hash after." << headerhash.GetHex();
+
 					if (UintToArith256(headerhash) > actualTarget) {
 						BOOST_LOG_CUSTOM(debug, pos) << "Too large: " << headerhash.ToString();
 						return;
@@ -237,8 +257,9 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos, ISolver *solv
 
 				if (solver->GetType() == SolverType::VERUS_CPU_OPT)
 				{
-					actualHeader.nSolution = std::vector<unsigned char>(1344);
+					actualHeader.nNonce = bNonce;
 					// solver needs more information to prevent callouts and perform well on VerusHash
+
 					solver->solve_verus(actualHeader,
 						actualTarget,
 						cancelFun,
