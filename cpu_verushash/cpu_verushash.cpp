@@ -38,6 +38,8 @@ void cpu_verushash::solve_verus(CBlockHeader &bh,
 	CVerusHashWriter &vhw = *(device_context.pVHW);
 	CVerusHash &vh = vhw.GetState();
 	uint256 curHash;
+	std::vector<unsigned char> solution = std::vector<unsigned char>(1344);
+	bh.nSolution = solution;
 
 	// prepare the hash state
 	vhw.Reset();
@@ -57,11 +59,11 @@ void cpu_verushash::solve_verus(CBlockHeader &bh,
 		if (UintToArith256(curHash) > target)
 			continue;
 
-		int extraSpace = (bh.nSolution.size() % 32) + 15;
-		assert(bh.nSolution.size() > 15);
-		*((int64_t *)&(bh.nSolution.data()[bh.nSolution.size() - extraSpace])) = i;
+		int extraSpace = (solution.size() % 32) + 15;
+		assert(solution.size() > 32);
+		*((int64_t *)&(solution.data()[solution.size() - extraSpace])) = i;
 
-		solutionf(std::vector<uint32_t>(0), bh.nSolution.size(), bh.nSolution.data());
+		solutionf(std::vector<uint32_t>(0), solution.size(), solution.data());
 		if (cancelf()) return;
 	}
 
