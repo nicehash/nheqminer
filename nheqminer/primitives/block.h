@@ -75,7 +75,10 @@ public:
         return (nBits == 0);
     }
 
-    uint256 GetHash() const;
+    uint256 GetHash() const
+    {
+        return (this->*hashFunction)();
+    }
 
     uint256 GetSHA256DHash() const;
     static void SetSHA256DHash();

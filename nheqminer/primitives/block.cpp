@@ -12,11 +12,6 @@
 
 int32_t ASSETCHAINS_MAGIC = -497513811;
 
-uint256 CBlockHeader::GetHash() const
-{
-    return SerializeHash(*this);
-}
-
 // default hash algorithm for block
 uint256 (CBlockHeader::*CBlockHeader::hashFunction)() const = &CBlockHeader::GetSHA256DHash;
 
