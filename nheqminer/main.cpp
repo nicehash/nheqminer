@@ -286,6 +286,7 @@ int main(int argc, char* argv[])
 	std::cout << "\tSpecial thanks to tromp, xenoncat and djeZo for providing "<< std::endl;
 	std::cout << "\toptimized CPU and CUDA equihash solvers." << std::endl << std::endl;
 	std::cout << "\tProtocol upgrade and VerusHash CPU support by miketout." << std::endl;
+	std::cout << "\tWindows MSVC2015 build by Decker." << std::endl;
 	std::cout << "\t==================== www.veruscoin.io ====================" << std::endl;
 	std::cout << std::endl;
 
