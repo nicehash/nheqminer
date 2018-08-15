@@ -52,7 +52,13 @@ public:
 		std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
 		std::function<void(void)> hashdonef) override {
 			std::cout << std::endl << "\tERROR: Calling solve_verus on non-Verus solver" << std::endl;
+		#ifndef _WIN32
 			sleep(1);
+		#else
+			_sleep(1000);
+		#endif // !_WIN32
+
+
 	}
 
 	virtual std::string getdevinfo() override {
@@ -100,7 +106,11 @@ public:
 		std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
 		std::function<void(void)> hashdonef) override {
 			std::cout << std::endl << "\tERROR: Calling solve instead of solve_verus on Verus solver" << std::endl;
-			sleep(1);
+			#ifndef _WIN32
+						sleep(1);
+			#else
+						_sleep(1000);
+			#endif // !_WIN32
 	}
 
 	virtual void solve_verus(CBlockHeader &bh, 

@@ -73,7 +73,11 @@ extern "C" void stratum_sigint_handler(int signum)
 		scSig->disconnect();
 	
 		for (int i = 0; scSig->isRunning() && i < 5; i++)
-			sleep(1);
+		#ifndef _WIN32
+					sleep(1);
+		#else
+					_sleep(1000);
+		#endif // !_WIN32
 	}
 	if (_MinerFactory) _MinerFactory->ClearAllSolvers();
 	exit(0);

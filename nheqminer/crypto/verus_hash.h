@@ -11,7 +11,14 @@ This provides the PoW hash function for Verus, enabling CPU mining.
 #include <cstring>
 #include <vector>
 
+
+
+#ifndef _WIN32
 #include <cpuid.h>
+#else
+#include <intrin.h> 
+#endif // !WIN32
+
 
 extern "C" 
 {
@@ -121,6 +128,7 @@ extern void verus_hash_v2(void *result, const void *data, size_t len);
 
 inline bool IsCPUVerusOptimized()
 {
+	#ifndef _WIN32
     unsigned int eax,ebx,ecx,edx;
 
     if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx))
@@ -128,6 +136,10 @@ inline bool IsCPUVerusOptimized()
         return false;
     }
     return ((ecx & (bit_AVX | bit_AES)) == (bit_AVX | bit_AES));
+	#else
+	return 1;
+	#endif
+
 };
 
 #endif
