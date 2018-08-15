@@ -137,7 +137,17 @@ inline bool IsCPUVerusOptimized()
     }
     return ((ecx & (bit_AVX | bit_AES)) == (bit_AVX | bit_AES));
 	#else
-	return 1;
+	
+	// https://github.com/gcc-mirror/gcc/blob/master/gcc/config/i386/cpuid.h
+	#define bit_AVX		(1 << 28)
+	#define bit_AES		(1 << 25)
+	// https://insufficientlycomplicated.wordpress.com/2011/11/07/detecting-intel-advanced-vector-extensions-avx-in-visual-studio/
+	// bool cpuAVXSuport = cpuInfo[2] & (1 << 28) || false;
+	
+	int cpuInfo[4];
+	__cpuid(cpuInfo, 1);
+	return ((cpuInfo[2] & (bit_AVX | bit_AES)) == (bit_AVX | bit_AES));
+			
 	#endif
 
 };

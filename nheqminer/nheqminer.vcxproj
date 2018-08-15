@@ -117,6 +117,7 @@
     <ClInclude Include="crypto\common.h" />
     <ClInclude Include="crypto\haraka.h" />
     <ClInclude Include="crypto\sha256.h" />
+    <ClInclude Include="crypto\verus_hash.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="json\json_spirit.h" />
     <ClInclude Include="json\json_spirit_error_position.h" />
