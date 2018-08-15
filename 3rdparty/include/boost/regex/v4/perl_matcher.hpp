@@ -161,9 +161,9 @@ iterator BOOST_REGEX_CALL re_is_set_member(iterator next,
       if(*p == static_cast<charT>(0))
       {
          // treat null string as special case:
-         if(traits_inst.translate(*ptr, icase) != *p)
+         if(traits_inst.translate(*ptr, icase))
          {
-            while(*p == static_cast<charT>(0))++p;
+            ++p;
             continue;
          }
          return set_->isnot ? next : (ptr == next) ? ++next : ptr;
@@ -348,6 +348,7 @@ struct recursion_info
    const re_syntax_base* preturn_address;
    Results results;
    repeater_count<iterator>* repeater_stack;
+   iterator location_of_start;
 };
 
 #ifdef BOOST_MSVC

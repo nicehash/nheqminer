@@ -23,6 +23,7 @@
 #include <boost/test/impl/progress_monitor.ipp>
 #include <boost/test/impl/results_collector.ipp>
 #include <boost/test/impl/results_reporter.ipp>
+#include <boost/test/impl/test_framework_init_observer.ipp>
 #include <boost/test/impl/test_main.ipp>
 #include <boost/test/impl/test_tools.ipp>
 #include <boost/test/impl/test_tree.ipp>

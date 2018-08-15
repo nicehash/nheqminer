@@ -147,6 +147,8 @@ void generic_interconvert(To& to, const From& from, const mpl::int_<number_kind_
    using default_ops::eval_add;
    using default_ops::eval_subtract;
    using default_ops::eval_convert_to;
+   using default_ops::eval_get_sign;
+   using default_ops::eval_is_zero;
 
    //
    // First classify the input, then handle the special cases:
@@ -425,7 +427,7 @@ void generic_interconvert_float2rational(To& to, const From& from, const mpl::in
    //
    typedef typename mpl::front<typename To::unsigned_types>::type ui_type;
    typename From::exponent_type e;
-   typename component_type<To>::type num, denom;
+   typename component_type<number<To> >::type num, denom;
    number<From> val(from);
    e = ilogb(val);
    val = scalbn(val, -e);
@@ -446,7 +448,7 @@ void generic_interconvert_float2rational(To& to, const From& from, const mpl::in
       num *= denom;
       denom = 1;
    }
-   assign_components(to, num, denom);
+   assign_components(to, num.backend(), denom.backend());
 }
 
 template <class To, class From>
@@ -455,7 +457,70 @@ void generic_interconvert(To& to, const From& from, const mpl::int_<number_kind_
    generic_interconvert_float2rational(to, from, mpl::int_<std::numeric_limits<number<From> >::radix>());
 }
 
-}}} // namespaces
+template <class To, class From>
+void generic_interconvert(To& to, const From& from, const mpl::int_<number_kind_integer>& /*to_type*/, const mpl::int_<number_kind_rational>& /*from_type*/)
+{
+   number<From> t(from);
+   number<To> result(numerator(t) / denominator(t));
+   to = result.backend();
+}
+
+template <class To, class From>
+void generic_interconvert_float2int(To& to, const From& from, const mpl::int_<2>& /*radix*/)
+{
+   typedef typename From::exponent_type exponent_type;
+   static const exponent_type shift = std::numeric_limits<boost::long_long_type>::digits;
+   exponent_type e;
+   number<To>   num(0u);
+   number<From> val(from);
+   val = frexp(val, &e);
+   while(e > 0)
+   {
+      int s = (std::min)(e, shift);
+      val = ldexp(val, s);
+      e -= s;
+      boost::long_long_type ll = boost::math::lltrunc(val);
+      val -= ll;
+      num <<= s;
+      num += ll;
+   }
+   to = num.backend();
+}
+
+template <class To, class From, int Radix>
+void generic_interconvert_float2int(To& to, const From& from, const mpl::int_<Radix>& /*radix*/)
+{
+   //
+   // This is almost the same as the binary case above, but we have to use
+   // scalbn and ilogb rather than ldexp and frexp, we also only extract
+   // one Radix digit at a time which is terribly inefficient!
+   //
+   typename From::exponent_type e;
+   number<To> num(0u);
+   number<From> val(from);
+   e = ilogb(val);
+   val = scalbn(val, -e);
+   while(e >= 0)
+   {
+      boost::long_long_type ll = boost::math::lltrunc(val);
+      val -= ll;
+      val = scalbn(val, 1);
+      num *= Radix;
+      num += ll;
+      --e;
+   }
+   to = num.backend();
+}
+
+template <class To, class From>
+void generic_interconvert(To& to, const From& from, const mpl::int_<number_kind_integer>& /*to_type*/, const mpl::int_<number_kind_floating_point>& /*from_type*/)
+{
+   generic_interconvert_float2int(to, from, mpl::int_<std::numeric_limits<number<From> >::radix>());
+}
+
+}
+}
+} // namespaces
 
 #ifdef BOOST_MSVC
 #pragma warning(pop)

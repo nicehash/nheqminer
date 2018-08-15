@@ -5,6 +5,10 @@
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 // Copyright (c) 2014 Adam Wulkiewicz, Lodz, Poland.
 
+// This file was modified by Oracle on 2017.
+// Modifications copyright (c) 2017 Oracle and/or its affiliates.
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -61,7 +65,8 @@ namespace detail { namespace correct
 template <typename Geometry>
 struct correct_nop
 {
-    static inline void apply(Geometry& )
+    template <typename Strategy>
+    static inline void apply(Geometry& , Strategy const& )
     {}
 };
 
@@ -104,8 +109,8 @@ struct correct_box_loop<Box, DimensionCount, DimensionCount>
 template <typename Box>
 struct correct_box
 {
-
-    static inline void apply(Box& box)
+    template <typename Strategy>
+    static inline void apply(Box& box, Strategy const& )
     {
         // Currently only for Cartesian coordinates
         // (or spherical without crossing dateline)
@@ -119,17 +124,11 @@ struct correct_box
 
 
 // Close a ring, if not closed
-template <typename Ring, typename Predicate>
+template <typename Ring, template <typename> class Predicate>
 struct correct_ring
 {
     typedef typename point_type<Ring>::type point_type;
     typedef typename coordinate_type<Ring>::type coordinate_type;
-
-    typedef typename strategy::area::services::default_strategy
-        <
-            typename cs_tag<point_type>::type,
-            point_type
-        >::type strategy_type;
 
     typedef detail::area::ring_area
             <
@@ -138,7 +137,8 @@ struct correct_ring
             > ring_area_type;
 
 
-    static inline void apply(Ring& r)
+    template <typename Strategy>
+    static inline void apply(Ring& r, Strategy const& strategy)
     {
         // Check close-ness
         if (boost::size(r) > 2)
@@ -158,10 +158,10 @@ struct correct_ring
             }
         }
         // Check area
-        Predicate predicate;
-        typedef typename default_area_result<Ring>::type area_result_type;
-        area_result_type const zero = area_result_type();
-        if (predicate(ring_area_type::apply(r, strategy_type()), zero))
+        typedef typename Strategy::return_type area_result_type;
+        Predicate<area_result_type> predicate;
+        area_result_type const zero = 0;
+        if (predicate(ring_area_type::apply(r, strategy), zero))
         {
             std::reverse(boost::begin(r), boost::end(r));
         }
@@ -174,15 +174,15 @@ template <typename Polygon>
 struct correct_polygon
 {
     typedef typename ring_type<Polygon>::type ring_type;
-    typedef typename default_area_result<Polygon>::type area_result_type;
-
-    static inline void apply(Polygon& poly)
+    
+    template <typename Strategy>
+    static inline void apply(Polygon& poly, Strategy const& strategy)
     {
         correct_ring
             <
                 ring_type,
-                std::less<area_result_type>
-            >::apply(exterior_ring(poly));
+                std::less
+            >::apply(exterior_ring(poly), strategy);
 
         typename interior_return_type<Polygon>::type
             rings = interior_rings(poly);
@@ -192,8 +192,8 @@ struct correct_polygon
             correct_ring
                 <
                     ring_type,
-                    std::greater<area_result_type>
-                >::apply(*it);
+                    std::greater
+                >::apply(*it, strategy);
         }
     }
 };
@@ -237,7 +237,7 @@ struct correct<Ring, ring_tag>
     : detail::correct::correct_ring
         <
             Ring,
-            std::less<typename default_area_result<Ring>::type>
+            std::less
         >
 {};
 
@@ -281,29 +281,36 @@ namespace resolve_variant {
 template <typename Geometry>
 struct correct
 {
-    static inline void apply(Geometry& geometry)
+    template <typename Strategy>
+    static inline void apply(Geometry& geometry, Strategy const& strategy)
     {
         concepts::check<Geometry const>();
-        dispatch::correct<Geometry>::apply(geometry);
+        dispatch::correct<Geometry>::apply(geometry, strategy);
     }
 };
 
 template <BOOST_VARIANT_ENUM_PARAMS(typename T)>
 struct correct<boost::variant<BOOST_VARIANT_ENUM_PARAMS(T)> >
 {
+    template <typename Strategy>
     struct visitor: boost::static_visitor<void>
     {
+        Strategy const& m_strategy;
+
+        visitor(Strategy const& strategy): m_strategy(strategy) {}
+
         template <typename Geometry>
         void operator()(Geometry& geometry) const
         {
-            correct<Geometry>::apply(geometry);
+            correct<Geometry>::apply(geometry, m_strategy);
         }
     };
 
+    template <typename Strategy>
     static inline void
-    apply(boost::variant<BOOST_VARIANT_ENUM_PARAMS(T)>& geometry)
+    apply(boost::variant<BOOST_VARIANT_ENUM_PARAMS(T)>& geometry, Strategy const& strategy)
     {
-        boost::apply_visitor(visitor(), geometry);
+        boost::apply_visitor(visitor<Strategy>(strategy), geometry);
     }
 };
 
@@ -325,7 +332,37 @@ struct correct<boost::variant<BOOST_VARIANT_ENUM_PARAMS(T)> >
 template <typename Geometry>
 inline void correct(Geometry& geometry)
 {
-    resolve_variant::correct<Geometry>::apply(geometry);
+    typedef typename point_type<Geometry>::type point_type;
+
+    typedef typename strategy::area::services::default_strategy
+        <
+            typename cs_tag<point_type>::type,
+            point_type
+        >::type strategy_type;
+
+    resolve_variant::correct<Geometry>::apply(geometry, strategy_type());
+}
+
+/*!
+\brief Corrects a geometry
+\details Corrects a geometry: all rings which are wrongly oriented with respect
+    to their expected orientation are reversed. To all rings which do not have a
+    closing point and are typed as they should have one, the first point is
+    appended. Also boxes can be corrected.
+\ingroup correct
+\tparam Geometry \tparam_geometry
+\tparam Strategy \tparam_strategy{Area}
+\param geometry \param_geometry which will be corrected if necessary
+\param strategy \param_strategy{area}
+
+\qbk{distinguish,with strategy}
+
+\qbk{[include reference/algorithms/correct.qbk]}
+*/
+template <typename Geometry, typename Strategy>
+inline void correct(Geometry& geometry, Strategy const& strategy)
+{
+    resolve_variant::correct<Geometry>::apply(geometry, strategy);
 }
 
 #if defined(_MSC_VER)

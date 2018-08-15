@@ -119,7 +119,7 @@ make(DataSet&& ds)
 
 //! @overload boost::unit_test::data::make()
 template<typename T>
-inline typename std::enable_if<!is_forward_iterable<T>::value && 
+inline typename std::enable_if<!is_container_forward_iterable<T>::value && 
                                !monomorphic::is_dataset<T>::value &&
                                !is_array<typename remove_reference<T>::type>::value, 
                                monomorphic::singleton<T>>::type
@@ -129,7 +129,7 @@ make( T&& v );
 
 //! @overload boost::unit_test::data::make()
 template<typename C>
-inline typename std::enable_if<is_forward_iterable<C>::value,monomorphic::collection<C>>::type
+inline typename std::enable_if<is_container_forward_iterable<C>::value,monomorphic::collection<C>>::type
 make( C&& c );
 
 //____________________________________________________________________________//

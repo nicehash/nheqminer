@@ -55,6 +55,7 @@ struct rational_adaptor
    typename enable_if_c<(boost::multiprecision::detail::is_explicitly_convertible<U, IntBackend>::value && !is_arithmetic<U>::value), rational_adaptor&>::type operator = (const U& u) 
    {
       m_value = IntBackend(u);
+      return *this;
    }
 
 #ifndef BOOST_NO_CXX11_RVALUE_REFERENCES

@@ -12,6 +12,8 @@
 #include <boost/detail/workaround.hpp>
 #include <boost/thread/detail/platform.hpp>
 
+#define BOOST_THREAD_USEFIXES_TIMESPEC
+//#define BOOST_THREAD_HAS_CONDATTR_SET_CLOCK_MONOTONIC
 //#define BOOST_THREAD_DONT_PROVIDE_INTERRUPTIONS
 // ATTRIBUTE_MAY_ALIAS
 

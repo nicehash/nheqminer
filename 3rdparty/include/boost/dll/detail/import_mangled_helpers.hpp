@@ -71,28 +71,32 @@ template <class ...Ts>
 struct function_tuple;
 
 template <class Return, class...Args, class T2, class ...Ts>
-struct function_tuple<Return(Args...), T2, Ts...> : function_tuple<T2, Ts...>
+struct function_tuple<Return(Args...), T2, Ts...>
+    : function_tuple<T2, Ts...>
 {
-    constexpr function_tuple(Return(* t)(Args...), T2* t2, Ts* ... ts) : function_tuple<T2, Ts...>(t2, ts...), _f(t) {};
-    Return(*_f)(Args...);
+    Return(*f_)(Args...);
 
-    Return operator()(Args...args)
-    {
-        return (*_f)(static_cast<Args>(args)...);
+    constexpr function_tuple(Return(* t)(Args...), T2* t2, Ts* ... ts)
+        : function_tuple<T2, Ts...>(t2, ts...)
+        , f_(t)
+    {}
+
+    Return operator()(Args...args) const {
+        return (*f_)(static_cast<Args>(args)...);
     }
     using function_tuple<T2, Ts...>::operator();
-
 };
 
 template <class Return, class...Args>
-struct function_tuple<Return(Args...)>
-{
-    constexpr function_tuple(Return(* t)(Args...)) : _f(t) {};
-    Return(*_f)(Args...);
+struct function_tuple<Return(Args...)> {
+    Return(*f_)(Args...);
 
-    Return operator()(Args...args)
-    {
-        return (*_f)(static_cast<Args>(args)...);
+    constexpr function_tuple(Return(* t)(Args...))
+        : f_(t)
+    {}
+
+    Return operator()(Args...args) const {
+        return (*f_)(static_cast<Args>(args)...);
     }
 };
 
@@ -250,33 +254,35 @@ template <class ...Ts>
 struct mem_fn_tuple;
 
 template <class Class, class Return, class...Args, class T2, class ...Ts>
-struct mem_fn_tuple<mem_fn_def<Class, Return(Args...)>, T2, Ts...> : mem_fn_tuple<T2, Ts...>
+struct mem_fn_tuple<mem_fn_def<Class, Return(Args...)>, T2, Ts...>
+    : mem_fn_tuple<T2, Ts...>
 {
     typedef typename boost::dll::detail::get_mem_fn_type<Class, Return(Args...)>::mem_fn mem_fn;
+    mem_fn f_;
 
     constexpr mem_fn_tuple(mem_fn f, typename T2::mem_fn t2, typename Ts::mem_fn ... ts)
-                            : mem_fn_tuple<T2, Ts...>(t2, ts...), _f(f) {};
-    mem_fn _f;
+        : mem_fn_tuple<T2, Ts...>(t2, ts...)
+        , f_(f)
+    {}
 
-    Return operator()(Class* const cl, Args...args)
-    {
-        return (cl->*_f)(static_cast<Args>(args)...);
+    Return operator()(Class* const cl, Args...args) const {
+        return (cl->*f_)(static_cast<Args>(args)...);
     }
     using mem_fn_tuple<T2, Ts...>::operator();
 
 };
 
 template <class Class, class Return, class...Args>
-struct mem_fn_tuple<mem_fn_def<Class, Return(Args...)>>
-{
+struct mem_fn_tuple<mem_fn_def<Class, Return(Args...)>> {
     typedef typename boost::dll::detail::get_mem_fn_type<Class, Return(Args...)>::mem_fn mem_fn;
+    mem_fn f_;
 
-    constexpr mem_fn_tuple(mem_fn f) : _f(f) {};
-    mem_fn _f;
+    constexpr mem_fn_tuple(mem_fn f)
+        : f_(f)
+    {}
 
-    Return operator()(Class * const cl, Args...args)
-    {
-        return (cl->*_f)(static_cast<Args>(args)...);
+    Return operator()(Class * const cl, Args...args) const {
+        return (cl->*f_)(static_cast<Args>(args)...);
     }
 };
 

@@ -2,6 +2,11 @@
 
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
+// This file was modified by Oracle on 2017.
+// Modifications copyright (c) 2017 Oracle and/or its affiliates.
+
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -19,20 +24,21 @@
 #  include <iostream>
 #  include <boost/geometry/algorithms/detail/overlay/debug_turn_info.hpp>
 #  include <boost/geometry/io/wkt/wkt.hpp>
-#  define BOOST_GEOMETRY_DEBUG_IDENTIFIER
+#  if ! defined(BOOST_GEOMETRY_DEBUG_IDENTIFIER)
+#    define BOOST_GEOMETRY_DEBUG_IDENTIFIER
+  #endif
 #endif
 
 #include <boost/range.hpp>
 
-#include <boost/geometry/iterators/ever_circling_iterator.hpp>
 #include <boost/geometry/algorithms/detail/ring_identifier.hpp>
-#include <boost/geometry/algorithms/detail/overlay/copy_segment_point.hpp>
 #include <boost/geometry/algorithms/detail/overlay/handle_colocations.hpp>
+#include <boost/geometry/algorithms/detail/overlay/handle_self_turns.hpp>
+#include <boost/geometry/algorithms/detail/overlay/is_self_turn.hpp>
 #include <boost/geometry/algorithms/detail/overlay/less_by_segment_ratio.hpp>
 #include <boost/geometry/algorithms/detail/overlay/overlay_type.hpp>
-#include <boost/geometry/algorithms/detail/overlay/sort_by_side.hpp>
 #include <boost/geometry/policies/robustness/robust_type.hpp>
-#include <boost/geometry/strategies/side.hpp>
+
 #ifdef BOOST_GEOMETRY_DEBUG_ENRICH
 #  include <boost/geometry/algorithms/detail/overlay/check_enrich.hpp>
 #endif
@@ -58,7 +64,7 @@ template
     typename Turns,
     typename Geometry1, typename Geometry2,
     typename RobustPolicy,
-    typename Strategy
+    typename SideStrategy
 >
 inline void enrich_sort(Operations& operations,
             Turns const& turns,
@@ -66,7 +72,7 @@ inline void enrich_sort(Operations& operations,
             Geometry1 const& geometry1,
             Geometry2 const& geometry2,
             RobustPolicy const& robust_policy,
-            Strategy const& /*strategy*/)
+            SideStrategy const& strategy)
 {
     std::sort(boost::begin(operations),
             boost::end(operations),
@@ -76,8 +82,9 @@ inline void enrich_sort(Operations& operations,
                     typename boost::range_value<Operations>::type,
                     Geometry1, Geometry2,
                     RobustPolicy,
+                    SideStrategy,
                     Reverse1, Reverse2
-                >(turns, for_operation, geometry1, geometry2, robust_policy));
+                >(turns, for_operation, geometry1, geometry2, robust_policy, strategy));
 }
 
 
@@ -145,7 +152,7 @@ inline void enrich_assign(Operations& operations, Turns& turns)
              it != boost::end(operations);
              ++it)
         {
-            op_type& op = turns[it->turn_index]
+            op_type const& op = turns[it->turn_index]
                 .operations[it->operation_index];
 
             std::cout << it->turn_index
@@ -171,9 +178,7 @@ inline void enrich_assign(Operations& operations, Turns& turns)
 
 
 template <typename Turns, typename MappedVector>
-inline void create_map(Turns const& turns,
-        detail::overlay::operation_type for_operation,
-        MappedVector& mapped_vector)
+inline void create_map(Turns const& turns, MappedVector& mapped_vector)
 {
     typedef typename boost::range_value<Turns>::type turn_type;
     typedef typename turn_type::container_type container_type;
@@ -192,15 +197,6 @@ inline void create_map(Turns const& turns,
         turn_type const& turn = *it;
         if (turn.discarded)
         {
-            continue;
-        }
-
-        if (for_operation == operation_intersection
-            && turn.cluster_id == -1
-            && turn.both(operation_union))
-        {
-            // Only include uu turns if part of cluster (to block potential paths),
-            // otherwise they can block possibly viable paths
             continue;
         }
 
@@ -225,6 +221,56 @@ inline void create_map(Turns const& turns,
     }
 }
 
+template <typename Point1, typename Point2>
+inline typename geometry::coordinate_type<Point1>::type
+        distance_measure(Point1 const& a, Point2 const& b)
+{
+    // TODO: use comparable distance for point-point instead - but that
+    // causes currently cycling include problems
+    typedef typename geometry::coordinate_type<Point1>::type ctype;
+    ctype const dx = get<0>(a) - get<0>(b);
+    ctype const dy = get<1>(a) - get<1>(b);
+    return dx * dx + dy * dy;
+}
+
+template <typename Turns>
+inline void calculate_remaining_distance(Turns& turns)
+{
+    typedef typename boost::range_value<Turns>::type turn_type;
+    typedef typename turn_type::turn_operation_type op_type;
+
+    for (typename boost::range_iterator<Turns>::type
+            it = boost::begin(turns);
+         it != boost::end(turns);
+         ++it)
+    {
+        turn_type& turn = *it;
+        if (! turn.both(detail::overlay::operation_continue))
+        {
+           continue;
+        }
+
+        op_type& op0 = turn.operations[0];
+        op_type& op1 = turn.operations[1];
+
+        if (op0.remaining_distance != 0
+         || op1.remaining_distance != 0)
+        {
+            continue;
+        }
+
+        int const to_index0 = op0.enriched.get_next_turn_index();
+        int const to_index1 = op1.enriched.get_next_turn_index();
+        if (to_index1 >= 0
+                && to_index1 >= 0
+                && to_index0 != to_index1)
+        {
+            op0.remaining_distance = distance_measure(turn.point, turns[to_index0].point);
+            op1.remaining_distance = distance_measure(turn.point, turns[to_index1].point);
+        }
+    }
+}
+
 
 }} // namespace detail::overlay
 #endif //DOXYGEN_NO_DETAIL
@@ -239,7 +285,7 @@ inline void create_map(Turns const& turns,
 \tparam Clusters type of cluster container
 \tparam Geometry1 \tparam_geometry
 \tparam Geometry2 \tparam_geometry
-\tparam Strategy side strategy type
+\tparam SideStrategy side strategy type
 \param turns container containing intersection points
 \param clusters container containing clusters
 \param geometry1 \param_geometry
@@ -255,16 +301,21 @@ template
     typename Clusters,
     typename Geometry1, typename Geometry2,
     typename RobustPolicy,
-    typename Strategy
+    typename SideStrategy
 >
 inline void enrich_intersection_points(Turns& turns,
     Clusters& clusters,
     Geometry1 const& geometry1, Geometry2 const& geometry2,
     RobustPolicy const& robust_policy,
-    Strategy const& strategy)
+    SideStrategy const& strategy)
 {
-    static const detail::overlay::operation_type for_operation
+    static const detail::overlay::operation_type target_operation
             = detail::overlay::operation_from_overlay<OverlayType>::value;
+    static const detail::overlay::operation_type opposite_operation
+            = target_operation == detail::overlay::operation_union
+            ? detail::overlay::operation_intersection
+            : detail::overlay::operation_union;
+
     typedef typename boost::range_value<Turns>::type turn_type;
     typedef typename turn_type::turn_operation_type op_type;
     typedef detail::overlay::indexed_turn_operation
@@ -278,27 +329,68 @@ inline void enrich_intersection_points(Turns& turns,
             std::vector<indexed_turn_operation>
         > mapped_vector_type;
 
+    bool has_cc = false;
     bool const has_colocations
-        = detail::overlay::handle_colocations<Reverse1, Reverse2>(turns,
+        = detail::overlay::handle_colocations<Reverse1, Reverse2, OverlayType>(turns,
         clusters, geometry1, geometry2);
 
-    // Discard none turns, if any
+    // Discard turns not part of target overlay
     for (typename boost::range_iterator<Turns>::type
             it = boost::begin(turns);
          it != boost::end(turns);
          ++it)
     {
-        if (it->both(detail::overlay::operation_none))
+        turn_type& turn = *it;
+
+        if (turn.both(detail::overlay::operation_none))
         {
-            it->discarded = true;
+            turn.discarded = true;
+            continue;
+        }
+
+        if (turn.both(opposite_operation))
+        {
+            // For intersections, remove uu to avoid the need to travel
+            // a union (during intersection) in uu/cc clusters (e.g. #31,#32,#33)
+            // Also, for union, discard ii
+            turn.discarded = true;
+            turn.cluster_id = -1;
+            continue;
+        }
+
+        if (detail::overlay::is_self_turn<OverlayType>(turn)
+            && turn.cluster_id < 0
+            && ! turn.both(target_operation))
+        {
+            // Only keep self-uu-turns or self-ii-turns
+           turn.discarded = true;
+           turn.cluster_id = -1;
+           continue;
+        }
+
+        if (! turn.discarded
+            && turn.both(detail::overlay::operation_continue))
+        {
+            has_cc = true;
         }
     }
+
+    detail::overlay::discard_closed_turns
+        <
+            OverlayType,
+            target_operation
+        >::apply(turns, geometry1, geometry2);
+    detail::overlay::discard_open_turns
+        <
+            OverlayType,
+            target_operation
+        >::apply(turns, geometry1, geometry2);
 
     // Create a map of vectors of indexed operation-types to be able
     // to sort intersection points PER RING
     mapped_vector_type mapped_vector;
 
-    detail::overlay::create_map(turns, for_operation, mapped_vector);
+    detail::overlay::create_map(turns, mapped_vector);
 
     // No const-iterator; contents of mapped copy is temporary,
     // and changed by enrich
@@ -312,7 +404,7 @@ inline void enrich_intersection_points(Turns& turns,
         << mit->first << std::endl;
 #endif
         detail::overlay::enrich_sort<Reverse1, Reverse2>(
-                    mit->second, turns, for_operation,
+                    mit->second, turns, target_operation,
                     geometry1, geometry2,
                     robust_policy, strategy);
     }
@@ -331,8 +423,22 @@ inline void enrich_intersection_points(Turns& turns,
 
     if (has_colocations)
     {
-        detail::overlay::gather_cluster_properties<Reverse1, Reverse2>(
-                clusters, turns, for_operation, geometry1, geometry2);
+        // First gather cluster properties (using even clusters with
+        // discarded turns - for open turns), then clean up clusters
+        detail::overlay::gather_cluster_properties
+            <
+                Reverse1,
+                Reverse2,
+                OverlayType
+            >(clusters, turns, target_operation,
+              geometry1, geometry2, strategy);
+
+        detail::overlay::cleanup_clusters(turns, clusters);
+    }
+
+    if (has_cc)
+    {
+        detail::overlay::calculate_remaining_distance(turns);
     }
 
 #ifdef BOOST_GEOMETRY_DEBUG_ENRICH

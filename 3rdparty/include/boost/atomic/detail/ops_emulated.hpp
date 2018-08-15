@@ -35,6 +35,8 @@ struct emulated_operations
 {
     typedef T storage_type;
 
+    static BOOST_CONSTEXPR_OR_CONST bool is_always_lock_free = false;
+
     static BOOST_FORCEINLINE void store(storage_type volatile& storage, storage_type v, memory_order) BOOST_NOEXCEPT
     {
         lockpool::scoped_lock lock(&storage);
@@ -139,11 +141,6 @@ struct emulated_operations
     static BOOST_FORCEINLINE void clear(storage_type volatile& storage, memory_order order) BOOST_NOEXCEPT
     {
         store(storage, (storage_type)0, order);
-    }
-
-    static BOOST_FORCEINLINE bool is_lock_free(storage_type const volatile&) BOOST_NOEXCEPT
-    {
-        return false;
     }
 };
 

@@ -2,7 +2,7 @@
 @file
 Forward declares `boost::hana::type` and related utilities.
 
-@copyright Louis Dionne 2013-2016
+@copyright Louis Dionne 2013-2017
 Distributed under the Boost Software License, Version 1.0.
 (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
  */
@@ -37,18 +37,25 @@ BOOST_HANA_NAMESPACE_BEGIN
     //!
     //!
     //! @note
-    //! For subtle reasons having to do with ADL, the actual representation of
-    //! `hana::type` is implementation-defined. In particular, `hana::type`
-    //! may be a dependent type, so one should not attempt to do pattern
-    //! matching on it. However, one can assume that `hana::type` _inherits_
-    //! from `hana::basic_type`, which can be useful when declaring overloaded
-    //! functions:
+    //! For subtle reasons, the actual representation of `hana::type` is
+    //! implementation-defined. In particular, `hana::type` may be a dependent
+    //! type, so one should not attempt to do pattern matching on it. However,
+    //! one can assume that `hana::type` _inherits_ from `hana::basic_type`,
+    //! which can be useful when declaring overloaded functions:
     //! @code
     //!     template <typename T>
     //!     void f(hana::basic_type<T>) {
     //!         // do something with T
     //!     }
     //! @endcode
+    //! The full story is that [ADL][] causes template arguments to be
+    //! instantiated. Hence, if `hana::type` were defined naively, expressions
+    //! like `hana::type<T>{} == hana::type<U>{}` would cause both `T` and `U`
+    //! to be instantiated. This is usually not a problem, except when `T` or
+    //! `U` should not be instantiated. To avoid these instantiations,
+    //! `hana::type` is implemented using some cleverness, and that is
+    //! why the representation is implementation-defined. When that
+    //! behavior is not required, `hana::basic_type` can be used instead.
     //!
     //!
     //! @anchor type_lvalues_and_rvalues
@@ -86,6 +93,8 @@ BOOST_HANA_NAMESPACE_BEGIN
     //! The hash of a type is just that type itself. In other words, `hash`
     //! is the identity function on `hana::type`s.
     //! @include example/type/hashable.cpp
+    //!
+    //! [ADL]: http://en.cppreference.com/w/cpp/language/adl
 #ifdef BOOST_HANA_DOXYGEN_INVOKED
     template <typename T>
     struct type {
@@ -122,7 +131,7 @@ BOOST_HANA_NAMESPACE_BEGIN
     //! @relates hana::type
     //!
     //! @deprecated
-    //! The semantics of `decltype_` are can be confusing, and `hana::typeid_`
+    //! The semantics of `decltype_` can be confusing, and `hana::typeid_`
     //! should be preferred instead. `decltype_` may be removed in the next
     //! major version of the library.
     //!
@@ -396,7 +405,7 @@ BOOST_HANA_NAMESPACE_BEGIN
     //! [1]: http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1430
 #ifdef BOOST_HANA_DOXYGEN_INVOKED
     template <template <typename ...> class F>
-    constexpr auto template_ = [](basic_type<T>-or-T ...) {
+    constexpr auto template_ = [](basic_type<T>...) {
         return hana::type_c<F<T...>>;
     };
 #else
@@ -423,7 +432,7 @@ BOOST_HANA_NAMESPACE_BEGIN
     //! @include example/type/metafunction.cpp
 #ifdef BOOST_HANA_DOXYGEN_INVOKED
     template <template <typename ...> class F>
-    constexpr auto metafunction = [](basic_type<T>-or-T ...) {
+    constexpr auto metafunction = [](basic_type<T>...) {
         return hana::type_c<typename F<T...>::type>;
     };
 #else
@@ -450,7 +459,7 @@ BOOST_HANA_NAMESPACE_BEGIN
     //! @include example/type/metafunction_class.cpp
 #ifdef BOOST_HANA_DOXYGEN_INVOKED
     template <typename F>
-    constexpr auto metafunction_class = [](basic_type<T>-or-T ...) {
+    constexpr auto metafunction_class = [](basic_type<T>...) {
         return hana::type_c<typename F::template apply<T...>::type>;
     };
 #else
@@ -495,7 +504,7 @@ BOOST_HANA_NAMESPACE_BEGIN
     //! @include example/type/integral.cpp
 #ifdef BOOST_HANA_DOXYGEN_INVOKED
     constexpr auto integral = [](auto f) {
-        return [](basic_type<T>-or-T ...) {
+        return [](basic_type<T>...) {
             return decltype(f)::apply<T...>::type{};
         };
     };

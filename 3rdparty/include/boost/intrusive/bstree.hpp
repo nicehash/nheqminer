@@ -255,7 +255,8 @@ struct get_key_of_value<void, T>
 template<class ValuePtr, class VoidOrKeyOfValue, class VoidOrKeyComp>
 struct bst_key_types
 {
-   typedef typename pointer_element<ValuePtr>::type   value_type;
+   typedef typename
+      boost::movelib::pointer_element<ValuePtr>::type value_type;
    typedef typename get_key_of_value
       < VoidOrKeyOfValue, value_type>::type           key_of_value;
    typedef typename key_of_value::type                key_type;
@@ -967,7 +968,7 @@ class bstree_impl
    void swap(bstree_impl& other)
    {
       //This can throw
-      ::boost::adl_move_swap(this->comp(), this->comp());
+      ::boost::adl_move_swap(this->comp(), other.comp());
       //These can't throw
       node_algorithms::swap_tree(this->header_ptr(), node_ptr(other.header_ptr()));
       this->sz_traits().swap(other.sz_traits());

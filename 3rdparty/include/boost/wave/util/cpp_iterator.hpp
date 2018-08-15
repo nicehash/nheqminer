@@ -607,7 +607,7 @@ pp_iterator_functor<ContextT>::operator()()
         break;
     }
 
-    if (whitespace.must_insert(id, act_token.get_value())) {
+    if (token_is_valid(act_token) && whitespace.must_insert(id, act_token.get_value())) {
     // must insert some whitespace into the output stream to avoid adjacent
     // tokens, which would form different (and wrong) tokens
         whitespace.shift_tokens(T_SPACE);

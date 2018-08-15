@@ -14,10 +14,9 @@
 
 #include <boost/assert.hpp>
 #include <exception>
-#include <functional>                           // unary_function.
 #include <iterator>                             // advance.
 #include <list>
-#include <memory>                               // allocator, auto_ptr.
+#include <memory>                               // allocator, auto_ptr or unique_ptr.
 #include <typeinfo>
 #include <stdexcept>                            // logic_error, out_of_range.
 #include <boost/checked_delete.hpp>
@@ -243,8 +242,19 @@ private:
             pback_size != -1 ?
                 pback_size :
                 pimpl_->pback_size_;
+                
+#if defined(BOOST_NO_CXX11_SMART_PTR)
+
         std::auto_ptr<streambuf_t>
             buf(new streambuf_t(t, buffer_size, pback_size));
+            
+#else
+
+        std::unique_ptr<streambuf_t>
+            buf(new streambuf_t(t, buffer_size, pback_size));
+            
+#endif
+            
         list().push_back(buf.get());
         buf.release();
         if (is_device<component_type>::value) {
@@ -281,7 +291,9 @@ private:
     static void set_auto_close(streambuf_type* b, bool close)
     { b->set_auto_close(close); }
 
-    struct closer  : public std::unary_function<streambuf_type*, void>  {
+    struct closer {
+        typedef streambuf_type* argument_type;
+        typedef void result_type;
         closer(BOOST_IOS::openmode m) : mode_(m) { }
         void operator() (streambuf_type* b)
         {
@@ -472,7 +484,7 @@ public:
     BOOST_IOSTREAMS_DEFINE_PUSH(push, mode, char_type, push_impl)
     void pop() { chain_->pop(); }
     bool empty() const { return chain_->empty(); }
-    size_type size() { return chain_->size(); }
+    size_type size() const { return chain_->size(); }
     void reset() { chain_->reset(); }
 
     // Returns a copy of the underlying chain.

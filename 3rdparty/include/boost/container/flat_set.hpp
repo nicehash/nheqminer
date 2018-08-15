@@ -114,6 +114,7 @@ class flat_set
    typedef typename BOOST_CONTAINER_IMPDEF(base_t::const_iterator)                     const_iterator;
    typedef typename BOOST_CONTAINER_IMPDEF(base_t::reverse_iterator)                   reverse_iterator;
    typedef typename BOOST_CONTAINER_IMPDEF(base_t::const_reverse_iterator)             const_reverse_iterator;
+   typedef typename BOOST_CONTAINER_IMPDEF(base_t::sequence_type)                      sequence_type;
 
    public:
    //////////////////////////////////////////////
@@ -125,25 +126,69 @@ class flat_set
    //! <b>Effects</b>: Default constructs an empty container.
    //!
    //! <b>Complexity</b>: Constant.
+   BOOST_CONTAINER_FORCEINLINE
    explicit flat_set() BOOST_NOEXCEPT_IF(container_detail::is_nothrow_default_constructible<Allocator>::value &&
                                          container_detail::is_nothrow_default_constructible<Compare>::value)
       : base_t()
    {}
 
    //! <b>Effects</b>: Constructs an empty container using the specified
-   //! comparison object and allocator.
+   //! comparison object.
    //!
    //! <b>Complexity</b>: Constant.
-   explicit flat_set(const Compare& comp,
-                     const allocator_type& a = allocator_type())
-      : base_t(comp, a)
+   BOOST_CONTAINER_FORCEINLINE
+   explicit flat_set(const Compare& comp)
+      : base_t(comp)
    {}
 
    //! <b>Effects</b>: Constructs an empty container using the specified allocator.
    //!
    //! <b>Complexity</b>: Constant.
+   BOOST_CONTAINER_FORCEINLINE
    explicit flat_set(const allocator_type& a)
       : base_t(a)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified
+   //! comparison object and allocator.
+   //!
+   //! <b>Complexity</b>: Constant.
+   BOOST_CONTAINER_FORCEINLINE
+   flat_set(const Compare& comp, const allocator_type& a)
+      : base_t(comp, a)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container and
+   //! inserts elements from the range [first ,last ).
+   //!
+   //! <b>Complexity</b>: Linear in N if the range [first ,last ) is already sorted using
+   //! comp and otherwise N logN, where N is last - first.
+   template <class InputIterator>
+   BOOST_CONTAINER_FORCEINLINE
+   flat_set(InputIterator first, InputIterator last)
+      : base_t(true, first, last)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified
+   //! allocator, and inserts elements from the range [first ,last ).
+   //!
+   //! <b>Complexity</b>: Linear in N if the range [first ,last ) is already sorted using
+   //! comp and otherwise N logN, where N is last - first.
+   template <class InputIterator>
+   BOOST_CONTAINER_FORCEINLINE
+   flat_set(InputIterator first, InputIterator last, const allocator_type& a)
+      : base_t(true, first, last, a)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
+   //! inserts elements from the range [first ,last ).
+   //!
+   //! <b>Complexity</b>: Linear in N if the range [first ,last ) is already sorted using
+   //! comp and otherwise N logN, where N is last - first.
+   template <class InputIterator>
+   BOOST_CONTAINER_FORCEINLINE
+   flat_set(InputIterator first, InputIterator last, const Compare& comp)
+      : base_t(true, first, last, comp)
    {}
 
    //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
@@ -152,20 +197,41 @@ class flat_set
    //! <b>Complexity</b>: Linear in N if the range [first ,last ) is already sorted using
    //! comp and otherwise N logN, where N is last - first.
    template <class InputIterator>
-   flat_set(InputIterator first, InputIterator last,
-            const Compare& comp = Compare(),
-            const allocator_type& a = allocator_type())
+   BOOST_CONTAINER_FORCEINLINE
+   flat_set(InputIterator first, InputIterator last, const Compare& comp, const allocator_type& a)
       : base_t(true, first, last, comp, a)
    {}
 
-   //! <b>Effects</b>: Constructs an empty container using the specified
-   //! allocator, and inserts elements from the range [first ,last ).
+   //! <b>Effects</b>: Constructs an empty container and
+   //! inserts elements from the ordered unique range [first ,last). This function
+   //! is more efficient than the normal range creation for ordered ranges.
    //!
-   //! <b>Complexity</b>: Linear in N if the range [first ,last ) is already sorted using
-   //! comp and otherwise N logN, where N is last - first.
+   //! <b>Requires</b>: [first ,last) must be ordered according to the predicate and must be
+   //! unique values.
+   //!
+   //! <b>Complexity</b>: Linear in N.
+   //!
+   //! <b>Note</b>: Non-standard extension.
    template <class InputIterator>
-   flat_set(InputIterator first, InputIterator last, const allocator_type& a)
-      : base_t(true, first, last, Compare(), a)
+   BOOST_CONTAINER_FORCEINLINE
+   flat_set(ordered_unique_range_t, InputIterator first, InputIterator last)
+      : base_t(ordered_unique_range, first, last)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
+   //! inserts elements from the ordered unique range [first ,last). This function
+   //! is more efficient than the normal range creation for ordered ranges.
+   //!
+   //! <b>Requires</b>: [first ,last) must be ordered according to the predicate and must be
+   //! unique values.
+   //!
+   //! <b>Complexity</b>: Linear in N.
+   //!
+   //! <b>Note</b>: Non-standard extension.
+   template <class InputIterator>
+   BOOST_CONTAINER_FORCEINLINE
+   flat_set(ordered_unique_range_t, InputIterator first, InputIterator last, const Compare& comp)
+      : base_t(ordered_unique_range, first, last, comp)
    {}
 
    //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
@@ -179,21 +245,19 @@ class flat_set
    //!
    //! <b>Note</b>: Non-standard extension.
    template <class InputIterator>
-   flat_set(ordered_unique_range_t, InputIterator first, InputIterator last,
-            const Compare& comp = Compare(),
-            const allocator_type& a = allocator_type())
+   BOOST_CONTAINER_FORCEINLINE
+   flat_set(ordered_unique_range_t, InputIterator first, InputIterator last, const Compare& comp, const allocator_type& a)
       : base_t(ordered_unique_range, first, last, comp, a)
    {}
 
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
-   //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
-   //! allocator, and inserts elements from the range [il.begin(), il.end()).
+   //! <b>Effects</b>: Constructs an empty container and
+   //! inserts elements from the range [il.begin(), il.end()).
    //!
    //! <b>Complexity</b>: Linear in N if the range [il.begin(), il.end()) is already sorted using
    //! comp and otherwise N logN, where N is il.begin() - il.end().
-   flat_set(std::initializer_list<value_type> il, const Compare& comp = Compare(),
-            const allocator_type& a = allocator_type())
-      : base_t(true, il.begin(), il.end(), comp, a)
+   BOOST_CONTAINER_FORCEINLINE flat_set(std::initializer_list<value_type> il)
+      : base_t(true, il.begin(), il.end())
    {}
 
    //! <b>Effects</b>: Constructs an empty container using the specified
@@ -201,8 +265,54 @@ class flat_set
    //!
    //! <b>Complexity</b>: Linear in N if the range [il.begin(), il.end()) is already sorted using
    //! comp and otherwise N logN, where N is il.begin() - il.end().
-   flat_set(std::initializer_list<value_type> il, const allocator_type& a)
-      : base_t(true, il.begin(), il.end(), Compare(), a)
+   BOOST_CONTAINER_FORCEINLINE flat_set(std::initializer_list<value_type> il, const allocator_type& a)
+      : base_t(true, il.begin(), il.end(), a)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
+   //! inserts elements from the range [il.begin(), il.end()).
+   //!
+   //! <b>Complexity</b>: Linear in N if the range [il.begin(), il.end()) is already sorted using
+   //! comp and otherwise N logN, where N is il.begin() - il.end().
+   BOOST_CONTAINER_FORCEINLINE flat_set(std::initializer_list<value_type> il, const Compare& comp)
+      : base_t(true, il.begin(), il.end(), comp)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
+   //! allocator, and inserts elements from the range [il.begin(), il.end()).
+   //!
+   //! <b>Complexity</b>: Linear in N if the range [il.begin(), il.end()) is already sorted using
+   //! comp and otherwise N logN, where N is il.begin() - il.end().
+   BOOST_CONTAINER_FORCEINLINE flat_set(std::initializer_list<value_type> il, const Compare& comp, const allocator_type& a)
+      : base_t(true, il.begin(), il.end(), comp, a)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
+   //! inserts elements from the ordered unique range [il.begin(), il.end()). This function
+   //! is more efficient than the normal range creation for ordered ranges.
+   //!
+   //! <b>Requires</b>: [il.begin(), il.end()) must be ordered according to the predicate and must be
+   //! unique values.
+   //!
+   //! <b>Complexity</b>: Linear in N.
+   //!
+   //! <b>Note</b>: Non-standard extension.
+   BOOST_CONTAINER_FORCEINLINE flat_set(ordered_unique_range_t, std::initializer_list<value_type> il)
+      : base_t(ordered_unique_range, il.begin(), il.end())
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
+   //! inserts elements from the ordered unique range [il.begin(), il.end()). This function
+   //! is more efficient than the normal range creation for ordered ranges.
+   //!
+   //! <b>Requires</b>: [il.begin(), il.end()) must be ordered according to the predicate and must be
+   //! unique values.
+   //!
+   //! <b>Complexity</b>: Linear in N.
+   //!
+   //! <b>Note</b>: Non-standard extension.
+   BOOST_CONTAINER_FORCEINLINE flat_set(ordered_unique_range_t, std::initializer_list<value_type> il, const Compare& comp)
+      : base_t(ordered_unique_range, il.begin(), il.end(), comp)
    {}
 
    //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
@@ -215,8 +325,7 @@ class flat_set
    //! <b>Complexity</b>: Linear in N.
    //!
    //! <b>Note</b>: Non-standard extension.
-   flat_set(ordered_unique_range_t, std::initializer_list<value_type> il,
-            const Compare& comp = Compare(), const allocator_type& a = allocator_type())
+   BOOST_CONTAINER_FORCEINLINE flat_set(ordered_unique_range_t, std::initializer_list<value_type> il, const Compare& comp, const allocator_type& a)
       : base_t(ordered_unique_range, il.begin(), il.end(), comp, a)
    {}
 #endif
@@ -224,7 +333,7 @@ class flat_set
    //! <b>Effects</b>: Copy constructs the container.
    //!
    //! <b>Complexity</b>: Linear in x.size().
-   flat_set(const flat_set& x)
+   BOOST_CONTAINER_FORCEINLINE flat_set(const flat_set& x)
       : base_t(static_cast<const base_t&>(x))
    {}
 
@@ -233,7 +342,7 @@ class flat_set
    //! <b>Complexity</b>: Constant.
    //!
    //! <b>Postcondition</b>: x is emptied.
-   flat_set(BOOST_RV_REF(flat_set) x)
+   BOOST_CONTAINER_FORCEINLINE flat_set(BOOST_RV_REF(flat_set) x)
       BOOST_NOEXCEPT_IF(boost::container::container_detail::is_nothrow_move_constructible<Compare>::value)
       : base_t(BOOST_MOVE_BASE(base_t, x))
    {}
@@ -241,7 +350,7 @@ class flat_set
    //! <b>Effects</b>: Copy constructs a container using the specified allocator.
    //!
    //! <b>Complexity</b>: Linear in x.size().
-   flat_set(const flat_set& x, const allocator_type &a)
+   BOOST_CONTAINER_FORCEINLINE flat_set(const flat_set& x, const allocator_type &a)
       : base_t(static_cast<const base_t&>(x), a)
    {}
 
@@ -249,14 +358,14 @@ class flat_set
    //!                 Constructs *this using x's resources.
    //!
    //! <b>Complexity</b>: Constant if a == x.get_allocator(), linear otherwise
-   flat_set(BOOST_RV_REF(flat_set) x, const allocator_type &a)
+   BOOST_CONTAINER_FORCEINLINE flat_set(BOOST_RV_REF(flat_set) x, const allocator_type &a)
       : base_t(BOOST_MOVE_BASE(base_t, x), a)
    {}
 
    //! <b>Effects</b>: Makes *this a copy of x.
    //!
    //! <b>Complexity</b>: Linear in x.size().
-   flat_set& operator=(BOOST_COPY_ASSIGN_REF(flat_set) x)
+   BOOST_CONTAINER_FORCEINLINE flat_set& operator=(BOOST_COPY_ASSIGN_REF(flat_set) x)
    {  return static_cast<flat_set&>(this->base_t::operator=(static_cast<const base_t&>(x)));  }
 
    //! <b>Throws</b>: If allocator_traits_type::propagate_on_container_move_assignment
@@ -265,7 +374,7 @@ class flat_set
    //! <b>Complexity</b>: Constant if allocator_traits_type::
    //!   propagate_on_container_move_assignment is true or
    //!   this->get>allocator() == x.get_allocator(). Linear otherwise.
-   flat_set& operator=(BOOST_RV_REF(flat_set) x)
+   BOOST_CONTAINER_FORCEINLINE flat_set& operator=(BOOST_RV_REF(flat_set) x)
       BOOST_NOEXCEPT_IF( (allocator_traits_type::propagate_on_container_move_assignment::value ||
                           allocator_traits_type::is_always_equal::value) &&
                            boost::container::container_detail::is_nothrow_move_assignable<Compare>::value)
@@ -469,7 +578,7 @@ class flat_set
    //!
    //! <b>Note</b>: If an element is inserted it might invalidate elements.
    template <class... Args>
-   std::pair<iterator,bool> emplace(BOOST_FWD_REF(Args)... args)
+   BOOST_CONTAINER_FORCEINLINE std::pair<iterator,bool> emplace(BOOST_FWD_REF(Args)... args)
    {  return this->base_t::emplace_unique(boost::forward<Args>(args)...); }
 
    //! <b>Effects</b>: Inserts an object of type Key constructed with
@@ -485,18 +594,18 @@ class flat_set
    //!
    //! <b>Note</b>: If an element is inserted it might invalidate elements.
    template <class... Args>
-   iterator emplace_hint(const_iterator p, BOOST_FWD_REF(Args)... args)
+   BOOST_CONTAINER_FORCEINLINE iterator emplace_hint(const_iterator p, BOOST_FWD_REF(Args)... args)
    {  return this->base_t::emplace_hint_unique(p, boost::forward<Args>(args)...); }
 
    #else // !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
 
    #define BOOST_CONTAINER_FLAT_SET_EMPLACE_CODE(N) \
    BOOST_MOVE_TMPL_LT##N BOOST_MOVE_CLASS##N BOOST_MOVE_GT##N \
-   std::pair<iterator,bool> emplace(BOOST_MOVE_UREF##N)\
+   BOOST_CONTAINER_FORCEINLINE std::pair<iterator,bool> emplace(BOOST_MOVE_UREF##N)\
    {  return this->base_t::emplace_unique(BOOST_MOVE_FWD##N);  }\
    \
    BOOST_MOVE_TMPL_LT##N BOOST_MOVE_CLASS##N BOOST_MOVE_GT##N \
-   iterator emplace_hint(const_iterator hint BOOST_MOVE_I##N BOOST_MOVE_UREF##N)\
+   BOOST_CONTAINER_FORCEINLINE iterator emplace_hint(const_iterator hint BOOST_MOVE_I##N BOOST_MOVE_UREF##N)\
    {  return this->base_t::emplace_hint_unique(hint BOOST_MOVE_I##N BOOST_MOVE_FWD##N); }\
    //
    BOOST_MOVE_ITERATE_0TO9(BOOST_CONTAINER_FLAT_SET_EMPLACE_CODE)
@@ -575,7 +684,7 @@ class flat_set
    //!
    //! <b>Note</b>: If an element is inserted it might invalidate elements.
    template <class InputIterator>
-   void insert(InputIterator first, InputIterator last)
+   BOOST_CONTAINER_FORCEINLINE void insert(InputIterator first, InputIterator last)
       {  this->base_t::insert_unique(first, last);  }
 
    //! <b>Requires</b>: first, last are not iterators into *this and
@@ -590,7 +699,7 @@ class flat_set
    //!
    //! <b>Note</b>: Non-standard extension. If an element is inserted it might invalidate elements.
    template <class InputIterator>
-   void insert(ordered_unique_range_t, InputIterator first, InputIterator last)
+   BOOST_CONTAINER_FORCEINLINE void insert(ordered_unique_range_t, InputIterator first, InputIterator last)
       {  this->base_t::insert_unique(ordered_unique_range, first, last);  }
 
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
@@ -601,7 +710,7 @@ class flat_set
    //!   search time plus N*size() insertion time.
    //!
    //! <b>Note</b>: If an element is inserted it might invalidate elements.
-   void insert(std::initializer_list<value_type> il)
+   BOOST_CONTAINER_FORCEINLINE void insert(std::initializer_list<value_type> il)
    {  this->base_t::insert_unique(il.begin(), il.end()); }
 
    //! <b>Requires</b>: Range [il.begin(), il.end()) must be ordered according to the predicate
@@ -614,7 +723,7 @@ class flat_set
    //!   search time plus N*size() insertion time.
    //!
    //! <b>Note</b>: Non-standard extension. If an element is inserted it might invalidate elements.
-   void insert(ordered_unique_range_t, std::initializer_list<value_type> il)
+   BOOST_CONTAINER_FORCEINLINE void insert(ordered_unique_range_t, std::initializer_list<value_type> il)
    {  this->base_t::insert_unique(ordered_unique_range, il.begin(), il.end()); }
 #endif
 
@@ -623,7 +732,7 @@ class flat_set
    BOOST_CONTAINER_FORCEINLINE void merge(flat_set<Key, C2, Allocator>& source)
    {  this->base_t::merge_unique(source.tree());   }
 
-   //! @copydoc ::boost::container::flat_map::merge(flat_set<Key, C2, Allocator>&)
+   //! @copydoc ::boost::container::flat_set::merge(flat_set<Key, C2, Allocator>&)
    template<class C2>
    BOOST_CONTAINER_FORCEINLINE void merge(BOOST_RV_REF_BEG flat_set<Key, C2, Allocator> BOOST_RV_REF_END source)
    {  return this->merge(static_cast<flat_set<Key, C2, Allocator>&>(source));   }
@@ -633,7 +742,7 @@ class flat_set
    BOOST_CONTAINER_FORCEINLINE void merge(flat_multiset<Key, C2, Allocator>& source)
    {  this->base_t::merge_unique(source.tree());   }
 
-   //! @copydoc ::boost::container::flat_map::merge(flat_multiset<Key, C2, Allocator>&)
+   //! @copydoc ::boost::container::flat_set::merge(flat_multiset<Key, C2, Allocator>&)
    template<class C2>
    BOOST_CONTAINER_FORCEINLINE void merge(BOOST_RV_REF_BEG flat_multiset<Key, C2, Allocator> BOOST_RV_REF_END source)
    {  return this->merge(static_cast<flat_multiset<Key, C2, Allocator>&>(source));   }
@@ -765,7 +874,7 @@ class flat_set
    //! <b>Returns</b>: The number of elements with key equivalent to x.
    //!
    //! <b>Complexity</b>: log(size())+count(k)
-   size_type count(const key_type& x) const
+   BOOST_CONTAINER_FORCEINLINE size_type count(const key_type& x) const
    {  return static_cast<size_type>(this->base_t::find(x) != this->base_t::cend());  }
 
    #if defined(BOOST_CONTAINER_DOXYGEN_INVOKED)
@@ -798,13 +907,13 @@ class flat_set
    //! <b>Effects</b>: Equivalent to std::make_pair(this->lower_bound(k), this->upper_bound(k)).
    //!
    //! <b>Complexity</b>: Logarithmic
-   std::pair<const_iterator, const_iterator> equal_range(const key_type& x) const
+   BOOST_CONTAINER_FORCEINLINE std::pair<const_iterator, const_iterator> equal_range(const key_type& x) const
    {  return this->base_t::lower_bound_range(x);  }
 
    //! <b>Effects</b>: Equivalent to std::make_pair(this->lower_bound(k), this->upper_bound(k)).
    //!
    //! <b>Complexity</b>: Logarithmic
-   std::pair<iterator,iterator> equal_range(const key_type& x)
+   BOOST_CONTAINER_FORCEINLINE std::pair<iterator,iterator> equal_range(const key_type& x)
    {  return this->base_t::lower_bound_range(x);  }
 
    #if defined(BOOST_CONTAINER_DOXYGEN_INVOKED)
@@ -844,16 +953,46 @@ class flat_set
    //! <b>Complexity</b>: Constant.
    friend void swap(flat_set& x, flat_set& y);
 
+   //! <b>Effects</b>: Extracts the internal sequence container.
+   //!
+   //! <b>Complexity</b>: Same as the move constructor of sequence_type, usually constant.
+   //!
+   //! <b>Postcondition</b>: this->empty()
+   //!
+   //! <b>Throws</b>: If secuence_type's move constructor throws 
+   sequence_type extract_sequence();
+
    #endif   //#ifdef BOOST_CONTAINER_DOXYGEN_INVOKED
+
+   //! <b>Effects</b>: Discards the internally hold sequence container and adopts the
+   //!   one passed externally using the move assignment. Erases non-unique elements.
+   //!
+   //! <b>Complexity</b>: Assuming O(1) move assignment, O(NlogN) with N = seq.size()
+   //!
+   //! <b>Throws</b>: If the comparison or the move constructor throws
+   BOOST_CONTAINER_FORCEINLINE void adopt_sequence(BOOST_RV_REF(sequence_type) seq)
+   {  this->base_t::adopt_sequence_unique(boost::move(seq));  }
+
+   //! <b>Requires</b>: seq shall be ordered according to this->compare()
+   //!   and shall contain unique elements.
+   //!
+   //! <b>Effects</b>: Discards the internally hold sequence container and adopts the
+   //!   one passed externally using the move assignment.
+   //!
+   //! <b>Complexity</b>: Assuming O(1) move assignment, O(1)
+   //!
+   //! <b>Throws</b>: If the move assignment throws
+   BOOST_CONTAINER_FORCEINLINE void adopt_sequence(ordered_unique_range_t, BOOST_RV_REF(sequence_type) seq)
+   {  this->base_t::adopt_sequence_unique(ordered_unique_range_t(), boost::move(seq));  }
 
    #ifndef BOOST_CONTAINER_DOXYGEN_INVOKED
    private:
    template<class KeyType>
-   std::pair<iterator, bool> priv_insert(BOOST_FWD_REF(KeyType) x)
+   BOOST_CONTAINER_FORCEINLINE std::pair<iterator, bool> priv_insert(BOOST_FWD_REF(KeyType) x)
    {  return this->base_t::insert_unique(::boost::forward<KeyType>(x));  }
 
    template<class KeyType>
-   iterator priv_insert(const_iterator p, BOOST_FWD_REF(KeyType) x)
+   BOOST_CONTAINER_FORCEINLINE iterator priv_insert(const_iterator p, BOOST_FWD_REF(KeyType) x)
    {  return this->base_t::insert_unique(p, ::boost::forward<KeyType>(x)); }
    #endif   //#ifndef BOOST_CONTAINER_DOXYGEN_INVOKED
 };
@@ -939,40 +1078,55 @@ class flat_multiset
    typedef typename BOOST_CONTAINER_IMPDEF(base_t::const_iterator)                     const_iterator;
    typedef typename BOOST_CONTAINER_IMPDEF(base_t::reverse_iterator)                   reverse_iterator;
    typedef typename BOOST_CONTAINER_IMPDEF(base_t::const_reverse_iterator)             const_reverse_iterator;
+   typedef typename BOOST_CONTAINER_IMPDEF(base_t::sequence_type)                      sequence_type;
 
    //! @copydoc ::boost::container::flat_set::flat_set()
-   explicit flat_multiset() BOOST_NOEXCEPT_IF(container_detail::is_nothrow_default_constructible<Allocator>::value &&
+   BOOST_CONTAINER_FORCEINLINE explicit flat_multiset() BOOST_NOEXCEPT_IF(container_detail::is_nothrow_default_constructible<Allocator>::value &&
                                               container_detail::is_nothrow_default_constructible<Compare>::value)
       : base_t()
    {}
 
-   //! @copydoc ::boost::container::flat_set::flat_set(const Compare&, const allocator_type&)
-   explicit flat_multiset(const Compare& comp,
-                          const allocator_type& a = allocator_type())
-      : base_t(comp, a)
+   //! @copydoc ::boost::container::flat_set::flat_set(const Compare&)
+   BOOST_CONTAINER_FORCEINLINE explicit flat_multiset(const Compare& comp)
+      : base_t(comp)
    {}
 
    //! @copydoc ::boost::container::flat_set::flat_set(const allocator_type&)
-   explicit flat_multiset(const allocator_type& a)
+   BOOST_CONTAINER_FORCEINLINE explicit flat_multiset(const allocator_type& a)
       : base_t(a)
    {}
 
-   //! @copydoc ::boost::container::flat_set::flat_set(InputIterator, InputIterator, const Compare& comp, const allocator_type&)
+   //! @copydoc ::boost::container::flat_set::flat_set(const Compare&, const allocator_type&)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(const Compare& comp, const allocator_type& a)
+      : base_t(comp, a)
+   {}
+
+   //! @copydoc ::boost::container::flat_set::flat_set(InputIterator, InputIterator)
    template <class InputIterator>
-   flat_multiset(InputIterator first, InputIterator last,
-                 const Compare& comp        = Compare(),
-                 const allocator_type& a = allocator_type())
-      : base_t(false, first, last, comp, a)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(InputIterator first, InputIterator last)
+      : base_t(false, first, last)
    {}
 
    //! @copydoc ::boost::container::flat_set::flat_set(InputIterator, InputIterator, const allocator_type&)
    template <class InputIterator>
-   flat_multiset(InputIterator first, InputIterator last, const allocator_type& a)
-      : base_t(false, first, last, Compare(), a)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(InputIterator first, InputIterator last, const allocator_type& a)
+      : base_t(false, first, last, a)
    {}
 
-   //! <b>Effects</b>: Constructs an empty flat_multiset using the specified comparison object and
-   //! allocator, and inserts elements from the ordered range [first ,last ). This function
+   //! @copydoc ::boost::container::flat_set::flat_set(InputIterator, InputIterator, const Compare& comp)
+   template <class InputIterator>
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(InputIterator first, InputIterator last, const Compare& comp)
+      : base_t(false, first, last, comp)
+   {}
+
+   //! @copydoc ::boost::container::flat_set::flat_set(InputIterator, InputIterator, const Compare& comp, const allocator_type&)
+   template <class InputIterator>
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(InputIterator first, InputIterator last, const Compare& comp, const allocator_type& a)
+      : base_t(false, first, last, comp, a)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty flat_multiset and
+   //! inserts elements from the ordered range [first ,last ). This function
    //! is more efficient than the normal range creation for ordered ranges.
    //!
    //! <b>Requires</b>: [first ,last) must be ordered according to the predicate.
@@ -981,22 +1135,83 @@ class flat_multiset
    //!
    //! <b>Note</b>: Non-standard extension.
    template <class InputIterator>
-   flat_multiset(ordered_range_t, InputIterator first, InputIterator last,
-                 const Compare& comp        = Compare(),
-                 const allocator_type& a = allocator_type())
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(ordered_range_t, InputIterator first, InputIterator last)
+      : base_t(ordered_range, first, last)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty flat_multiset using the specified comparison object and
+   //! inserts elements from the ordered range [first ,last ). This function
+   //! is more efficient than the normal range creation for ordered ranges.
+   //!
+   //! <b>Requires</b>: [first ,last) must be ordered according to the predicate.
+   //!
+   //! <b>Complexity</b>: Linear in N.
+   //!
+   //! <b>Note</b>: Non-standard extension.
+   template <class InputIterator>
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(ordered_range_t, InputIterator first, InputIterator last, const Compare& comp)
+      : base_t(ordered_range, first, last, comp)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty flat_multiset using the specified comparison object and
+   //! allocator, and inserts elements from the ordered range [first, last ). This function
+   //! is more efficient than the normal range creation for ordered ranges.
+   //!
+   //! <b>Requires</b>: [first ,last) must be ordered according to the predicate.
+   //!
+   //! <b>Complexity</b>: Linear in N.
+   //!
+   //! <b>Note</b>: Non-standard extension.
+   template <class InputIterator>
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(ordered_range_t, InputIterator first, InputIterator last, const Compare& comp, const allocator_type& a)
       : base_t(ordered_range, first, last, comp, a)
    {}
 
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
-   //! @copydoc ::boost::container::flat_set::flat_set(std::initializer_list<value_type>, const Compare& comp, const allocator_type&)
-   flat_multiset(std::initializer_list<value_type> il, const Compare& comp = Compare(),
-            const allocator_type& a = allocator_type())
-      : base_t(false, il.begin(), il.end(), comp, a)
+   //! @copydoc ::boost::container::flat_set::flat_set(std::initializer_list<value_type)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(std::initializer_list<value_type> il)
+      : base_t(false, il.begin(), il.end())
    {}
 
    //! @copydoc ::boost::container::flat_set::flat_set(std::initializer_list<value_type>, const allocator_type&)
-   flat_multiset(std::initializer_list<value_type> il, const allocator_type& a)
-      : base_t(false, il.begin(), il.end(), Compare(), a)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(std::initializer_list<value_type> il, const allocator_type& a)
+      : base_t(false, il.begin(), il.end(), a)
+   {}
+
+   //! @copydoc ::boost::container::flat_set::flat_set(std::initializer_list<value_type>, const Compare& comp)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(std::initializer_list<value_type> il, const Compare& comp)
+      : base_t(false, il.begin(), il.end(), comp)
+   {}
+
+   //! @copydoc ::boost::container::flat_set::flat_set(std::initializer_list<value_type>, const Compare& comp, const allocator_type&)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(std::initializer_list<value_type> il, const Compare& comp, const allocator_type& a)
+      : base_t(false, il.begin(), il.end(), comp, a)
+   {}
+
+   //! <b>Effects</b>: Constructs an empty containerand
+   //! inserts elements from the ordered unique range [il.begin(), il.end()). This function
+   //! is more efficient than the normal range creation for ordered ranges.
+   //!
+   //! <b>Requires</b>: [il.begin(), il.end()) must be ordered according to the predicate.
+   //!
+   //! <b>Complexity</b>: Linear in N.
+   //!
+   //! <b>Note</b>: Non-standard extension.
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(ordered_range_t, std::initializer_list<value_type> il)
+      : base_t(ordered_range, il.begin(), il.end())
+   {}
+
+   //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
+   //! inserts elements from the ordered unique range [il.begin(), il.end()). This function
+   //! is more efficient than the normal range creation for ordered ranges.
+   //!
+   //! <b>Requires</b>: [il.begin(), il.end()) must be ordered according to the predicate.
+   //!
+   //! <b>Complexity</b>: Linear in N.
+   //!
+   //! <b>Note</b>: Non-standard extension.
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(ordered_range_t, std::initializer_list<value_type> il, const Compare& comp)
+      : base_t(ordered_range, il.begin(), il.end(), comp)
    {}
 
    //! <b>Effects</b>: Constructs an empty container using the specified comparison object and
@@ -1008,39 +1223,38 @@ class flat_multiset
    //! <b>Complexity</b>: Linear in N.
    //!
    //! <b>Note</b>: Non-standard extension.
-   flat_multiset(ordered_range_t, std::initializer_list<value_type> il,
-            const Compare& comp = Compare(), const allocator_type& a = allocator_type())
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(ordered_range_t, std::initializer_list<value_type> il, const Compare& comp, const allocator_type& a)
       : base_t(ordered_range, il.begin(), il.end(), comp, a)
    {}
 #endif
 
    //! @copydoc ::boost::container::flat_set::flat_set(const flat_set &)
-   flat_multiset(const flat_multiset& x)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(const flat_multiset& x)
       : base_t(static_cast<const base_t&>(x))
    {}
 
    //! @copydoc ::boost::container::flat_set::flat_set(flat_set &&)
-   flat_multiset(BOOST_RV_REF(flat_multiset) x)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(BOOST_RV_REF(flat_multiset) x)
       BOOST_NOEXCEPT_IF(boost::container::container_detail::is_nothrow_move_constructible<Compare>::value)
       : base_t(boost::move(static_cast<base_t&>(x)))
    {}
 
    //! @copydoc ::boost::container::flat_set::flat_set(const flat_set &, const allocator_type &)
-   flat_multiset(const flat_multiset& x, const allocator_type &a)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(const flat_multiset& x, const allocator_type &a)
       : base_t(static_cast<const base_t&>(x), a)
    {}
 
    //! @copydoc ::boost::container::flat_set::flat_set(flat_set &&, const allocator_type &)
-   flat_multiset(BOOST_RV_REF(flat_multiset) x, const allocator_type &a)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset(BOOST_RV_REF(flat_multiset) x, const allocator_type &a)
       : base_t(BOOST_MOVE_BASE(base_t, x), a)
    {}
 
    //! @copydoc ::boost::container::flat_set::operator=(const flat_set &)
-   flat_multiset& operator=(BOOST_COPY_ASSIGN_REF(flat_multiset) x)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset& operator=(BOOST_COPY_ASSIGN_REF(flat_multiset) x)
    {  return static_cast<flat_multiset&>(this->base_t::operator=(static_cast<const base_t&>(x)));  }
 
    //! @copydoc ::boost::container::flat_set::operator=(flat_set &&)
-   flat_multiset& operator=(BOOST_RV_REF(flat_multiset) x)
+   BOOST_CONTAINER_FORCEINLINE flat_multiset& operator=(BOOST_RV_REF(flat_multiset) x)
       BOOST_NOEXCEPT_IF( (allocator_traits_type::propagate_on_container_move_assignment::value ||
                           allocator_traits_type::is_always_equal::value) &&
                            boost::container::container_detail::is_nothrow_move_assignable<Compare>::value)
@@ -1140,7 +1354,7 @@ class flat_multiset
    //!
    //! <b>Note</b>: If an element is inserted it might invalidate elements.
    template <class... Args>
-   iterator emplace(BOOST_FWD_REF(Args)... args)
+   BOOST_CONTAINER_FORCEINLINE iterator emplace(BOOST_FWD_REF(Args)... args)
    {  return this->base_t::emplace_equal(boost::forward<Args>(args)...); }
 
    //! <b>Effects</b>: Inserts an object of type Key constructed with
@@ -1155,18 +1369,18 @@ class flat_multiset
    //!
    //! <b>Note</b>: If an element is inserted it might invalidate elements.
    template <class... Args>
-   iterator emplace_hint(const_iterator p, BOOST_FWD_REF(Args)... args)
+   BOOST_CONTAINER_FORCEINLINE iterator emplace_hint(const_iterator p, BOOST_FWD_REF(Args)... args)
    {  return this->base_t::emplace_hint_equal(p, boost::forward<Args>(args)...); }
 
    #else // !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
 
    #define BOOST_CONTAINER_FLAT_MULTISET_EMPLACE_CODE(N) \
    BOOST_MOVE_TMPL_LT##N BOOST_MOVE_CLASS##N BOOST_MOVE_GT##N \
-   iterator emplace(BOOST_MOVE_UREF##N)\
+   BOOST_CONTAINER_FORCEINLINE iterator emplace(BOOST_MOVE_UREF##N)\
    {  return this->base_t::emplace_equal(BOOST_MOVE_FWD##N);  }\
    \
    BOOST_MOVE_TMPL_LT##N BOOST_MOVE_CLASS##N BOOST_MOVE_GT##N \
-   iterator emplace_hint(const_iterator hint BOOST_MOVE_I##N BOOST_MOVE_UREF##N)\
+   BOOST_CONTAINER_FORCEINLINE iterator emplace_hint(const_iterator hint BOOST_MOVE_I##N BOOST_MOVE_UREF##N)\
    {  return this->base_t::emplace_hint_equal(hint BOOST_MOVE_I##N BOOST_MOVE_FWD##N); }\
    //
    BOOST_MOVE_ITERATE_0TO9(BOOST_CONTAINER_FLAT_MULTISET_EMPLACE_CODE)
@@ -1233,7 +1447,7 @@ class flat_multiset
    //!
    //! <b>Note</b>: If an element is inserted it might invalidate elements.
    template <class InputIterator>
-   void insert(InputIterator first, InputIterator last)
+   BOOST_CONTAINER_FORCEINLINE void insert(InputIterator first, InputIterator last)
       {  this->base_t::insert_equal(first, last);  }
 
    //! <b>Requires</b>: first, last are not iterators into *this and
@@ -1247,7 +1461,7 @@ class flat_multiset
    //!
    //! <b>Note</b>: Non-standard extension. If an element is inserted it might invalidate elements.
    template <class InputIterator>
-   void insert(ordered_range_t, InputIterator first, InputIterator last)
+   BOOST_CONTAINER_FORCEINLINE void insert(ordered_range_t, InputIterator first, InputIterator last)
       {  this->base_t::insert_equal(ordered_range, first, last);  }
 
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
@@ -1257,7 +1471,7 @@ class flat_multiset
    //!   search time plus N*size() insertion time.
    //!
    //! <b>Note</b>: If an element is inserted it might invalidate elements.
-   void insert(std::initializer_list<value_type> il)
+   BOOST_CONTAINER_FORCEINLINE void insert(std::initializer_list<value_type> il)
    {  this->base_t::insert_equal(il.begin(), il.end()); }
 
    //! <b>Requires</b>: Range [il.begin(), il.end()) must be ordered according to the predicate.
@@ -1269,7 +1483,7 @@ class flat_multiset
    //!   search time plus N*size() insertion time.
    //!
    //! <b>Note</b>: Non-standard extension. If an element is inserted it might invalidate elements.
-   void insert(ordered_range_t, std::initializer_list<value_type> il)
+   BOOST_CONTAINER_FORCEINLINE void insert(ordered_range_t, std::initializer_list<value_type> il)
    {  this->base_t::insert_equal(ordered_range, il.begin(), il.end()); }
 #endif
 
@@ -1392,16 +1606,45 @@ class flat_multiset
    //! <b>Complexity</b>: Constant.
    friend void swap(flat_multiset& x, flat_multiset& y);
 
+   //! <b>Effects</b>: Extracts the internal sequence container.
+   //!
+   //! <b>Complexity</b>: Same as the move constructor of sequence_type, usually constant.
+   //!
+   //! <b>Postcondition</b>: this->empty()
+   //!
+   //! <b>Throws</b>: If secuence_type's move constructor throws 
+   sequence_type extract_sequence();
+
    #endif   //#ifdef BOOST_CONTAINER_DOXYGEN_INVOKED
+
+   //! <b>Effects</b>: Discards the internally hold sequence container and adopts the
+   //!   one passed externally using the move assignment.
+   //!
+   //! <b>Complexity</b>: Assuming O(1) move assignment, O(NlogN) with N = seq.size()
+   //!
+   //! <b>Throws</b>: If the comparison or the move constructor throws
+   BOOST_CONTAINER_FORCEINLINE void adopt_sequence(BOOST_RV_REF(sequence_type) seq)
+   {  this->base_t::adopt_sequence_equal(boost::move(seq));  }
+
+   //! <b>Requires</b>: seq shall be ordered according to this->compare()
+   //!
+   //! <b>Effects</b>: Discards the internally hold sequence container and adopts the
+   //!   one passed externally using the move assignment.
+   //!
+   //! <b>Complexity</b>: Assuming O(1) move assignment, O(1)
+   //!
+   //! <b>Throws</b>: If the move assignment throws
+   BOOST_CONTAINER_FORCEINLINE void adopt_sequence(ordered_range_t, BOOST_RV_REF(sequence_type) seq)
+   {  this->base_t::adopt_sequence_equal(ordered_range_t(), boost::move(seq));  }
 
    #ifndef BOOST_CONTAINER_DOXYGEN_INVOKED
    private:
    template <class KeyType>
-   iterator priv_insert(BOOST_FWD_REF(KeyType) x)
+   BOOST_CONTAINER_FORCEINLINE iterator priv_insert(BOOST_FWD_REF(KeyType) x)
    {  return this->base_t::insert_equal(::boost::forward<KeyType>(x));  }
 
    template <class KeyType>
-   iterator priv_insert(const_iterator p, BOOST_FWD_REF(KeyType) x)
+   BOOST_CONTAINER_FORCEINLINE iterator priv_insert(const_iterator p, BOOST_FWD_REF(KeyType) x)
    {  return this->base_t::insert_equal(p, ::boost::forward<KeyType>(x)); }
    #endif   //#ifndef BOOST_CONTAINER_DOXYGEN_INVOKED
 };

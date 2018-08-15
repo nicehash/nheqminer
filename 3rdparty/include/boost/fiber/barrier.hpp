@@ -24,19 +24,19 @@ namespace fibers {
 
 class BOOST_FIBERS_DECL barrier {
 private:
-	std::size_t         initial_;
-	std::size_t         current_;
-	bool                cycle_{ true };
-	mutex               mtx_{};
-	condition_variable  cond_{};
+    std::size_t         initial_;
+    std::size_t         current_;
+    std::size_t         cycle_{ 0 };
+    mutex               mtx_{};
+    condition_variable  cond_{};
 
 public:
-	explicit barrier( std::size_t);
+    explicit barrier( std::size_t);
 
     barrier( barrier const&) = delete;
     barrier & operator=( barrier const&) = delete;
 
-	bool wait();
+    bool wait();
 };
 
 }}

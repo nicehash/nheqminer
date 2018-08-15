@@ -159,7 +159,7 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
     {
     private:
         template <typename Iterator>
-        static void reserve(Container& c, Iterator first, Iterator last, mpl::false_)
+        static void reserve(Container& /* c */, Iterator /* first */, Iterator /* last */, mpl::false_)
         {
             // Not all containers have "reserve"
         }
@@ -199,7 +199,7 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
     }
 
     template <typename Iterator>
-    inline bool append(unused_type, Iterator first, Iterator last)
+    inline bool append(unused_type, Iterator /* first */, Iterator /* last */)
     {
         return true;
     }

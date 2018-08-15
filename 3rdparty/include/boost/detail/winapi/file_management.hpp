@@ -157,6 +157,12 @@ SetFilePointer(
     boost::detail::winapi::LONG_ lpDistanceToMove,
     boost::detail::winapi::PLONG_ lpDistanceToMoveHigh,
     boost::detail::winapi::DWORD_ dwMoveMethod);
+
+struct _BY_HANDLE_FILE_INFORMATION;
+BOOST_SYMBOL_IMPORT boost::detail::winapi::BOOL_ WINAPI
+GetFileInformationByHandle(
+    boost::detail::winapi::HANDLE_ hFile,
+    ::_BY_HANDLE_FILE_INFORMATION* lpFileInformation);
 }
 #endif
 
@@ -235,6 +241,24 @@ const DWORD_ FILE_CURRENT_ = 1;
 const DWORD_ FILE_END_ = 2;
 
 #endif // defined( BOOST_USE_WINDOWS_H )
+
+// Some of these constants are not defined by Windows SDK in MinGW or older MSVC
+const DWORD_ FILE_FLAG_WRITE_THROUGH_ = 0x80000000;
+const DWORD_ FILE_FLAG_OVERLAPPED_ = 0x40000000;
+const DWORD_ FILE_FLAG_NO_BUFFERING_ = 0x20000000;
+const DWORD_ FILE_FLAG_RANDOM_ACCESS_ = 0x10000000;
+const DWORD_ FILE_FLAG_SEQUENTIAL_SCAN_ = 0x08000000;
+const DWORD_ FILE_FLAG_DELETE_ON_CLOSE_ = 0x04000000;
+const DWORD_ FILE_FLAG_BACKUP_SEMANTICS_ = 0x02000000;
+const DWORD_ FILE_FLAG_POSIX_SEMANTICS_ = 0x01000000;
+const DWORD_ FILE_FLAG_SESSION_AWARE_ = 0x00800000;
+const DWORD_ FILE_FLAG_OPEN_REPARSE_POINT_ = 0x00200000;
+const DWORD_ FILE_FLAG_OPEN_NO_RECALL_ = 0x00100000;
+const DWORD_ FILE_FLAG_FIRST_PIPE_INSTANCE_ = 0x00080000;
+
+#if BOOST_USE_WINAPI_VERSION >= BOOST_WINAPI_VERSION_WIN8
+const DWORD_ FILE_FLAG_OPEN_REQUIRING_OPLOCK_ = 0x00040000;
+#endif
 
 // This constant is not defined in Windows SDK up until 6.0A
 const DWORD_ FILE_ATTRIBUTE_VIRTUAL_ = 0x00010000;
@@ -357,6 +381,19 @@ typedef struct BOOST_DETAIL_WINAPI_MAY_ALIAS _WIN32_FIND_DATAW {
     WORD_  wFinderFlags;
 #endif
 } WIN32_FIND_DATAW_, *PWIN32_FIND_DATAW_, *LPWIN32_FIND_DATAW_;
+
+typedef struct BOOST_DETAIL_WINAPI_MAY_ALIAS _BY_HANDLE_FILE_INFORMATION {
+    DWORD_ dwFileAttributes;
+    FILETIME_ ftCreationTime;
+    FILETIME_ ftLastAccessTime;
+    FILETIME_ ftLastWriteTime;
+    DWORD_ dwVolumeSerialNumber;
+    DWORD_ nFileSizeHigh;
+    DWORD_ nFileSizeLow;
+    DWORD_ nNumberOfLinks;
+    DWORD_ nFileIndexHigh;
+    DWORD_ nFileIndexLow;
+} BY_HANDLE_FILE_INFORMATION_, *PBY_HANDLE_FILE_INFORMATION_, *LPBY_HANDLE_FILE_INFORMATION_;
 
 BOOST_FORCEINLINE HANDLE_ FindFirstFileW(LPCWSTR_ lpFileName, WIN32_FIND_DATAW_* lpFindFileData)
 {
@@ -502,6 +539,11 @@ BOOST_FORCEINLINE BOOL_ move_file(LPCWSTR_ lpExistingFileName, LPCWSTR_ lpNewFil
 BOOST_FORCEINLINE DWORD_ get_file_attributes(LPCWSTR_ lpFileName)
 {
     return ::GetFileAttributesW(lpFileName);
+}
+
+BOOST_FORCEINLINE BOOL_ GetFileInformationByHandle(HANDLE_ h, BY_HANDLE_FILE_INFORMATION_* info)
+{
+    return ::GetFileInformationByHandle(h, reinterpret_cast< ::_BY_HANDLE_FILE_INFORMATION* >(info));
 }
 
 }

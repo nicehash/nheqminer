@@ -4,6 +4,10 @@
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
+// This file was modified by Oracle on 2017.
+// Modifications copyright (c) 2017 Oracle and/or its affiliates.
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -303,7 +307,8 @@ inline typename default_area_result<Geometry>::type area(Geometry const& geometr
 
 [heading Available Strategies]
 \* [link geometry.reference.strategies.strategy_area_surveyor Surveyor (cartesian)]
-\* [link geometry.reference.strategies.strategy_area_huiller Huiller (spherical)]
+\* [link geometry.reference.strategies.strategy_area_spherical Spherical]
+[/link geometry.reference.strategies.strategy_area_geographic Geographic]
 }
  */
 template <typename Geometry, typename Strategy>

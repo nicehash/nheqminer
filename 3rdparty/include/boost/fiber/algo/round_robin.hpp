@@ -32,9 +32,9 @@ namespace algo {
 
 class BOOST_FIBERS_DECL round_robin : public algorithm {
 private:
-    typedef scheduler::ready_queue_t rqueue_t;
+    typedef scheduler::ready_queue_type rqueue_type;
 
-    rqueue_t                    rqueue_{};
+    rqueue_type                 rqueue_{};
     std::mutex                  mtx_{};
     std::condition_variable     cnd_{};
     bool                        flag_{ false };

@@ -11,6 +11,7 @@
 #define BOOST_PHOENIX_CONFIG_HPP
 
 #include <boost/config.hpp>
+#include <boost/detail/workaround.hpp>
 
 //////////////////////////////////////////////////////////////////////////
 // This section is to sort out whether hash types or unordered types
@@ -60,11 +61,21 @@
 #define BOOST_PHOENIX_HASH_MAP_HEADER BOOST_HASH_MAP_HEADER
 #define BOOST_PHOENIX_HAS_HASH
 #define BOOST_PHOENIX_HASH_NAMESPACE BOOST_STD_EXTENSION_NAMESPACE
+#define BOOST_PHOENIX_HASH_template_rest_param class Hash, class Cmp, class Alloc
+#define BOOST_PHOENIX_HASH_type_rest_param           Hash,       Cmp,       Alloc
 #elif defined(BOOST_DINKUMWARE_STDLIB) && (BOOST_DINKUMWARE_STDLIB < 610)
 #define BOOST_PHOENIX_HASH_SET_HEADER <hash_set>
 #define BOOST_PHOENIX_HASH_MAP_HEADER <hash_map>
 #define BOOST_PHOENIX_HAS_HASH
 #define BOOST_PHOENIX_HASH_NAMESPACE stdext
+#define BOOST_PHOENIX_HASH_template_rest_param class Tr, class Alloc
+#define BOOST_PHOENIX_HASH_type_rest_param           Tr,       Alloc
+#endif
+
+#if BOOST_WORKAROUND(BOOST_GCC, < 40100)
+#define BOOST_PHOENIX_SFINAE_AND_OVERLOADS , void* = 0
+#else
+#define BOOST_PHOENIX_SFINAE_AND_OVERLOADS
 #endif
 
 #endif

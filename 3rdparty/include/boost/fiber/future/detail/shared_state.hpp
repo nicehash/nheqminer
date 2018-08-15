@@ -62,7 +62,7 @@ protected:
 
     void set_exception_( std::exception_ptr except, std::unique_lock< mutex > & lk) {
         BOOST_ASSERT( lk.owns_lock() );
-        if ( ready_) {
+        if ( BOOST_UNLIKELY( ready_) ) {
             throw promise_already_satisfied();
         }
         except_ = except;
@@ -109,46 +109,47 @@ public:
     shared_state_base & operator=( shared_state_base const&) = delete;
 
     void owner_destroyed() {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         owner_destroyed_( lk);
     }
 
     void set_exception( std::exception_ptr except) {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         set_exception_( except, lk);
     }
 
     std::exception_ptr get_exception_ptr() {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         return get_exception_ptr_( lk);
     }
 
     void wait() const {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         wait_( lk);
     }
 
     template< typename Rep, typename Period >
     future_status wait_for( std::chrono::duration< Rep, Period > const& timeout_duration) const {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         return wait_for_( lk, timeout_duration);
     }
 
     template< typename Clock, typename Duration >
     future_status wait_until( std::chrono::time_point< Clock, Duration > const& timeout_time) const {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         return wait_until_( lk, timeout_time);
     }
 
     friend inline
     void intrusive_ptr_add_ref( shared_state_base * p) noexcept {
-        ++p->use_count_;
+        p->use_count_.fetch_add( 1, std::memory_order_relaxed);
     }
 
     friend inline
     void intrusive_ptr_release( shared_state_base * p) noexcept {
-        if ( 0 == --p->use_count_) {
-           p->deallocate_future();
+        if ( 1 == p->use_count_.fetch_sub( 1, std::memory_order_release) ) {
+            std::atomic_thread_fence( std::memory_order_acquire);
+            p->deallocate_future();
         }
     }
 };
@@ -160,17 +161,17 @@ private:
 
     void set_value_( R const& value, std::unique_lock< mutex > & lk) {
         BOOST_ASSERT( lk.owns_lock() );
-        if ( ready_) {
-            throw promise_already_satisfied();
+        if ( BOOST_UNLIKELY( ready_) ) {
+            throw promise_already_satisfied{};
         }
-        ::new ( static_cast< void * >( std::addressof( storage_) ) ) R( value);
+        ::new ( static_cast< void * >( std::addressof( storage_) ) ) R( value );
         mark_ready_and_notify_( lk);
     }
 
     void set_value_( R && value, std::unique_lock< mutex > & lk) {
         BOOST_ASSERT( lk.owns_lock() );
-        if ( ready_) {
-            throw promise_already_satisfied();
+        if ( BOOST_UNLIKELY( ready_) ) {
+            throw promise_already_satisfied{};
         }
         ::new ( static_cast< void * >( std::addressof( storage_) ) ) R( std::move( value) );
         mark_ready_and_notify_( lk);
@@ -186,13 +187,13 @@ private:
     }
 
 public:
-    typedef intrusive_ptr< shared_state >    ptr_t;
+    typedef intrusive_ptr< shared_state >    ptr_type;
 
     shared_state() = default;
 
     virtual ~shared_state() {
         if ( ready_ && ! except_) {
-            reinterpret_cast< R * >( & storage_)->~R();
+            reinterpret_cast< R * >( std::addressof( storage_) )->~R();
         }
     }
 
@@ -200,17 +201,17 @@ public:
     shared_state & operator=( shared_state const&) = delete;
 
     void set_value( R const& value) {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         set_value_( value, lk);
     }
 
     void set_value( R && value) {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         set_value_( std::move( value), lk);
     }
 
     R & get() {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         return get_( lk);
     }
 };
@@ -222,7 +223,7 @@ private:
 
     void set_value_( R & value, std::unique_lock< mutex > & lk) {
         BOOST_ASSERT( lk.owns_lock() );
-        if ( ready_) {
+        if ( BOOST_UNLIKELY( ready_) ) {
             throw promise_already_satisfied();
         }
         value_ = std::addressof( value);
@@ -239,7 +240,7 @@ private:
     }
 
 public:
-    typedef intrusive_ptr< shared_state >    ptr_t;
+    typedef intrusive_ptr< shared_state >    ptr_type;
 
     shared_state() = default;
 
@@ -249,12 +250,12 @@ public:
     shared_state & operator=( shared_state const&) = delete;
 
     void set_value( R & value) {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         set_value_( value, lk);
     }
 
     R & get() {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         return get_( lk);
     }
 };
@@ -265,7 +266,7 @@ private:
     inline
     void set_value_( std::unique_lock< mutex > & lk) {
         BOOST_ASSERT( lk.owns_lock() );
-        if ( ready_) {
+        if ( BOOST_UNLIKELY( ready_) ) {
             throw promise_already_satisfied();
         }
         mark_ready_and_notify_( lk);
@@ -281,7 +282,7 @@ private:
     }
 
 public:
-    typedef intrusive_ptr< shared_state >    ptr_t;
+    typedef intrusive_ptr< shared_state >    ptr_type;
 
     shared_state() = default;
 
@@ -292,13 +293,13 @@ public:
 
     inline
     void set_value() {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         set_value_( lk);
     }
 
     inline
     void get() {
-        std::unique_lock< mutex > lk( mtx_);
+        std::unique_lock< mutex > lk{ mtx_ };
         get_( lk);
     }
 };

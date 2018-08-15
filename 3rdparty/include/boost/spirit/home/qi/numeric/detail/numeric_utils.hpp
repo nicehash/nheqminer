@@ -278,14 +278,20 @@ namespace boost { namespace spirit { namespace qi { namespace detail
 #define SPIRIT_NUMERIC_INNER_LOOP(z, x, data)                                 \
         if (!check_max_digits<MaxDigits>::call(count + leading_zeros)         \
             || it == last)                                                    \
+        {                                                                     \
             break;                                                            \
+        }                                                                     \
         ch = *it;                                                             \
         if (!radix_check::is_valid(ch))                                       \
+        {                                                                     \
             break;                                                            \
+        }                                                                     \
         if (!extractor::call(ch, count, val))                                 \
         {                                                                     \
             if (IgnoreOverflowDigits)                                         \
+            {                                                                 \
                 first = it;                                                   \
+            }                                                                 \
             traits::assign_to(val, attr);                                     \
             return IgnoreOverflowDigits;                                      \
         }                                                                     \
@@ -386,10 +392,14 @@ namespace boost { namespace spirit { namespace qi { namespace detail
     ///////////////////////////////////////////////////////////////////////////
 #define SPIRIT_NUMERIC_INNER_LOOP(z, x, data)                                 \
         if (it == last)                                                       \
+        {                                                                     \
             break;                                                            \
+        }                                                                     \
         ch = *it;                                                             \
         if (!radix_check::is_valid(ch))                                       \
+        {                                                                     \
             break;                                                            \
+        }                                                                     \
         if (!extractor::call(ch, count, val))                                 \
         {                                                                     \
             traits::assign_to(val, attr);                                     \

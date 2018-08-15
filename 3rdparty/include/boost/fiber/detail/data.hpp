@@ -23,22 +23,6 @@ class context;
 
 namespace detail {
 
-#if (BOOST_EXECUTION_CONTEXT==1)
-struct data_t {
-    spinlock_lock   *   lk{ nullptr };
-    context         *   ctx{ nullptr };
-
-    constexpr data_t() noexcept = default;
-
-    explicit data_t( spinlock_lock * lk_) noexcept :
-        lk{ lk_ } {
-    }
-
-    explicit data_t( context * ctx_) noexcept :
-        ctx{ ctx_ } {
-    }
-};
-#else
 struct data_t {
     spinlock_lock   *   lk{ nullptr };
     context         *   ctx{ nullptr };
@@ -60,7 +44,6 @@ struct data_t {
         from{ from_ } {
     }
 };
-#endif
 
 }}}
 

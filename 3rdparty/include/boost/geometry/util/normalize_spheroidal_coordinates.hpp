@@ -282,6 +282,40 @@ inline CoordinateType longitude_distance_unsigned(CoordinateType const& longitud
     return diff;
 }
 
+/*!
+\brief The abs difference between longitudes in range [0, 180].
+\tparam Units The units of the coordindate system in the spheroid
+\tparam CoordinateType The type of the coordinates
+\param longitude1 Longitude 1
+\param longitude2 Longitude 2
+\ingroup utility
+*/
+template <typename Units, typename CoordinateType>
+inline CoordinateType longitude_difference(CoordinateType const& longitude1,
+                                           CoordinateType const& longitude2)
+{
+    return math::abs(math::longitude_distance_signed<Units>(longitude1, longitude2));
+}
+
+template <typename Units, typename CoordinateType>
+inline CoordinateType longitude_interval_distance_signed(CoordinateType const& longitude_a1,
+                                                         CoordinateType const& longitude_a2,
+                                                         CoordinateType const& longitude_b)
+{
+    CoordinateType const c0 = 0;
+    CoordinateType dist_a12 = longitude_distance_signed<Units>(longitude_a1, longitude_a2);
+    CoordinateType dist_a1b = longitude_distance_signed<Units>(longitude_a1, longitude_b);
+    if (dist_a12 < c0)
+    {
+        dist_a12 = -dist_a12;
+        dist_a1b = -dist_a1b;
+    }
+    
+    return dist_a1b < c0 ? dist_a1b
+         : dist_a1b > dist_a12 ? dist_a1b - dist_a12
+         : c0;
+}
+
 } // namespace math
 
 

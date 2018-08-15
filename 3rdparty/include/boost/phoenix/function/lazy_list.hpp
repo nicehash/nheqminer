@@ -202,10 +202,10 @@ namespace boost {
        }
 
       template <class L>
-      bool is_a_unique_type_for_nil(const L& l) {
+      bool is_a_unique_type_for_nil(const L& /*l*/) {
          return false;
       }
-  
+
       template <>
       bool is_a_unique_type_for_nil<a_unique_type_for_nil>
       (const a_unique_type_for_nil& /* n */) {

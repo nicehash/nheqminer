@@ -34,11 +34,12 @@ namespace detail
 template <class ... Ts>
 class mangled_library_function {
     // Copying of `boost::dll::shared_library` is very expensive, so we use a `shared_ptr` to make it faster.
-    boost::shared_ptr<function_tuple<Ts...>>   f_;
-
+    boost::shared_ptr<shared_library> lib_;
+    function_tuple<Ts...>   f_;
 public:
-    inline mangled_library_function(const boost::shared_ptr<shared_library>& lib, Ts*... func_ptr) BOOST_NOEXCEPT
-        : f_(lib, new function_tuple<Ts...>(func_ptr...))
+    constexpr mangled_library_function(const boost::shared_ptr<shared_library>& lib, Ts*... func_ptr) BOOST_NOEXCEPT
+        : lib_(lib)
+        , f_(func_ptr...)
     {}
 
 
@@ -51,10 +52,10 @@ public:
     // f(1, 2);     // error: too many arguments to function
     // f();         // error: too few arguments to function
     template <class... Args>
-    inline auto operator()(Args&&... args) const
-        -> decltype( (*f_)(static_cast<Args&&>(args)...) )
+    auto operator()(Args&&... args) const
+        -> decltype( f_(static_cast<Args&&>(args)...) )
     {
-        return (*f_)(static_cast<Args&&>(args)...);
+        return f_(static_cast<Args&&>(args)...);
     }
 };
 
@@ -66,18 +67,20 @@ template <class Class, class ... Ts>
 class mangled_library_mem_fn<Class, sequence<Ts...>> {
     // Copying of `boost::dll::shared_library` is very expensive, so we use a `shared_ptr` to make it faster.
     typedef mem_fn_tuple<Ts...> call_tuple_t;
-    boost::shared_ptr<call_tuple_t>   f_;
+    boost::shared_ptr<shared_library>   lib_;
+    call_tuple_t f_;
 
 public:
-    inline mangled_library_mem_fn(const boost::shared_ptr<shared_library>& lib,
-                                  typename Ts::mem_fn... func_ptr) BOOST_NOEXCEPT
-        : f_(lib, new call_tuple_t(func_ptr...))
+    constexpr mangled_library_mem_fn(const boost::shared_ptr<shared_library>& lib, typename Ts::mem_fn... func_ptr) BOOST_NOEXCEPT
+        : lib_(lib)
+        , f_(func_ptr...)
     {}
 
     template <class ClassIn, class... Args>
-    inline auto operator()(ClassIn *cl, Args&&... args) const -> decltype( (*f_)(cl, static_cast<Args&&>(args)...) )
+    auto operator()(ClassIn *cl, Args&&... args) const
+        -> decltype( f_(cl, static_cast<Args&&>(args)...) )
     {
-        return (*f_)(cl, static_cast<Args&&>(args)...);
+        return f_(cl, static_cast<Args&&>(args)...);
     }
 };
 
