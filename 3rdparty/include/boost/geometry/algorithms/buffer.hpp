@@ -4,6 +4,10 @@
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
+// This file was modified by Oracle on 2017.
+// Modifications copyright (c) 2017 Oracle and/or its affiliates.
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -274,6 +278,11 @@ inline void buffer(GeometryIn const& geometry_in,
     geometry::envelope(geometry_in, box);
     geometry::buffer(box, box, distance_strategy.max_distance(join_strategy, end_strategy));
 
+    typename strategy::intersection::services::default_strategy
+        <
+            typename cs_tag<GeometryIn>::type
+        >::type intersection_strategy;
+
     rescale_policy_type rescale_policy
             = boost::geometry::get_rescale_policy<rescale_policy_type>(box);
 
@@ -283,6 +292,7 @@ inline void buffer(GeometryIn const& geometry_in,
                 join_strategy,
                 end_strategy,
                 point_strategy,
+                intersection_strategy,
                 rescale_policy);
 }
 

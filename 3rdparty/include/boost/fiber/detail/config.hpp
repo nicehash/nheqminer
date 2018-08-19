@@ -7,7 +7,10 @@
 #ifndef BOOST_FIBERS_DETAIL_CONFIG_H
 #define BOOST_FIBERS_DETAIL_CONFIG_H
 
+#include <cstddef>
+
 #include <boost/config.hpp>
+#include <boost/predef.h> 
 #include <boost/detail/workaround.hpp>
 
 #ifdef BOOST_FIBERS_DECL
@@ -33,6 +36,31 @@
 #  define BOOST_DYN_LINK
 # endif
 # include <boost/config/auto_link.hpp>
+#endif
+
+#if BOOST_OS_LINUX || BOOST_OS_WINDOWS
+# define BOOST_FIBERS_HAS_FUTEX
+#endif
+
+#if (!defined(BOOST_FIBERS_HAS_FUTEX) && \
+    (defined(BOOST_FIBERS_SPINLOCK_TTAS_FUTEX) || defined(BOOST_FIBERS_SPINLOCK_TTAS_ADAPTIVE_FUTEX)))
+# error "futex not supported on this platform"
+#endif
+
+#if !defined(BOOST_FIBERS_CONTENTION_WINDOW_THRESHOLD)
+# define BOOST_FIBERS_CONTENTION_WINDOW_THRESHOLD 16
+#endif
+
+#if !defined(BOOST_FIBERS_RETRY_THRESHOLD)
+# define BOOST_FIBERS_RETRY_THRESHOLD 64
+#endif
+
+#if !defined(BOOST_FIBERS_SPIN_BEFORE_SLEEP0)
+# define BOOST_FIBERS_SPIN_BEFORE_SLEEP0 32
+#endif
+
+#if !defined(BOOST_FIBERS_SPIN_BEFORE_YIELD)
+# define BOOST_FIBERS_SPIN_BEFORE_YIELD 64
 #endif
 
 #endif // BOOST_FIBERS_DETAIL_CONFIG_H

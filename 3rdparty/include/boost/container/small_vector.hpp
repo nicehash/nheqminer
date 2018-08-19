@@ -387,8 +387,8 @@ class small_vector_base
          this->steal_resources(x);
       }
       else{
-         this->assign( boost::make_move_iterator(container_detail::iterator_to_raw_pointer(x.begin()))
-                     , boost::make_move_iterator(container_detail::iterator_to_raw_pointer(x.end  ()))
+         this->assign( boost::make_move_iterator(boost::movelib::iterator_to_raw_pointer(x.begin()))
+                     , boost::make_move_iterator(boost::movelib::iterator_to_raw_pointer(x.end  ()))
                      );
       }
    }
@@ -507,7 +507,7 @@ class small_vector : public small_vector_base<T, Allocator>
 
    public:
    BOOST_CONTAINER_FORCEINLINE small_vector()
-	   BOOST_NOEXCEPT_IF(container_detail::is_nothrow_default_constructible<Allocator>::value)
+      BOOST_NOEXCEPT_IF(container_detail::is_nothrow_default_constructible<Allocator>::value)
       : base_type(initial_capacity_t(), internal_capacity())
    {}
 

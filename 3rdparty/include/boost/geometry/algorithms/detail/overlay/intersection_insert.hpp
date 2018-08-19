@@ -2,10 +2,11 @@
 
 // Copyright (c) 2007-2015 Barend Gehrels, Amsterdam, the Netherlands.
 
-// This file was modified by Oracle on 2014, 2015.
-// Modifications copyright (c) 2014-2015 Oracle and/or its affiliates.
+// This file was modified by Oracle on 2014, 2015, 2017.
+// Modifications copyright (c) 2014-2017 Oracle and/or its affiliates.
 
 // Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
@@ -29,10 +30,11 @@
 #include <boost/geometry/algorithms/convert.hpp>
 #include <boost/geometry/algorithms/detail/point_on_border.hpp>
 #include <boost/geometry/algorithms/detail/overlay/clip_linestring.hpp>
+#include <boost/geometry/algorithms/detail/overlay/follow.hpp>
 #include <boost/geometry/algorithms/detail/overlay/get_intersection_points.hpp>
 #include <boost/geometry/algorithms/detail/overlay/overlay.hpp>
 #include <boost/geometry/algorithms/detail/overlay/overlay_type.hpp>
-#include <boost/geometry/algorithms/detail/overlay/follow.hpp>
+#include <boost/geometry/algorithms/detail/overlay/range_in_geometry.hpp>
 
 #include <boost/geometry/policies/robustness/robust_point_type.hpp>
 #include <boost/geometry/policies/robustness/segment_ratio_type.hpp>
@@ -71,7 +73,7 @@ struct intersection_segment_segment_point
             Segment2 const& segment2,
             RobustPolicy const& robust_policy,
             OutputIterator out,
-            Strategy const& )
+            Strategy const& strategy)
     {
         typedef typename point_type<PointOut>::type point_type;
 
@@ -106,16 +108,15 @@ struct intersection_segment_segment_point
                     >::type
                 > intersection_return_type;
 
-        typedef strategy::intersection::relate_cartesian_segments
+        typedef policies::relate::segments_intersection_points
             <
-                policies::relate::segments_intersection_points
-                    <
-                        intersection_return_type
-                    >
-            > policy;
+                intersection_return_type
+            > policy_type;
 
-        intersection_return_type is = policy::apply(segment1, segment2,
-                        robust_policy, pi_rob, pj_rob, qi_rob, qj_rob);
+        intersection_return_type
+            is = strategy.apply(segment1, segment2,
+                                policy_type(), robust_policy,
+                                pi_rob, pj_rob, qi_rob, qj_rob);
 
         for (std::size_t i = 0; i < is.count; i++)
         {
@@ -134,13 +135,14 @@ struct intersection_linestring_linestring_point
     <
         typename Linestring1, typename Linestring2,
         typename RobustPolicy,
-        typename OutputIterator, typename Strategy
+        typename OutputIterator,
+        typename Strategy
     >
     static inline OutputIterator apply(Linestring1 const& linestring1,
             Linestring2 const& linestring2,
             RobustPolicy const& robust_policy,
             OutputIterator out,
-            Strategy const& )
+            Strategy const& strategy)
     {
         typedef typename point_type<PointOut>::type point_type;
 
@@ -151,7 +153,8 @@ struct intersection_linestring_linestring_point
             > turn_info;
         std::deque<turn_info> turns;
 
-        geometry::get_intersection_points(linestring1, linestring2, robust_policy, turns);
+        geometry::get_intersection_points(linestring1, linestring2,
+                                          robust_policy, turns, strategy);
 
         for (typename boost::range_iterator<std::deque<turn_info> const>::type
             it = boost::begin(turns); it != boost::end(turns); ++it)
@@ -286,6 +289,27 @@ struct intersection_of_linestring_with_areal
             >::apply(boost::begin(turns), boost::end(turns));
     }
 
+    template <typename Turns>
+    static inline int inside_or_outside_turn(Turns const& turns)
+    {
+        using namespace overlay;
+        for (typename Turns::const_iterator it = turns.begin();
+                it != turns.end(); ++it)
+        {
+            operation_type op0 = it->operations[0].operation;
+            operation_type op1 = it->operations[1].operation;
+            if (op0 == operation_intersection && op1 == operation_intersection)
+            {
+                return 1; // inside
+            }
+            else if (op0 == operation_union && op1 == operation_union)
+            {
+                return -1; // outside
+            }
+        }
+        return 0;
+    }
+
     template
     <
         typename LineString, typename Areal,
@@ -295,7 +319,7 @@ struct intersection_of_linestring_with_areal
     static inline OutputIterator apply(LineString const& linestring, Areal const& areal,
             RobustPolicy const& robust_policy,
             OutputIterator out,
-            Strategy const& )
+            Strategy const& strategy)
     {
         if (boost::size(linestring) == 0)
         {
@@ -325,23 +349,25 @@ struct intersection_of_linestring_with_areal
                 false,
                 (OverlayType == overlay_intersection ? ReverseAreal : !ReverseAreal),
                 detail::overlay::assign_null_policy
-            >(linestring, areal, robust_policy, turns, policy);
+            >(linestring, areal, strategy, robust_policy, turns, policy);
 
         if (no_crossing_turns_or_empty(turns))
         {
-            // No intersection points, it is either completely
+            // No intersection points, it is either
             // inside (interior + borders)
-            // or completely outside
+            // or outside (exterior + borders)
 
-            // Use border point (on a segment) to check this
-            // (because turn points might skip some cases)
-            point_type border_point;
-            if (! geometry::point_on_border(border_point, linestring, true))
+            // analyse the turns
+            int inside_value = inside_or_outside_turn(turns);            
+            if (inside_value == 0)
             {
-                return out;
+                // if needed analyse points of a linestring
+                // NOTE: range_in_geometry checks points of a linestring
+                // until a point inside/outside areal is found
+                inside_value = overlay::range_in_geometry(linestring, areal, strategy);
             }
-
-            if (follower::included(border_point, areal, robust_policy))
+            // add point to the output if conditions are met
+            if (inside_value != 0 && follower::included(inside_value))
             {
                 LineStringOut copy;
                 geometry::convert(linestring, copy);
@@ -363,7 +389,7 @@ struct intersection_of_linestring_with_areal
                 (
                     linestring, areal,
                     geometry::detail::overlay::operation_intersection,
-                    turns, robust_policy, out
+                    turns, robust_policy, out, strategy
                 );
     }
 };
@@ -621,7 +647,7 @@ struct intersection_insert
     static inline OutputIterator apply(Geometry1 const& geometry1,
             Geometry2 const& geometry2,
             RobustPolicy const& robust_policy,
-            OutputIterator out, Strategy const& )
+            OutputIterator out, Strategy const& strategy)
     {
 
         typedef detail::overlay::turn_info
@@ -635,7 +661,7 @@ struct intersection_insert
         geometry::get_turns
             <
                 false, false, detail::overlay::assign_null_policy
-            >(geometry1, geometry2, robust_policy, turns, policy);
+            >(geometry1, geometry2, strategy, robust_policy, turns, policy);
         for (typename std::vector<turn_info>::const_iterator it
             = turns.begin(); it != turns.end(); ++it)
         {
@@ -996,7 +1022,11 @@ inline OutputIterator intersection_insert(Geometry1 const& geometry1,
     concepts::check<Geometry1 const>();
     concepts::check<Geometry2 const>();
 
-    typedef typename Strategy::rescale_policy_type rescale_policy_type;
+    typedef typename geometry::rescale_policy_type
+        <
+            typename geometry::point_type<Geometry1>::type // TODO from both
+        >::type rescale_policy_type;
+
     rescale_policy_type robust_policy
             = geometry::get_rescale_policy<rescale_policy_type>(geometry1, geometry2);
 
@@ -1037,22 +1067,13 @@ inline OutputIterator intersection_insert(Geometry1 const& geometry1,
     concepts::check<Geometry1 const>();
     concepts::check<Geometry2 const>();
 
-    typedef typename geometry::rescale_policy_type
+    typedef typename strategy::intersection::services::default_strategy
         <
-            typename geometry::point_type<Geometry1>::type // TODO from both
-        >::type rescale_policy_type;
-
-    typedef intersection_strategies
-        <
-            typename cs_tag<GeometryOut>::type,
-            Geometry1,
-            Geometry2,
-            typename geometry::point_type<GeometryOut>::type,
-            rescale_policy_type
-        > strategy;
-
+            typename cs_tag<GeometryOut>::type
+        >::type strategy_type;
+    
     return intersection_insert<GeometryOut>(geometry1, geometry2, out,
-                strategy());
+                                            strategy_type());
 }
 
 }} // namespace detail::intersection

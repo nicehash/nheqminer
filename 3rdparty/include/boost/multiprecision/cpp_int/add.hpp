@@ -84,7 +84,7 @@ inline void add_unsigned(CppInt1& result, const CppInt2& a, const CppInt3& b) BO
    {
       // We overflowed, need to add one more limb:
       result.resize(x + 1, x + 1);
-      if(CppInt1::variable || (result.size() > x))
+      if(result.size() > x)
          result.limbs()[x] = static_cast<limb_type>(carry);
    }
    result.normalize();
@@ -126,7 +126,7 @@ inline void add_unsigned(CppInt1& result, const CppInt2& a, const limb_type& o) 
       // We overflowed, need to add one more limb:
       unsigned x = result.size();
       result.resize(x + 1, x + 1);
-      if(CppInt1::variable || (result.size() > x))
+      if(result.size() > x)
          result.limbs()[x] = static_cast<limb_type>(carry);
    }
    result.normalize();

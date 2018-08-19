@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -19,13 +19,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -84,7 +84,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;USE_CPU_VERUSHASH;USE_CPU_TROMP;USE_CPU_XENONCAT;USE_CUDA_TROMP;USE_CUDA_DJEZO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;USE_CPU_VERUSHASH;USE_CPU_XENONCAT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <AdditionalOptions>-D_WIN32_WINNT=0x0601 %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4068;4996;4503;4267;4180;4290;4244;4800;4334;4251</DisableSpecificWarnings>
@@ -96,7 +96,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>cuda_djezo.lib;cuda_tromp.lib;cuda_tromp_75.lib;cpu_xenoncat.lib;cpu_tromp_SSE2.lib;cpu_tromp_AVX.lib</AdditionalDependencies>
+      <AdditionalDependencies>cpu_xenoncat.lib;cpu_verushash.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>.\trompequihash\pthreads\x64;..\3rdparty\libs\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LargeAddressAware>
       </LargeAddressAware>
@@ -115,7 +115,9 @@
     <ClInclude Include="compat\byteswap.h" />
     <ClInclude Include="compat\endian.h" />
     <ClInclude Include="crypto\common.h" />
+    <ClInclude Include="crypto\haraka.h" />
     <ClInclude Include="crypto\sha256.h" />
+    <ClInclude Include="crypto\verus_hash.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="json\json_spirit.h" />
     <ClInclude Include="json\json_spirit_error_position.h" />
@@ -153,7 +155,11 @@
     <ClCompile Include="amount.cpp" />
     <ClCompile Include="api.cpp" />
     <ClCompile Include="arith_uint256.cpp" />
+    <ClCompile Include="crypto\haraka.c" />
+    <ClCompile Include="crypto\haraka_portable.c" />
+    <ClCompile Include="crypto\ripemd160.cpp" />
     <ClCompile Include="crypto\sha256.cpp" />
+    <ClCompile Include="crypto\verus_hash.cpp" />
     <ClCompile Include="json\json_spirit_reader.cpp">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -165,6 +171,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MinerFactory.cpp" />
     <ClCompile Include="primitives\block.cpp" />
+    <ClCompile Include="primitives\nonce.cpp" />
     <ClCompile Include="speed.cpp" />
     <ClCompile Include="uint256.cpp" />
     <ClCompile Include="utilstrencodings.cpp" />

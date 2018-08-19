@@ -282,6 +282,7 @@ inline void eval_ldexp(debug_adaptor<Backend>& result, const debug_adaptor<Backe
 template <class Backend, class Exp>
 inline void eval_scalbn(debug_adaptor<Backend>& result, const debug_adaptor<Backend>& arg, Exp exp)
 {
+   using default_ops::eval_scalbn;
    eval_scalbn(result.value(), arg.value(), exp);
    result.update_view();
 }
@@ -289,6 +290,7 @@ inline void eval_scalbn(debug_adaptor<Backend>& result, const debug_adaptor<Back
 template <class Backend>
 inline typename Backend::exponent_type eval_ilogb(const debug_adaptor<Backend>& arg)
 {
+   using default_ops::eval_ilogb;
    return eval_ilogb(arg.value());
 }
 
@@ -456,11 +458,16 @@ NON_MEMBER_OP3(pow, "pow");
 NON_MEMBER_OP3(atan2, "atan2");
 
 template <class Backend>
+int eval_signbit(const debug_adaptor<Backend>& val)
+{
+   return eval_signbit(val.value());
+}
+
+template <class Backend>
 std::size_t hash_value(const debug_adaptor<Backend>& val)
 {
    return hash_value(val.value());
 }
-
 
 } // namespace backends
 

@@ -1,6 +1,7 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
 // Copyright (c) 2012-2014 Barend Gehrels, Amsterdam, the Netherlands.
+// Copyright (c) 2017 Adam Wulkiewicz, Lodz, Poland.
 
 // This file was modified by Oracle on 2016.
 // Modifications copyright (c) 2016 Oracle and/or its affiliates.
@@ -686,32 +687,32 @@ public:
     {}
 
     template <typename Turn, typename Piece>
-    inline void apply(Turn const& turn, Piece const& piece, bool first = true)
+    inline bool apply(Turn const& turn, Piece const& piece, bool first = true)
     {
         boost::ignore_unused_variable_warning(first);
 
         if (turn.count_within > 0)
         {
             // Already inside - no need to check again
-            return;
+            return true;
         }
 
         if (piece.type == strategy::buffer::buffered_flat_end
             || piece.type == strategy::buffer::buffered_concave)
         {
             // Turns cannot be located within flat-end or concave pieces
-            return;
+            return true;
         }
 
         if (! geometry::covered_by(turn.robust_point, piece.robust_envelope))
         {
             // Easy check: if the turn is not in the envelope, we can safely return
-            return;
+            return true;
         }
 
         if (skip(turn.operations[0], piece) || skip(turn.operations[1], piece))
         {
-            return;
+            return true;
         }
 
         // TODO: mutable_piece to make some on-demand preparations in analyse
@@ -733,11 +734,11 @@ public:
             if (cd < piece.robust_min_comparable_radius)
             {
                 mutable_turn.count_within++;
-                return;
+                return true;
             }
             if (cd > piece.robust_max_comparable_radius)
             {
-                return;
+                return true;
             }
         }
 
@@ -749,20 +750,20 @@ public:
         switch(analyse_code)
         {
             case analyse_disjoint :
-                return;
+                return true;
             case analyse_on_offsetted :
                 mutable_turn.count_on_offsetted++; // value is not used anymore
-                return;
+                return true;
             case analyse_on_original_boundary :
                 mutable_turn.count_on_original_boundary++;
-                return;
+                return true;
             case analyse_within :
                 mutable_turn.count_within++;
-                return;
+                return true;
 #if ! defined(BOOST_GEOMETRY_BUFFER_USE_SIDE_OF_INTERSECTION)
             case analyse_near_offsetted :
                 mutable_turn.count_within_near_offsetted++;
-                return;
+                return true;
 #endif
             default :
                 break;
@@ -790,6 +791,8 @@ public:
         {
             mutable_turn.count_within++;
         }
+
+        return true;
     }
 };
 

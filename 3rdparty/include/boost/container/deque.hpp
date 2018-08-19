@@ -31,11 +31,11 @@
 #include <boost/container/detail/alloc_helpers.hpp>
 #include <boost/container/detail/copy_move_algo.hpp>
 #include <boost/container/detail/iterator.hpp>
-#include <boost/container/detail/iterator_to_raw_pointer.hpp>
+#include <boost/move/detail/iterator_to_raw_pointer.hpp>
 #include <boost/container/detail/iterators.hpp>
 #include <boost/container/detail/min_max.hpp>
 #include <boost/container/detail/mpl.hpp>
-#include <boost/container/detail/to_raw_pointer.hpp>
+#include <boost/move/detail/to_raw_pointer.hpp>
 #include <boost/container/detail/type_traits.hpp>
 // move
 #include <boost/move/adl_move_swap.hpp>
@@ -1649,7 +1649,7 @@ class deque : protected deque_base<Allocator>
       if (this->members_.m_start.m_cur != this->members_.m_start.m_last - 1) {
          allocator_traits_type::destroy
             ( this->alloc()
-            , container_detail::to_raw_pointer(this->members_.m_start.m_cur)
+            , boost::movelib::to_raw_pointer(this->members_.m_start.m_cur)
             );
          ++this->members_.m_start.m_cur;
       }
@@ -1669,7 +1669,7 @@ class deque : protected deque_base<Allocator>
          --this->members_.m_finish.m_cur;
          allocator_traits_type::destroy
             ( this->alloc()
-            , container_detail::to_raw_pointer(this->members_.m_finish.m_cur)
+            , boost::movelib::to_raw_pointer(this->members_.m_finish.m_cur)
             );
       }
       else
@@ -1916,7 +1916,7 @@ class deque : protected deque_base<Allocator>
 
    T *priv_push_back_simple_pos() const
    {
-      return container_detail::to_raw_pointer(this->members_.m_finish.m_cur);
+      return boost::movelib::to_raw_pointer(this->members_.m_finish.m_cur);
    }
 
    void priv_push_back_simple_commit()
@@ -1931,7 +1931,7 @@ class deque : protected deque_base<Allocator>
    }
 
    T *priv_push_front_simple_pos() const
-   {  return container_detail::to_raw_pointer(this->members_.m_start.m_cur) - 1;  }
+   {  return boost::movelib::to_raw_pointer(this->members_.m_start.m_cur) - 1;  }
 
    void priv_push_front_simple_commit()
    {  --this->members_.m_start.m_cur;   }
@@ -1940,7 +1940,7 @@ class deque : protected deque_base<Allocator>
    {
       if(!Base::traits_t::trivial_dctr){
          for(;p != p2; ++p){
-            allocator_traits_type::destroy(this->alloc(), container_detail::iterator_to_raw_pointer(p));
+            allocator_traits_type::destroy(this->alloc(), boost::movelib::iterator_to_raw_pointer(p));
          }
       }
    }
@@ -1949,7 +1949,7 @@ class deque : protected deque_base<Allocator>
    {
       if(!Base::traits_t::trivial_dctr){
          for(;p != p2; ++p){
-            allocator_traits_type::destroy(this->alloc(), container_detail::iterator_to_raw_pointer(p));
+            allocator_traits_type::destroy(this->alloc(), boost::movelib::iterator_to_raw_pointer(p));
          }
       }
    }
@@ -2133,7 +2133,7 @@ class deque : protected deque_base<Allocator>
       this->members_.m_finish.m_cur = this->members_.m_finish.m_last - 1;
       allocator_traits_type::destroy
          ( this->alloc()
-         , container_detail::to_raw_pointer(this->members_.m_finish.m_cur)
+         , boost::movelib::to_raw_pointer(this->members_.m_finish.m_cur)
          );
    }
 
@@ -2145,7 +2145,7 @@ class deque : protected deque_base<Allocator>
    {
       allocator_traits_type::destroy
          ( this->alloc()
-         , container_detail::to_raw_pointer(this->members_.m_start.m_cur)
+         , boost::movelib::to_raw_pointer(this->members_.m_start.m_cur)
          );
       this->priv_deallocate_node(this->members_.m_start.m_first);
       this->members_.m_start.priv_set_node(this->members_.m_start.m_node + 1);

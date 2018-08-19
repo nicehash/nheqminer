@@ -3,8 +3,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef BOOST_FIBERS_QUEUE_OP_STATUS_H
-#define BOOST_FIBERS_QUEUE_OP_STATUS_H
+#ifndef BOOST_FIBERS_CHANNEL_OP_STATUS_H
+#define BOOST_FIBERS_CHANNEL_OP_STATUS_H
 
 #include <boost/config.hpp>
 
@@ -31,4 +31,4 @@ enum class channel_op_status {
 #  include BOOST_ABI_SUFFIX
 #endif
 
-#endif // BOOST_FIBERS_QUEUE_OP_STATUS_H
+#endif // BOOST_FIBERS_CHANNEL_OP_STATUS_H

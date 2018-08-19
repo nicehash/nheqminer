@@ -48,7 +48,7 @@ inline typename enable_if_c<!is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBit
    {
       unsigned i = result.size();
       result.resize(i + 1, i + 1);
-      if(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::variable || (result.size() > i))
+      if(result.size() > i)
          result.limbs()[i] = static_cast<limb_type>(carry);
    }
    result.sign(a.sign());
@@ -64,10 +64,10 @@ inline typename enable_if_c<!is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBit
 template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1>
 inline void resize_for_carry(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>& /*result*/, unsigned /*required*/){}
 
-template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1>
-inline void resize_for_carry(cpp_int_backend<MinBits1, MaxBits1, SignType1, checked, void>& result, unsigned required)
+template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, class Allocator1>
+inline void resize_for_carry(cpp_int_backend<MinBits1, MaxBits1, SignType1, checked, Allocator1>& result, unsigned required)
 {
-   if(result.size() != required)
+   if(result.size() < required)
       result.resize(required, required);
 }
 
@@ -136,7 +136,8 @@ inline typename enable_if_c<!is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBit
    for(unsigned i = 0; i < as; ++i)
    {
       unsigned inner_limit = cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::variable ? bs : (std::min)(result.size() - i, bs);
-      for(unsigned j = 0; j < inner_limit; ++j)
+      unsigned j;
+      for(j = 0; j < inner_limit; ++j)
       {
          BOOST_ASSERT(i+j < result.size());
 #if (!defined(__GLIBCXX__) && !defined(__GLIBCPP__)) || !BOOST_WORKAROUND(BOOST_GCC_VERSION, <= 50100)
@@ -156,9 +157,16 @@ inline typename enable_if_c<!is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBit
          carry >>= cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_bits;
          BOOST_ASSERT(carry <= (cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value));
       }
-      resize_for_carry(result, as + bs);  // May throw if checking is enabled
-      if(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::variable || (i + bs < result.size()))
-         pr[i + bs] = static_cast<limb_type>(carry);
+      if(carry)
+      {
+         resize_for_carry(result, i + j + 1);  // May throw if checking is enabled
+         if(i + j < result.size())
+#ifdef __MSVC_RUNTIME_CHECKS
+            pr[i + j] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
+#else
+            pr[i + j] = static_cast<limb_type>(carry);
+#endif
+      }
       carry = 0;
    }
    result.normalize();

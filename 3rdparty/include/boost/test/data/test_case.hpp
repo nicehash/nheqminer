@@ -16,6 +16,7 @@
 #include <boost/test/data/config.hpp>
 #include <boost/test/data/dataset.hpp>
 #include <boost/test/data/for_each_sample.hpp>
+#include <boost/test/tree/test_unit.hpp>
 
 // Boost
 #include <boost/preprocessor/repetition/enum_params.hpp>

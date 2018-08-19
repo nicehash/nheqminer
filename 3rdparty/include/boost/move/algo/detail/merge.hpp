@@ -16,6 +16,8 @@
 #include <boost/move/algo/detail/basic_op.hpp>
 #include <boost/move/detail/iterator_traits.hpp>
 #include <boost/move/detail/destruct_n.hpp>
+#include <boost/move/algo/predicate.hpp>
+#include <boost/move/detail/iterator_to_raw_pointer.hpp>
 #include <boost/assert.hpp>
 
 namespace boost {
@@ -181,9 +183,6 @@ void op_merge_left( RandIt buf_first
                            //and all elements from the second half are less)
       op(forward_t(), first1, last1, buf_first);
    }
-   else{
-      buf_first = buf_first;
-   }
 }
 
 // [buf_first, first1) -> buffer
@@ -312,13 +311,13 @@ void merge_bufferless_ONlogN_recursive
       if (len1 > len2) {
          len11 = len1 / 2;
          first_cut +=  len11;
-         second_cut = lower_bound(middle, last, *first_cut, comp);
+         second_cut = boost::movelib::lower_bound(middle, last, *first_cut, comp);
          len22 = size_type(second_cut - middle);
       }
       else {
          len22 = len2 / 2;
          second_cut += len22;
-         first_cut = upper_bound(first, middle, *second_cut, comp);
+         first_cut = boost::movelib::upper_bound(first, middle, *second_cut, comp);
          len11 = size_type(first_cut - first);
       }
       BidirIt new_middle = rotate_gcd(first_cut, middle, second_cut);
@@ -359,7 +358,7 @@ void merge_bufferless_ON2(RandIt first, RandIt middle, RandIt last, Compare comp
    if((middle - first) < (last - middle)){
       while(first != middle){
          RandIt const old_last1 = middle;
-         middle = lower_bound(middle, last, *first, comp);
+         middle = boost::movelib::lower_bound(middle, last, *first, comp);
          first = rotate_gcd(first, old_last1, middle);
          if(middle == last){
             break;
@@ -371,7 +370,7 @@ void merge_bufferless_ON2(RandIt first, RandIt middle, RandIt last, Compare comp
    }
    else{
       while(middle != last){
-         RandIt p = upper_bound(first, middle, last[-1], comp);
+         RandIt p = boost::movelib::upper_bound(first, middle, last[-1], comp);
          last = rotate_gcd(p, middle, last);
          middle = p;
          if(middle == first){
@@ -395,65 +394,6 @@ void merge_bufferless(RandIt first, RandIt middle, RandIt last, Compare comp)
    merge_bufferless_ON2(first, middle, last, comp);
    #endif   //BOOST_ADAPTIVE_MERGE_NLOGN_MERGE
 }
-
-template<class Comp>
-struct antistable
-{
-   explicit antistable(Comp &comp)
-      : m_comp(comp)
-   {}
-
-   template<class U, class V>
-   bool operator()(const U &u, const V & v)
-   {  return !m_comp(v, u);  }
-
-   private:
-   antistable & operator=(const antistable &);
-   Comp &m_comp;
-};
-
-template <class Comp>
-class negate
-{
-   public:
-   negate()
-   {}
-
-   explicit negate(Comp comp)
-      : m_comp(comp)
-   {}
-
-   template <class T1, class T2>
-   bool operator()(const T1& l, const T2& r)
-   {
-      return !m_comp(l, r);
-   }
-
-   private:
-   Comp m_comp;
-};
-
-
-template <class Comp>
-class inverse
-{
-   public:
-   inverse()
-   {}
-
-   explicit inverse(Comp comp)
-      : m_comp(comp)
-   {}
-
-   template <class T1, class T2>
-   bool operator()(const T1& l, const T2& r)
-   {
-      return m_comp(r, l);
-   }
-
-   private:
-   Comp m_comp;
-};
 
 // [r_first, r_last) are already in the right part of the destination range.
 template <class Compare, class InputIterator, class InputOutIterator, class Op>
@@ -492,7 +432,7 @@ void swap_merge_with_right_placed
    op_merge_with_right_placed(first, last, dest_first, r_first, r_last, comp, swap_op());
 }
 
-// [r_first, r_last) are already in the right part of the destination range.
+// [first, last) are already in the right part of the destination range.
 template <class Compare, class Op, class BidirIterator, class BidirOutIterator>
 void op_merge_with_left_placed
    ( BidirOutIterator const first, BidirOutIterator last, BidirOutIterator dest_last
@@ -525,7 +465,7 @@ void op_merge_with_left_placed
 
 // @endcond
 
-// [r_first, r_last) are already in the right part of the destination range.
+// [irst, last) are already in the right part of the destination range.
 template <class Compare, class BidirIterator, class BidirOutIterator>
 void merge_with_left_placed
    ( BidirOutIterator const first, BidirOutIterator last, BidirOutIterator dest_last
@@ -557,7 +497,50 @@ void uninitialized_merge_with_right_placed
    typedef typename iterator_traits<InputOutIterator>::value_type value_type;
    InputOutIterator const original_r_first = r_first;
 
-   destruct_n<value_type> d(&*dest_first);
+   destruct_n<value_type, InputOutIterator> d(dest_first);
+
+   while ( first != last && dest_first != original_r_first ) {
+      if (r_first == r_last) {
+         for(; dest_first != original_r_first; ++dest_first, ++first){
+            ::new((iterator_to_raw_pointer)(dest_first)) value_type(::boost::move(*first));
+            d.incr();
+         }
+         d.release();
+         InputOutIterator end = ::boost::move(first, last, original_r_first);
+         BOOST_ASSERT(end == r_last);
+         (void)end;
+         return;
+      }
+      else if (comp(*r_first, *first)) {
+         ::new((iterator_to_raw_pointer)(dest_first)) value_type(::boost::move(*r_first));
+         d.incr();
+         ++r_first;
+      }
+      else {
+         ::new((iterator_to_raw_pointer)(dest_first)) value_type(::boost::move(*first));
+         d.incr();
+         ++first;
+      }
+      ++dest_first;
+   }
+   d.release();
+   merge_with_right_placed(first, last, original_r_first, r_first, r_last, comp);
+}
+
+/*
+// [r_first, r_last) are already in the right part of the destination range.
+// [dest_first, r_first) is uninitialized memory
+template <class Compare, class BidirOutIterator, class BidirIterator>
+void uninitialized_merge_with_left_placed
+   ( BidirOutIterator dest_first, BidirOutIterator r_first, BidirOutIterator r_last
+   , BidirIterator first, BidirIterator last
+   , Compare comp)
+{
+   BOOST_ASSERT((last - first) == (r_last - r_first));
+   typedef typename iterator_traits<BidirOutIterator>::value_type value_type;
+   BidirOutIterator const original_r_last = r_last;
+
+   destruct_n<value_type> d(&*dest_last);
 
    while ( first != last && dest_first != original_r_first ) {
       if (r_first == r_last) {
@@ -566,7 +549,7 @@ void uninitialized_merge_with_right_placed
             d.incr();
          }
          d.release();
-         InputOutIterator end = ::boost::move(first, last, original_r_first);
+         BidirOutIterator end = ::boost::move(first, last, original_r_first);
          BOOST_ASSERT(end == r_last);
          (void)end;
          return;
@@ -586,6 +569,7 @@ void uninitialized_merge_with_right_placed
    d.release();
    merge_with_right_placed(first, last, original_r_first, r_first, r_last, comp);
 }
+*/
 
 }  //namespace movelib {
 }  //namespace boost {

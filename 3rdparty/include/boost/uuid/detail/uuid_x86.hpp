@@ -68,7 +68,7 @@ inline bool uuid::is_nil() const BOOST_NOEXCEPT
 #if defined(BOOST_UUID_USE_SSE41)
     return _mm_test_all_zeros(mm, mm) != 0;
 #else
-    mm = _mm_cmpeq_epi8(mm, _mm_setzero_si128());
+    mm = _mm_cmpeq_epi32(mm, _mm_setzero_si128());
     return _mm_movemask_epi8(mm) == 0xFFFF;
 #endif
 }
@@ -86,11 +86,11 @@ inline bool operator== (uuid const& lhs, uuid const& rhs) BOOST_NOEXCEPT
     __m128i mm_left = uuids::detail::load_unaligned_si128(lhs.data);
     __m128i mm_right = uuids::detail::load_unaligned_si128(rhs.data);
 
-    __m128i mm_cmp = _mm_cmpeq_epi32(mm_left, mm_right);
-
 #if defined(BOOST_UUID_USE_SSE41)
-    return _mm_test_all_ones(mm_cmp) != 0;
+    __m128i mm = _mm_xor_si128(mm_left, mm_right);
+    return _mm_test_all_zeros(mm, mm) != 0;
 #else
+    __m128i mm_cmp = _mm_cmpeq_epi32(mm_left, mm_right);
     return _mm_movemask_epi8(mm_cmp) == 0xFFFF;
 #endif
 }

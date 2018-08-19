@@ -98,10 +98,23 @@ CryptGenRandom(
     boost::detail::winapi::DWORD_ dwLen,
     boost::detail::winapi::BYTE_ *pbBuffer);
 
+#if defined(_MSC_VER) && (_MSC_VER+0) >= 1500 &&\
+    (\
+        (defined(NTDDI_VERSION) && (NTDDI_VERSION+0) < BOOST_DETAIL_WINAPI_MAKE_NTDDI_VERSION(BOOST_WINAPI_VERSION_WINXP)) ||\
+        (!defined(NTDDI_VERSION) && BOOST_USE_WINAPI_VERSION < BOOST_WINAPI_VERSION_WINXP)\
+    )
+// Standalone MS Windows SDK 6.0A and later provide a different declaration of CryptReleaseContext for Windows 2000 and older.
+// This is not the case for (a) MinGW and MinGW-w64 and (b) MSVC 7.1 and 8, which are shipped with their own Windows SDK.
+BOOST_SYMBOL_IMPORT boost::detail::winapi::BOOL_ WINAPI
+CryptReleaseContext(
+    boost::detail::winapi::HCRYPTPROV_ hProv,
+    boost::detail::winapi::ULONG_PTR_ dwFlags);
+#else
 BOOST_SYMBOL_IMPORT boost::detail::winapi::BOOL_ WINAPI
 CryptReleaseContext(
     boost::detail::winapi::HCRYPTPROV_ hProv,
     boost::detail::winapi::DWORD_ dwFlags);
+#endif
 }
 #endif // !defined( BOOST_USE_WINDOWS_H )
 
@@ -134,15 +147,23 @@ const DWORD_ CRYPT_SILENT_          = 64;
 #endif
 
 #if !defined( BOOST_NO_ANSI_APIS )
-using ::CryptEnumProvidersA;
 using ::CryptAcquireContextA;
 #endif
-using ::CryptEnumProvidersW;
 using ::CryptAcquireContextW;
 using ::CryptGenRandom;
-using ::CryptReleaseContext;
 
 #if !defined( BOOST_NO_ANSI_APIS )
+BOOST_FORCEINLINE BOOL_ CryptEnumProvidersA(
+    DWORD_ dwIndex,
+    DWORD_ *pdwReserved,
+    DWORD_ dwFlags,
+    DWORD_ *pdwProvType,
+    LPSTR_ szProvName,
+    DWORD_ *pcbProvName)
+{
+    return ::CryptEnumProvidersA(dwIndex, pdwReserved, dwFlags, pdwProvType, winapi::detail::cast_ptr(szProvName), pcbProvName);
+}
+
 BOOST_FORCEINLINE BOOL_ crypt_enum_providers(
     DWORD_ dwIndex,
     DWORD_ *pdwReserved,
@@ -165,6 +186,17 @@ BOOST_FORCEINLINE BOOL_ crypt_acquire_context(
 }
 #endif
 
+BOOST_FORCEINLINE BOOL_ CryptEnumProvidersW(
+    DWORD_ dwIndex,
+    DWORD_ *pdwReserved,
+    DWORD_ dwFlags,
+    DWORD_ *pdwProvType,
+    LPWSTR_ szProvName,
+    DWORD_ *pcbProvName)
+{
+    return ::CryptEnumProvidersW(dwIndex, pdwReserved, dwFlags, pdwProvType, winapi::detail::cast_ptr(szProvName), pcbProvName);
+}
+
 BOOST_FORCEINLINE BOOL_ crypt_enum_providers(
     DWORD_ dwIndex,
     DWORD_ *pdwReserved,
@@ -184,6 +216,11 @@ BOOST_FORCEINLINE BOOL_ crypt_acquire_context(
     DWORD_ dwFlags)
 {
     return ::CryptAcquireContextW(phProv, szContainer, szProvider, dwProvType, dwFlags);
+}
+
+BOOST_FORCEINLINE BOOL_ CryptReleaseContext(HCRYPTPROV_ hProv, DWORD_ dwFlags)
+{
+    return ::CryptReleaseContext(hProv, dwFlags);
 }
 
 }

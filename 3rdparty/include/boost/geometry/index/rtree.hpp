@@ -3,7 +3,7 @@
 // R-tree implementation
 //
 // Copyright (c) 2008 Federico J. Fernandez.
-// Copyright (c) 2011-2015 Adam Wulkiewicz, Lodz, Poland.
+// Copyright (c) 2011-2017 Adam Wulkiewicz, Lodz, Poland.
 //
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
@@ -21,19 +21,17 @@
 
 // Boost.Geometry
 #include <boost/geometry/algorithms/detail/comparable_distance/interface.hpp>
+#include <boost/geometry/algorithms/detail/covered_by/interface.hpp>
+#include <boost/geometry/algorithms/detail/disjoint/interface.hpp>
+#include <boost/geometry/algorithms/detail/equals/interface.hpp>
+#include <boost/geometry/algorithms/detail/intersects/interface.hpp>
+#include <boost/geometry/algorithms/detail/overlaps/interface.hpp>
+#include <boost/geometry/algorithms/detail/touches/interface.hpp>
+#include <boost/geometry/algorithms/detail/within/interface.hpp>
 #include <boost/geometry/algorithms/centroid.hpp>
-#include <boost/geometry/algorithms/covered_by.hpp>
-#include <boost/geometry/algorithms/disjoint.hpp>
-#include <boost/geometry/algorithms/equals.hpp>
-#include <boost/geometry/algorithms/intersects.hpp>
-#include <boost/geometry/algorithms/overlaps.hpp>
-#include <boost/geometry/algorithms/touches.hpp>
-#include <boost/geometry/algorithms/within.hpp>
 
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/box.hpp>
-
-#include <boost/geometry/strategies/strategies.hpp>
 
 // Boost.Geometry.Index
 #include <boost/geometry/index/detail/config_begin.hpp>
@@ -145,7 +143,8 @@ compared left-to-right.
 \tparam Allocator       The allocator used to allocate/deallocate memory,
                         construct/destroy nodes and Values.
 */
-template <
+template
+<
     typename Value,
     typename Parameters,
     typename IndexableGetter = index::indexable<Value>,
@@ -2221,9 +2220,6 @@ struct range_mutable_iterator
 };
 
 } // namespace boost
-
-// TODO: don't include the implementation at the end of the file
-#include <boost/geometry/algorithms/detail/comparable_distance/implementation.hpp>
 
 #include <boost/geometry/index/detail/config_end.hpp>
 

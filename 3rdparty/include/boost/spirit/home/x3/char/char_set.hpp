@@ -115,7 +115,7 @@ namespace boost { namespace spirit { namespace x3
     struct get_info<char_set<Encoding, Attribute>>
     {
         typedef std::string result_type;
-        std::string operator()(char_set<Encoding, Attribute> const& p) const
+        std::string operator()(char_set<Encoding, Attribute> const& /* p */) const
         {
             return "char-set";
         }

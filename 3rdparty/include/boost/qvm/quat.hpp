@@ -6,7 +6,7 @@
 #ifndef UUID_49C5A1042AEF11DF9603880056D89593
 #define UUID_49C5A1042AEF11DF9603880056D89593
 
-#include <boost/qvm/inline.hpp>
+#include <boost/qvm/detail/quat_assign.hpp>
 #include <boost/qvm/assert.hpp>
 #include <boost/qvm/static_assert.hpp>
 

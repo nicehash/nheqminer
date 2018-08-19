@@ -1115,7 +1115,7 @@ class slist_impl
    //!
    //! <b>Throws</b>: Nothing.
    //!
-   //! <b>Complexity</b>: Lineal to the elements (l - before_f + 1).
+   //! <b>Complexity</b>: Linear to the elements (l - before_f + 1).
    //!
    //! <b>Note</b>: Invalidates the iterators to the erased element.
    template<class Disposer>

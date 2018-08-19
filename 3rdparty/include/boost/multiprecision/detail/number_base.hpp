@@ -38,8 +38,9 @@
 
 //
 // Thread local storage:
+// Note fails on Mingw, see https://sourceforge.net/p/mingw-w64/bugs/527/
 //
-#if !defined(BOOST_NO_CXX11_THREAD_LOCAL) && !defined(BOOST_INTEL)
+#if !defined(BOOST_NO_CXX11_THREAD_LOCAL) && !defined(BOOST_INTEL) && !defined(__MINGW32__)
 #  define BOOST_MP_THREAD_LOCAL thread_local
 #else
 #  define BOOST_MP_THREAD_LOCAL
@@ -73,6 +74,18 @@ struct is_number : public mpl::false_ {};
 
 template <class Backend, expression_template_option ExpressionTemplates>
 struct is_number<number<Backend, ExpressionTemplates> > : public mpl::true_ {};
+
+template <class T>
+struct is_et_number : public mpl::false_ {};
+
+template <class Backend>
+struct is_et_number<number<Backend, et_on> > : public mpl::true_ {};
+
+template <class T>
+struct is_no_et_number : public mpl::false_ {};
+
+template <class Backend>
+struct is_no_et_number<number<Backend, et_off> > : public mpl::true_ {};
 
 namespace detail{
 
@@ -352,11 +365,20 @@ struct unmentionable
 
 typedef unmentionable* (unmentionable::*unmentionable_type)();
 
-template <class T>
-struct expression_storage
+template <class T, bool b>
+struct expression_storage_base
 {
    typedef const T& type;
 };
+
+template <class T>
+struct expression_storage_base<T, true>
+{
+   typedef T type;
+};
+
+template <class T>
+struct expression_storage : public expression_storage_base<T, boost::is_arithmetic<T>::value> {};
 
 template <class T>
 struct expression_storage<T*>
@@ -696,11 +718,11 @@ struct expression
    typedef typename right_middle_type::result_type right_middle_result_type;
    typedef typename right_type::result_type right_result_type;
    typedef typename combine_expression<
+      left_result_type,
       typename combine_expression<
-         typename combine_expression<left_result_type, left_middle_result_type>::type,
-         right_middle_result_type
-      >::type,
-      right_result_type
+         left_middle_result_type,
+         typename combine_expression<right_middle_result_type, right_result_type>::type
+      >::type
    >::type result_type;
    typedef tag tag_type;
 
@@ -976,6 +998,19 @@ template <class Backend, expression_template_option ExpressionTemplates>
 struct number_category<number<Backend, ExpressionTemplates> > : public number_category<Backend>{};
 template <class tag, class A1, class A2, class A3, class A4>
 struct number_category<detail::expression<tag, A1, A2, A3, A4> > : public number_category<typename detail::expression<tag, A1, A2, A3, A4>::result_type>{};
+//
+// Specializations for types which do not always have numberic_limits specializations:
+//
+#ifdef BOOST_HAS_INT128
+template <>
+struct number_category<__int128> : public mpl::int_<number_kind_integer> {};
+template <>
+struct number_category<unsigned __int128> : public mpl::int_<number_kind_integer> {};
+#endif
+#ifdef BOOST_HAS_FLOAT128
+template <>
+struct number_category<__float128> : public mpl::int_<number_kind_floating_point> {};
+#endif
 
 template <class T>
 struct component_type;

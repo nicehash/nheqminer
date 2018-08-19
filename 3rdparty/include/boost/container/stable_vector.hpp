@@ -44,7 +44,7 @@
 #include <boost/container/detail/iterator.hpp>
 #include <boost/container/detail/iterators.hpp>
 #include <boost/container/detail/placement_new.hpp>
-#include <boost/container/detail/to_raw_pointer.hpp>
+#include <boost/move/detail/to_raw_pointer.hpp>
 #include <boost/container/detail/type_traits.hpp>
 // intrusive
 #include <boost/intrusive/pointer_traits.hpp>
@@ -1975,7 +1975,7 @@ class stable_vector
          , container_detail::addressof(p->value)
          , it);
       //This does not throw
-      ::new(static_cast<node_base_type*>(container_detail::to_raw_pointer(p)), boost_container_new_t())
+      ::new(static_cast<node_base_type*>(boost::movelib::to_raw_pointer(p)), boost_container_new_t())
          node_base_type(index_traits_type::ptr_to_node_base_ptr(*up_index));
    }
 
@@ -1988,7 +1988,7 @@ class stable_vector
          , container_detail::addressof(p->value)
          , ::boost::forward<ValueConvertible>(value_convertible));
       //This does not throw
-      ::new(static_cast<node_base_type*>(container_detail::to_raw_pointer(p)), boost_container_new_t()) node_base_type;
+      ::new(static_cast<node_base_type*>(boost::movelib::to_raw_pointer(p)), boost_container_new_t()) node_base_type;
    }
 
    void priv_swap_members(stable_vector &x)

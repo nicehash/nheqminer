@@ -515,6 +515,7 @@ namespace boost { namespace phoenix { namespace impl
         }
     };
 
+#ifndef BOOST_NO_CXX98_RANDOM_SHUFFLE
     struct random_shuffle
     {
         typedef void result_type;
@@ -531,6 +532,7 @@ namespace boost { namespace phoenix { namespace impl
             return std::random_shuffle(detail::begin_(r), detail::end_(r), g);
         }
     };
+#endif
 
     struct partition
     {
@@ -1148,8 +1150,10 @@ namespace boost { namespace phoenix
     BOOST_PHOENIX_ADAPT_CALLABLE(reverse_copy, impl::reverse_copy, 2)
     BOOST_PHOENIX_ADAPT_CALLABLE(rotate, impl::rotate, 2)
     BOOST_PHOENIX_ADAPT_CALLABLE(rotate_copy, impl::rotate_copy, 3)
+#ifndef BOOST_NO_CXX98_RANDOM_SHUFFLE
     BOOST_PHOENIX_ADAPT_CALLABLE(random_shuffle, impl::random_shuffle, 1)
     BOOST_PHOENIX_ADAPT_CALLABLE(random_shuffle, impl::random_shuffle, 2)
+#endif
     BOOST_PHOENIX_ADAPT_CALLABLE(partition, impl::partition, 2)
     BOOST_PHOENIX_ADAPT_CALLABLE(stable_partition, impl::stable_partition, 2)
     BOOST_PHOENIX_ADAPT_CALLABLE(sort, impl::sort, 1)

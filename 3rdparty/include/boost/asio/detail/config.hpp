@@ -2,7 +2,7 @@
 // detail/config.hpp
 // ~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2017 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -65,7 +65,8 @@
 #if !defined(BOOST_ASIO_MSVC)
 # if defined(BOOST_ASIO_HAS_BOOST_CONFIG) && defined(BOOST_MSVC)
 #  define BOOST_ASIO_MSVC BOOST_MSVC
-# elif defined(_MSC_VER) && !defined(__MWERKS__) && !defined(__EDG_VERSION__)
+# elif defined(_MSC_VER) && (defined(__INTELLISENSE__) \
+      || (!defined(__MWERKS__) && !defined(__EDG_VERSION__)))
 #  define BOOST_ASIO_MSVC _MSC_VER
 # endif // defined(BOOST_ASIO_HAS_BOOST_CONFIG) && defined(BOOST_MSVC)
 #endif // defined(BOOST_ASIO_MSVC)
@@ -154,6 +155,11 @@
 #    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
 #   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 4)
 #  endif // defined(__GNUC__)
+#  if defined(BOOST_ASIO_MSVC)
+#   if (_MSC_VER >= 1900)
+#    define BOOST_ASIO_HAS_VARIADIC_TEMPLATES 1
+#   endif // (_MSC_VER >= 1900)
+#  endif // defined(BOOST_ASIO_MSVC)
 # endif // !defined(BOOST_ASIO_DISABLE_VARIADIC_TEMPLATES)
 #endif // !defined(BOOST_ASIO_HAS_VARIADIC_TEMPLATES)
 
@@ -172,6 +178,11 @@
 #    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
 #   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
 #  endif // defined(__GNUC__)
+#  if defined(BOOST_ASIO_MSVC)
+#   if (_MSC_VER >= 1900)
+#    define BOOST_ASIO_HAS_CONSTEXPR 1
+#   endif // (_MSC_VER >= 1900)
+#  endif // defined(BOOST_ASIO_MSVC)
 # endif // !defined(BOOST_ASIO_DISABLE_CONSTEXPR)
 #endif // !defined(BOOST_ASIO_HAS_CONSTEXPR)
 #if !defined(BOOST_ASIO_CONSTEXPR)
@@ -296,11 +307,11 @@
 #   endif // (__cplusplus >= 201103)
 #  endif // defined(__clang__)
 #  if defined(__GNUC__)
-#   if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5)) || (__GNUC__ > 4)
+#   if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 4)
 #    if defined(__GXX_EXPERIMENTAL_CXX0X__)
 #     define BOOST_ASIO_HAS_STD_ATOMIC 1
 #    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
-#   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5)) || (__GNUC__ > 4)
+#   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 4)
 #  endif // defined(__GNUC__)
 #  if defined(BOOST_ASIO_MSVC)
 #   if (_MSC_VER >= 1700)
@@ -434,6 +445,30 @@
 #  endif // defined(BOOST_ASIO_MSVC)
 # endif // !defined(BOOST_ASIO_DISABLE_STD_TYPE_TRAITS)
 #endif // !defined(BOOST_ASIO_HAS_STD_TYPE_TRAITS)
+
+// Standard library support for the C++11 allocator additions.
+#if !defined(BOOST_ASIO_HAS_CXX11_ALLOCATORS)
+# if !defined(BOOST_ASIO_DISABLE_CXX11_ALLOCATORS)
+#  if defined(__clang__)
+#   if defined(BOOST_ASIO_HAS_CLANG_LIBCXX)
+#    define BOOST_ASIO_HAS_CXX11_ALLOCATORS 1
+#   elif (__cplusplus >= 201103)
+#    define BOOST_ASIO_HAS_CXX11_ALLOCATORS 1
+#   endif // (__cplusplus >= 201103)
+#  elif defined(__GNUC__)
+#   if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
+#    if defined(__GXX_EXPERIMENTAL_CXX0X__)
+#     define BOOST_ASIO_HAS_CXX11_ALLOCATORS 1
+#    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
+#   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
+#  endif // defined(__GNUC__)
+#  if defined(BOOST_ASIO_MSVC)
+#   if (_MSC_VER >= 1700)
+#    define BOOST_ASIO_HAS_CXX11_ALLOCATORS 1
+#   endif // (_MSC_VER >= 1700)
+#  endif // defined(BOOST_ASIO_MSVC)
+# endif // !defined(BOOST_ASIO_DISABLE_CXX11_ALLOCATORS)
+#endif // !defined(BOOST_ASIO_HAS_CXX11_ALLOCATORS)
 
 // Standard library support for the cstdint header.
 #if !defined(BOOST_ASIO_HAS_CSTDINT)
@@ -964,12 +999,14 @@
 # if defined(__linux__)
 #  if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 #   if ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 3)
-#    if !defined(__INTEL_COMPILER) && !defined(__ICL)
+#    if !defined(__INTEL_COMPILER) && !defined(__ICL) \
+       && !(defined(__clang__) && defined(__ANDROID__))
 #     define BOOST_ASIO_HAS_THREAD_KEYWORD_EXTENSION 1
 #     define BOOST_ASIO_THREAD_KEYWORD __thread
 #    elif defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1100)
 #     define BOOST_ASIO_HAS_THREAD_KEYWORD_EXTENSION 1
 #    endif // defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1100)
+           // && !(defined(__clang__) && defined(__ANDROID__))
 #   endif // ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 3)
 #  endif // defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 # endif // defined(__linux__)
@@ -992,5 +1029,35 @@
 # endif // defined(__linux__)
         //   || (defined(__MACH__) && defined(__APPLE__))
 #endif // !defined(BOOST_ASIO_DISABLE_SSIZE_T)
+
+// Newer gcc, clang need special treatment to suppress unused typedef warnings.
+#if defined(__clang__)
+# if defined(__apple_build_version__)
+#  if (__clang_major__ >= 7)
+#   define BOOST_ASIO_UNUSED_TYPEDEF __attribute__((__unused__))
+#  endif // (__clang_major__ >= 7)
+# elif ((__clang_major__ == 3) && (__clang_minor__ >= 6)) \
+    || (__clang_major__ > 3)
+#  define BOOST_ASIO_UNUSED_TYPEDEF __attribute__((__unused__))
+# endif // ((__clang_major__ == 3) && (__clang_minor__ >= 6))
+        //   || (__clang_major__ > 3)
+#elif defined(__GNUC__)
+# if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)) || (__GNUC__ > 4)
+#  define BOOST_ASIO_UNUSED_TYPEDEF __attribute__((__unused__))
+# endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)) || (__GNUC__ > 4)
+#endif // defined(__GNUC__)
+#if !defined(BOOST_ASIO_UNUSED_TYPEDEF)
+# define BOOST_ASIO_UNUSED_TYPEDEF
+#endif // !defined(BOOST_ASIO_UNUSED_TYPEDEF)
+
+// Some versions of gcc generate spurious warnings about unused variables.
+#if defined(__GNUC__)
+# if (__GNUC__ >= 4)
+#  define BOOST_ASIO_UNUSED_VARIABLE __attribute__((__unused__))
+# endif // (__GNUC__ >= 4)
+#endif // defined(__GNUC__)
+#if !defined(BOOST_ASIO_UNUSED_VARIABLE)
+# define BOOST_ASIO_UNUSED_VARIABLE
+#endif // !defined(BOOST_ASIO_UNUSED_VARIABLE)
 
 #endif // BOOST_ASIO_DETAIL_CONFIG_HPP

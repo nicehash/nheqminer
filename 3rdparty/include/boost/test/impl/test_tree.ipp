@@ -381,7 +381,8 @@ normalize_test_case_name( const_string name )
     if( name[0] == '&' )
         norm_name = norm_name.substr( 1 );
         
-    std::replace(norm_name.begin(), norm_name.end(), ' ', '_'); 
+    std::replace(norm_name.begin(), norm_name.end(), ' ', '_');
+    std::replace(norm_name.begin(), norm_name.end(), ':', '_'); 
 
     return norm_name;
 }
@@ -447,7 +448,26 @@ auto_test_unit_registrar::auto_test_unit_registrar( int )
 
 global_fixture::global_fixture()
 {
+    framework::register_global_fixture( *this );
+}
+
+global_fixture::~global_fixture()
+{
+    framework::deregister_global_fixture( *this );
+}
+
+// ************************************************************************** //
+// **************            global_configuration              ************** //
+// ************************************************************************** //
+
+global_configuration::global_configuration()
+{
     framework::register_observer( *this );
+}
+
+global_configuration::~global_configuration()
+{
+    framework::deregister_observer( *this );
 }
 
 //____________________________________________________________________________//

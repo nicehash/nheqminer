@@ -2,7 +2,7 @@
 //
 // R-tree initial packing
 //
-// Copyright (c) 2011-2015 Adam Wulkiewicz, Lodz, Poland.
+// Copyright (c) 2011-2017 Adam Wulkiewicz, Lodz, Poland.
 //
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
@@ -13,6 +13,7 @@
 
 #include <boost/geometry/algorithms/expand.hpp>
 #include <boost/geometry/index/detail/algorithms/bounds.hpp>
+#include <boost/geometry/index/detail/algorithms/nth_element.hpp>
 
 #include <boost/geometry/algorithms/detail/expand_by_epsilon.hpp>
 
@@ -67,7 +68,7 @@ struct nth_element_and_half_boxes
     {
         if ( I == dim_index )
         {
-            std::nth_element(first, median, last, point_entries_comparer<I>());
+            index::detail::nth_element(first, median, last, point_entries_comparer<I>());
 
             geometry::convert(box, left);
             geometry::convert(box, right);

@@ -73,7 +73,11 @@ extern "C" void stratum_sigint_handler(int signum)
 		scSig->disconnect();
 	
 		for (int i = 0; scSig->isRunning() && i < 5; i++)
-			sleep(1);
+		#ifndef _WIN32
+					sleep(1);
+		#else
+					_sleep(1000);
+		#endif // !_WIN32
 	}
 	if (_MinerFactory) _MinerFactory->ClearAllSolvers();
 	exit(0);
@@ -266,6 +270,20 @@ void start_mining(int api_port, const std::string& host, const std::string& port
 	if (api) delete api;
 }
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+__inline int msver(void) {
+	switch (_MSC_VER) {
+	case 1500: return 2008;
+	case 1600: return 2010;
+	case 1700: return 2012;
+	case 1800: return 2013;
+	case 1900: return 2015;
+	default: return (_MSC_VER / 100);
+	}
+}
+#endif
+#endif // !_WIN32
 
 int main(int argc, char* argv[])
 {
@@ -282,6 +300,13 @@ int main(int argc, char* argv[])
 	std::cout << "\tSpecial thanks to tromp, xenoncat and djeZo for providing "<< std::endl;
 	std::cout << "\toptimized CPU and CUDA equihash solvers." << std::endl << std::endl;
 	std::cout << "\tProtocol upgrade and VerusHash CPU support by miketout." << std::endl;
+	#ifdef _WIN32
+	#ifdef _MSC_VER
+	std::cout << "\tVC++ " << msver() << " build by Decker." << std::endl;	
+	#else
+	std::cout << "\tWindows build by Decker." << std::endl;	
+	#endif
+	#endif // !_WIN32
 	std::cout << "\t==================== www.veruscoin.io ====================" << std::endl;
 	std::cout << std::endl;
 

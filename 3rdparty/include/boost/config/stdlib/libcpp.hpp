@@ -29,13 +29,18 @@
 // aliases since members rebind_alloc and rebind_traits require it.
 #if defined(_LIBCPP_HAS_NO_TEMPLATE_ALIASES)
 #    define BOOST_NO_CXX11_ALLOCATOR
+#    define BOOST_NO_CXX11_POINTER_TRAITS
 #endif
 
 #if __cplusplus < 201103
-#  define BOOST_NO_CXX11_HDR_ARRAY
+//
+// These two appear to be somewhat useable in C++03 mode, there may be others...
+//
+//#  define BOOST_NO_CXX11_HDR_ARRAY
+//#  define BOOST_NO_CXX11_HDR_FORWARD_LIST
+
 #  define BOOST_NO_CXX11_HDR_CODECVT
 #  define BOOST_NO_CXX11_HDR_CONDITION_VARIABLE
-#  define BOOST_NO_CXX11_HDR_FORWARD_LIST
 #  define BOOST_NO_CXX11_HDR_INITIALIZER_LIST
 #  define BOOST_NO_CXX11_HDR_MUTEX
 #  define BOOST_NO_CXX11_HDR_RANDOM
@@ -49,6 +54,7 @@
 #  define BOOST_NO_CXX11_HDR_UNORDERED_SET
 #  define BOOST_NO_CXX11_NUMERIC_LIMITS
 #  define BOOST_NO_CXX11_ALLOCATOR
+#  define BOOST_NO_CXX11_POINTER_TRAITS
 #  define BOOST_NO_CXX11_SMART_PTR
 #  define BOOST_NO_CXX11_HDR_FUNCTIONAL
 #  define BOOST_NO_CXX11_STD_ALIGN
@@ -73,6 +79,28 @@
 #if _LIBCPP_VERSION < 3700
 // libc++ uses a non-standard messages_base
 #define BOOST_NO_STD_MESSAGES
+#endif
+
+// C++14 features
+#if (_LIBCPP_VERSION < 3700) || (__cplusplus <= 201402L)
+#  define BOOST_NO_CXX14_STD_EXCHANGE
+#endif
+
+// C++17 features
+#if (_LIBCPP_VERSION < 3700) || (__cplusplus <= 201402L)
+#  define BOOST_NO_CXX17_STD_INVOKE
+#endif
+#if (_LIBCPP_VERSION < 4000) || (__cplusplus <= 201402L)
+#  define BOOST_NO_CXX17_STD_APPLY
+#endif
+#if (_LIBCPP_VERSION > 4000) && (__cplusplus > 201402L) && !defined(_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR)
+#  define BOOST_NO_AUTO_PTR
+#endif
+#if (_LIBCPP_VERSION > 4000) && (__cplusplus > 201402L) && !defined(_LIBCPP_ENABLE_CXX17_REMOVED_RANDOM_SHUFFLE)
+#  define BOOST_NO_CXX98_RANDOM_SHUFFLE
+#endif
+#if (_LIBCPP_VERSION > 4000) && (__cplusplus > 201402L) && !defined(_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS)
+#  define BOOST_NO_CXX98_BINDERS
 #endif
 
 #if (_LIBCPP_VERSION <= 1101) && !defined(BOOST_NO_CXX11_THREAD_LOCAL)

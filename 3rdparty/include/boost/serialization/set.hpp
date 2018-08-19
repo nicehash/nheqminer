@@ -29,6 +29,7 @@
 
 #include <boost/serialization/collections_save_imp.hpp>
 #include <boost/serialization/split_free.hpp>
+#include <boost/move/utility_core.hpp>
 
 namespace boost { 
 namespace serialization {
@@ -55,11 +56,7 @@ inline void load_set_collection(Archive & ar, Container &s)
         // borland fails silently w/o full namespace
         ar >> boost::serialization::make_nvp("item", t.reference());
         typename Container::iterator result =
-            #ifdef BOOST_NO_CXX11_HDR_UNORDERED_SET
-                s.insert(hint, t.reference());
-            #else
-                s.emplace_hint(hint, t.reference());
-            #endif
+            s.insert(hint, boost::move(t.reference()));
         ar.reset_object_address(& (* result), & t.reference());
         hint = result;
     }

@@ -1335,7 +1335,7 @@ namespace boost
 
         bool valid() const BOOST_NOEXCEPT
         {
-            return future_ != 0 && future_->valid();
+            return future_.get() != 0 && future_->valid();
         }
 
         void wait() const
@@ -1355,7 +1355,7 @@ namespace boost
               boost::throw_exception(future_uninitialized());
           }
           return future_->mutex;
-        };
+        }
 
         notify_when_ready_handle notify_when_ready(boost::condition_variable_any& cv)
         {
@@ -1639,7 +1639,9 @@ namespace boost
         base_type(boost::move(static_cast<base_type&>(BOOST_THREAD_RV(other))))
         {
         }
+#if defined BOOST_THREAD_PROVIDES_FUTURE_UNWRAP
         inline explicit BOOST_THREAD_FUTURE(BOOST_THREAD_RV_REF(BOOST_THREAD_FUTURE<BOOST_THREAD_FUTURE<R> >) other); // EXTENSION
+#endif
 
         explicit BOOST_THREAD_FUTURE(BOOST_THREAD_RV_REF(shared_future<R>) other) :
         base_type(boost::move(static_cast<base_type&>(BOOST_THREAD_RV(other))))
@@ -1680,7 +1682,7 @@ namespace boost
         // retrieving the value
         move_dest_type get()
         {
-            if (this->future_ == 0)
+            if (this->future_.get() == 0)
             {
                 boost::throw_exception(future_uninitialized());
             }
@@ -1700,7 +1702,7 @@ namespace boost
         get_or(BOOST_THREAD_RV_REF(R2) v)
         {
 
-            if (this->future_ == 0)
+            if (this->future_.get() == 0)
             {
                 boost::throw_exception(future_uninitialized());
             }
@@ -1726,7 +1728,7 @@ namespace boost
         typename boost::disable_if< is_void<R2>, move_dest_type>::type
         get_or(R2 const& v)  // EXTENSION
         {
-            if (this->future_ == 0)
+            if (this->future_.get() == 0)
             {
                 boost::throw_exception(future_uninitialized());
             }
@@ -1941,7 +1943,7 @@ namespace boost
             // retrieving the value
             move_dest_type get()
             {
-                if (this->future_ == 0)
+                if (this->future_.get() == 0)
                 {
                     boost::throw_exception(future_uninitialized());
                 }
@@ -1957,7 +1959,7 @@ namespace boost
             }
             move_dest_type get_or(BOOST_THREAD_RV_REF(R) v) // EXTENSION
             {
-                if (this->future_ == 0)
+                if (this->future_.get() == 0)
                 {
                     boost::throw_exception(future_uninitialized());
                 }
@@ -1976,7 +1978,7 @@ namespace boost
 
             move_dest_type get_or(R const& v) // EXTENSION
             {
-                if (this->future_ == 0)
+                if (this->future_.get() == 0)
                 {
                     boost::throw_exception(future_uninitialized());
                 }
@@ -4747,7 +4749,7 @@ namespace detail {
   inline BOOST_THREAD_FUTURE<typename boost::result_of<F(BOOST_THREAD_FUTURE<R>)>::type>
   BOOST_THREAD_FUTURE<R>::then(launch policy, BOOST_THREAD_FWD_REF(F) func) {
     typedef typename boost::result_of<F(BOOST_THREAD_FUTURE<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     // keep state alive as we move ourself but hold the lock
     shared_ptr<detail::shared_state_base> sentinel(this->future_);
@@ -4811,7 +4813,7 @@ namespace detail {
   inline BOOST_THREAD_FUTURE<typename boost::result_of<F(BOOST_THREAD_FUTURE<R>)>::type>
   BOOST_THREAD_FUTURE<R>::then(Ex& ex, BOOST_THREAD_FWD_REF(F) func) {
     typedef typename boost::result_of<F(BOOST_THREAD_FUTURE<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     // keep state alive as we move ourself but hold the lock
     shared_ptr<detail::shared_state_base> sentinel(this->future_);
@@ -4835,7 +4837,7 @@ namespace detail {
     return this->then(this->launch_policy(), boost::forward<F>(func));
 #else
     typedef typename boost::result_of<F(BOOST_THREAD_FUTURE<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     // keep state alive as we move ourself but hold the lock
     shared_ptr<detail::shared_state_base> sentinel(this->future_);
@@ -4865,7 +4867,7 @@ namespace detail {
   BOOST_THREAD_FUTURE<BOOST_THREAD_FUTURE<R2> >::then(launch policy, BOOST_THREAD_FWD_REF(F) func) {
     typedef BOOST_THREAD_FUTURE<R2> R;
     typedef typename boost::result_of<F(BOOST_THREAD_FUTURE<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     // keep state alive as we move ourself but hold the lock
     shared_ptr<detail::shared_state_base> sentinel(this->future_);
@@ -4939,7 +4941,7 @@ namespace detail {
   BOOST_THREAD_FUTURE<BOOST_THREAD_FUTURE<R2> >::then(Ex& ex, BOOST_THREAD_FWD_REF(F) func) {
     typedef BOOST_THREAD_FUTURE<R2> R;
     typedef typename boost::result_of<F(BOOST_THREAD_FUTURE<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     // keep state alive as we move ourself but hold the lock
     shared_ptr<detail::shared_state_base> sentinel(this->future_);
@@ -4965,7 +4967,7 @@ namespace detail {
 #else
     typedef BOOST_THREAD_FUTURE<R2> R;
     typedef typename boost::result_of<F(BOOST_THREAD_FUTURE<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     // keep state alive as we move ourself but hold the lock
     shared_ptr<detail::shared_state_base> sentinel(this->future_);
@@ -4995,7 +4997,7 @@ namespace detail {
   shared_future<R>::then(launch policy, BOOST_THREAD_FWD_REF(F) func)  const
   {
     typedef typename boost::result_of<F(shared_future<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     boost::unique_lock<boost::mutex> lock(this->future_->mutex);
     if (underlying_cast<int>(policy) & int(launch::async)) {
@@ -5064,7 +5066,7 @@ namespace detail {
   shared_future<R>::then(Ex& ex, BOOST_THREAD_FWD_REF(F) func)  const
   {
     typedef typename boost::result_of<F(shared_future<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     boost::unique_lock<boost::mutex> lock(this->future_->mutex);
     return BOOST_THREAD_MAKE_RV_REF((boost::detail::make_shared_future_executor_continuation_shared_state<Ex, shared_future<R>, future_type>(ex,
@@ -5085,7 +5087,7 @@ namespace detail {
     return this->then(this->launch_policy(), boost::forward<F>(func));
 #else
     typedef typename boost::result_of<F(shared_future<R>)>::type future_type;
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     boost::unique_lock<boost::mutex> lock(this->future_->mutex);
     launch policy = this->launch_policy(lock);
@@ -5257,7 +5259,7 @@ namespace detail
   BOOST_THREAD_FUTURE<R2>
   BOOST_THREAD_FUTURE<BOOST_THREAD_FUTURE<R2> >::unwrap()
   {
-    BOOST_THREAD_ASSERT_PRECONDITION(this->future_!=0, future_uninitialized());
+    BOOST_THREAD_ASSERT_PRECONDITION(this->future_.get()!=0, future_uninitialized());
 
     // keep state alive as we move ourself but hold the lock
     shared_ptr<detail::shared_state_base> sentinel(this->future_);
@@ -5656,5 +5658,5 @@ namespace detail
 #endif // BOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY
 }
 
-#endif // BOOST_NO_EXCEPTION
+#endif // BOOST_NO_EXCEPTIONS
 #endif // header

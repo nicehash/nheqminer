@@ -19,9 +19,12 @@
 #include <string>
 #include <memory>
 #include <locale>
+#include <boost/core/enable_if.hpp>
 #include <boost/core/explicit_operator_bool.hpp>
 #include <boost/utility/string_ref_fwd.hpp>
 #include <boost/utility/string_view_fwd.hpp>
+#include <boost/type_traits/is_enum.hpp>
+#include <boost/type_traits/is_scalar.hpp>
 #include <boost/type_traits/remove_cv.hpp>
 #include <boost/log/detail/config.hpp>
 #include <boost/log/detail/attachable_sstream_buf.hpp>
@@ -57,10 +60,18 @@ struct enable_if_streamable_char_type< char32_t, R > { typedef R type; };
 #endif
 #endif
 
-template< typename StreamT, typename R >
-struct enable_if_formatting_ostream {};
-template< typename CharT, typename TraitsT, typename AllocatorT, typename R >
-struct enable_if_formatting_ostream< basic_formatting_ostream< CharT, TraitsT, AllocatorT >, R > { typedef R type; };
+template< typename StreamT, typename T, bool ByValueV, typename R >
+struct enable_formatting_ostream_generic_operator {};
+template< typename CharT, typename TraitsT, typename AllocatorT, typename T, typename R >
+struct enable_formatting_ostream_generic_operator< basic_formatting_ostream< CharT, TraitsT, AllocatorT >, T, false, R > :
+    public boost::disable_if_c< boost::is_scalar< typename boost::remove_cv< T >::type >::value, R >
+{
+};
+template< typename CharT, typename TraitsT, typename AllocatorT, typename T, typename R >
+struct enable_formatting_ostream_generic_operator< basic_formatting_ostream< CharT, TraitsT, AllocatorT >, T, true, R > :
+    public boost::enable_if_c< boost::is_enum< typename boost::remove_cv< T >::type >::value, R >
+{
+};
 
 } // namespace aux
 
@@ -137,7 +148,7 @@ public:
         BOOST_DELETED_FUNCTION(sentry& operator= (sentry const&))
     };
 
-private:
+protected:
     //  Function types
     typedef std::ios_base& (*ios_base_manip)(std::ios_base&);
     typedef std::basic_ios< char_type, traits_type >& (*basic_ios_manip)(std::basic_ios< char_type, traits_type >&);
@@ -837,7 +848,7 @@ void basic_formatting_ostream< CharT, TraitsT, AllocatorT >::aligned_write(const
 
 // Implementation note: these operators below should be the least attractive for the compiler
 // so that user's overloads are chosen, when present. We use function template partial ordering for this purpose.
-// We also don't use perfect forwarding for the right hand argument because in ths case the generic overload
+// We also don't use perfect forwarding for the right hand argument because in this case the generic overload
 // would be more preferred than the typical one written by users:
 //
 // formatting_ostream& operator<< (formatting_ostream& strm, my_type const& arg);
@@ -845,7 +856,15 @@ void basic_formatting_ostream< CharT, TraitsT, AllocatorT >::aligned_write(const
 // This is because my_type rvalues require adding const to the type, which counts as a conversion that is not required
 // if there is a perfect forwarding overload.
 template< typename StreamT, typename T >
-inline typename boost::log::aux::enable_if_formatting_ostream< StreamT, StreamT& >::type
+inline typename boost::log::aux::enable_formatting_ostream_generic_operator< StreamT, T, true, StreamT& >::type
+operator<< (StreamT& strm, T value)
+{
+    strm.stream() << value;
+    return strm;
+}
+
+template< typename StreamT, typename T >
+inline typename boost::log::aux::enable_formatting_ostream_generic_operator< StreamT, T, false, StreamT& >::type
 operator<< (StreamT& strm, T const& value)
 {
     strm.stream() << value;
@@ -853,7 +872,7 @@ operator<< (StreamT& strm, T const& value)
 }
 
 template< typename StreamT, typename T >
-inline typename boost::log::aux::enable_if_formatting_ostream< StreamT, StreamT& >::type
+inline typename boost::log::aux::enable_formatting_ostream_generic_operator< StreamT, T, false, StreamT& >::type
 operator<< (StreamT& strm, T& value)
 {
     strm.stream() << value;
@@ -863,7 +882,15 @@ operator<< (StreamT& strm, T& value)
 #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
 
 template< typename StreamT, typename T >
-inline typename boost::log::aux::enable_if_formatting_ostream< StreamT, StreamT& >::type
+inline typename boost::log::aux::enable_formatting_ostream_generic_operator< StreamT, T, true, StreamT& >::type
+operator<< (StreamT&& strm, T value)
+{
+    strm.stream() << value;
+    return strm;
+}
+
+template< typename StreamT, typename T >
+inline typename boost::log::aux::enable_formatting_ostream_generic_operator< StreamT, T, false, StreamT& >::type
 operator<< (StreamT&& strm, T const& value)
 {
     strm.stream() << value;
@@ -871,7 +898,7 @@ operator<< (StreamT&& strm, T const& value)
 }
 
 template< typename StreamT, typename T >
-inline typename boost::log::aux::enable_if_formatting_ostream< StreamT, StreamT& >::type
+inline typename boost::log::aux::enable_formatting_ostream_generic_operator< StreamT, T, false, StreamT& >::type
 operator<< (StreamT&& strm, T& value)
 {
     strm.stream() << value;
