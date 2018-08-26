@@ -2,7 +2,7 @@
 // detail/impl/kqueue_reactor.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2017 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2005 Stefan Arentz (stefan at soze dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -312,10 +312,16 @@ void kqueue_reactor::deregister_descriptor(socket_type descriptor,
 
     descriptor_lock.unlock();
 
-    free_descriptor_state(descriptor_data);
-    descriptor_data = 0;
-
     io_service_.post_deferred_completions(ops);
+
+    // Leave descriptor_data set so that it will be freed by the subsequent
+    // call to cleanup_descriptor_data.
+  }
+  else
+  {
+    // We are shutting down, so prevent cleanup_descriptor_data from freeing
+    // the descriptor_data object and let the destructor free it instead.
+    descriptor_data = 0;
   }
 }
 
@@ -345,6 +351,22 @@ void kqueue_reactor::deregister_internal_descriptor(socket_type descriptor,
 
     descriptor_lock.unlock();
 
+    // Leave descriptor_data set so that it will be freed by the subsequent
+    // call to cleanup_descriptor_data.
+  }
+  else
+  {
+    // We are shutting down, so prevent cleanup_descriptor_data from freeing
+    // the descriptor_data object and let the destructor free it instead.
+    descriptor_data = 0;
+  }
+}
+
+void kqueue_reactor::cleanup_descriptor_data(
+    per_descriptor_data& descriptor_data)
+{
+  if (descriptor_data)
+  {
     free_descriptor_state(descriptor_data);
     descriptor_data = 0;
   }

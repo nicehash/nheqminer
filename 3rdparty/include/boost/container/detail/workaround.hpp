@@ -49,6 +49,10 @@
    #define BOOST_CONTAINER_FALLTHOUGH BOOST_FALLTHOUGH;
 #endif
 
+#if defined(BOOST_MSVC) && (_MSC_VER < 1400)
+   #define BOOST_CONTAINER_TEMPLATED_CONVERSION_OPERATOR_BROKEN
+#endif
+
 #if !defined(BOOST_NO_CXX11_HDR_TUPLE) || (defined(BOOST_MSVC) && (BOOST_MSVC == 1700 || BOOST_MSVC == 1600))
 #define BOOST_CONTAINER_PAIR_TEST_HAS_HEADER_TUPLE
 #endif
@@ -102,6 +106,9 @@
    #define BOOST_CONTAINER_FORCEINLINE BOOST_FORCEINLINE
 #elif defined(BOOST_MSVC) && defined(_DEBUG)
    //"__forceinline" and MSVC seems to have some bugs in debug mode
+   #define BOOST_CONTAINER_FORCEINLINE inline
+#elif defined(__GNUC__) && ((__GNUC__ < 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ < 5)))
+   //Older GCCs have problems with forceinline
    #define BOOST_CONTAINER_FORCEINLINE inline
 #else
    #define BOOST_CONTAINER_FORCEINLINE BOOST_FORCEINLINE

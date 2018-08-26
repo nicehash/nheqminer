@@ -507,6 +507,13 @@ NON_MEMBER_OP3(pow, "pow");
 NON_MEMBER_OP3(atan2, "atan2");
 
 template <class Backend>
+int eval_signbit(const logged_adaptor<Backend>& val)
+{
+   using default_ops::eval_signbit;
+   return eval_signbit(val.value());
+}
+
+template <class Backend>
 std::size_t hash_value(const logged_adaptor<Backend>& val)
 {
    return hash_value(val.value());

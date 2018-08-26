@@ -54,13 +54,19 @@
 #endif
 #endif
 
-#if defined(BOOST_USE_WINDOWS_H)
+#define BOOST_DETAIL_WINAPI_MAKE_NTDDI_VERSION2(x) x##0000
+#define BOOST_DETAIL_WINAPI_MAKE_NTDDI_VERSION(x) BOOST_DETAIL_WINAPI_MAKE_NTDDI_VERSION2(x)
+
+#if defined(BOOST_USE_WINDOWS_H) || defined(BOOST_WINAPI_DEFINE_VERSION_MACROS)
 // We have to define the version macros so that windows.h provides the necessary symbols
 #if !defined(_WIN32_WINNT)
 #define _WIN32_WINNT BOOST_USE_WINAPI_VERSION
 #endif
 #if !defined(WINVER)
 #define WINVER BOOST_USE_WINAPI_VERSION
+#endif
+#if !defined(NTDDI_VERSION)
+#define NTDDI_VERSION BOOST_DETAIL_WINAPI_MAKE_NTDDI_VERSION(BOOST_USE_WINAPI_VERSION)
 #endif
 #endif
 

@@ -2,8 +2,8 @@
 
 // Copyright (c) 2012-2014 Barend Gehrels, Amsterdam, the Netherlands.
 
-// This file was modified by Oracle on 2016.
-// Modifications copyright (c) 2016 Oracle and/or its affiliates.
+// This file was modified by Oracle on 2016-2017.
+// Modifications copyright (c) 2016-2017 Oracle and/or its affiliates.
 // Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Use, modification and distribution is subject to the Boost Software License,
@@ -117,10 +117,13 @@ enum segment_relation_code
  */
 
 
-template <typename Ring, typename RobustPolicy>
+template <typename Ring, typename IntersectionStrategy, typename RobustPolicy>
 struct buffered_piece_collection
 {
-    typedef buffered_piece_collection<Ring, RobustPolicy> this_type;
+    typedef buffered_piece_collection
+        <
+            Ring, IntersectionStrategy, RobustPolicy
+        > this_type;
 
     typedef typename geometry::point_type<Ring>::type point_type;
     typedef typename geometry::coordinate_type<Ring>::type coordinate_type;
@@ -139,10 +142,20 @@ struct buffered_piece_collection
             robust_point_type
         >::type robust_comparable_radius_type;
 
-    typedef typename strategy::side::services::default_strategy
+    typedef typename IntersectionStrategy::side_strategy_type side_strategy_type;
+
+    typedef typename IntersectionStrategy::template area_strategy
         <
-            typename cs_tag<point_type>::type
-        >::type side_strategy;
+            point_type
+        >::type area_strategy_type;
+
+    typedef typename IntersectionStrategy::template area_strategy
+        <
+            robust_point_type
+        >::type robust_area_strategy_type;
+
+    typedef typename area_strategy_type::return_type area_result_type;
+    typedef typename robust_area_strategy_type::return_type robust_area_result_type;
 
     typedef typename geometry::rescale_policy_type
         <
@@ -303,7 +316,10 @@ struct buffered_piece_collection
 
     cluster_type m_clusters;
 
-
+    IntersectionStrategy m_intersection_strategy;
+    side_strategy_type m_side_strategy;
+    area_strategy_type m_area_strategy;
+    robust_area_strategy_type m_robust_area_strategy;
     RobustPolicy const& m_robust_policy;
 
     struct redundant_turn
@@ -314,8 +330,13 @@ struct buffered_piece_collection
         }
     };
 
-    buffered_piece_collection(RobustPolicy const& robust_policy)
+    buffered_piece_collection(IntersectionStrategy const& intersection_strategy,
+                              RobustPolicy const& robust_policy)
         : m_first_piece_index(-1)
+        , m_intersection_strategy(intersection_strategy)
+        , m_side_strategy(intersection_strategy.get_side_strategy())
+        , m_area_strategy(intersection_strategy.template get_area_strategy<point_type>())
+        , m_robust_area_strategy(intersection_strategy.template get_area_strategy<robust_point_type>())
         , m_robust_policy(robust_policy)
     {}
 
@@ -473,7 +494,7 @@ struct buffered_piece_collection
         for (typename occupation_map_type::iterator it = occupation_map.begin();
             it != occupation_map.end(); ++it)
         {
-            it->second.get_left_turns(it->first, m_turns);
+            it->second.get_left_turns(it->first, m_turns, m_side_strategy);
         }
     }
 
@@ -512,10 +533,11 @@ struct buffered_piece_collection
         geometry::partition
             <
                 robust_box_type,
-                turn_get_box, turn_in_original_ovelaps_box,
-                original_get_box, original_ovelaps_box,
-                include_turn_policy, detail::partition::include_all_policy
-            >::apply(m_turns, robust_originals, visitor);
+                include_turn_policy,
+                detail::partition::include_all_policy
+            >::apply(m_turns, robust_originals, visitor,
+                     turn_get_box(), turn_in_original_ovelaps_box(),
+                     original_get_box(), original_ovelaps_box());
 
         bool const deflate = distance_strategy.negative();
 
@@ -693,7 +715,7 @@ struct buffered_piece_collection
             ++it)
         {
             piece& pc = *it;
-            if (geometry::area(pc.robust_ring) < 0)
+            if (geometry::area(pc.robust_ring, m_robust_area_strategy) < 0)
             {
                 // Rings can be ccw:
                 // - in a concave piece
@@ -767,15 +789,17 @@ struct buffered_piece_collection
                     piece_vector_type,
                     buffered_ring_collection<buffered_ring<Ring> >,
                     turn_vector_type,
+                    IntersectionStrategy,
                     RobustPolicy
-                > visitor(m_pieces, offsetted_rings, m_turns, m_robust_policy);
+                > visitor(m_pieces, offsetted_rings, m_turns,
+                          m_intersection_strategy, m_robust_policy);
 
             geometry::partition
                 <
-                    robust_box_type,
-                    detail::section::get_section_box,
-                    detail::section::overlaps_section_box
-                >::apply(monotonic_sections, visitor);
+                    robust_box_type
+                >::apply(monotonic_sections, visitor,
+                         detail::section::get_section_box(),
+                         detail::section::overlaps_section_box());
         }
 
         insert_rescaled_piece_turns();
@@ -795,10 +819,10 @@ struct buffered_piece_collection
 
             geometry::partition
                 <
-                    robust_box_type,
-                    turn_get_box, turn_ovelaps_box,
-                    piece_get_box, piece_ovelaps_box
-                >::apply(m_turns, m_pieces, visitor);
+                    robust_box_type
+                >::apply(m_turns, m_pieces, visitor,
+                         turn_get_box(), turn_ovelaps_box(),
+                         piece_get_box(), piece_ovelaps_box());
 
         }
     }
@@ -1212,14 +1236,9 @@ struct buffered_piece_collection
 
     inline void enrich()
     {
-        typedef typename strategy::side::services::default_strategy
-        <
-            typename cs_tag<Ring>::type
-        >::type side_strategy_type;
-
         enrich_intersection_points<false, false, overlay_buffer>(m_turns,
                     m_clusters, offsetted_rings, offsetted_rings,
-                    m_robust_policy, side_strategy_type());
+                    m_robust_policy, m_side_strategy);
     }
 
     // Discards all rings which do have not-OK intersection points only.
@@ -1306,7 +1325,7 @@ struct buffered_piece_collection
             buffered_ring<Ring>& ring = *it;
             if (! ring.has_intersections()
                 && boost::size(ring) > 0u
-                && geometry::area(ring) < 0)
+                && geometry::area(ring, m_area_strategy) < 0)
             {
                 if (! point_coveredby_original(geometry::range::front(ring)))
                 {
@@ -1354,7 +1373,8 @@ struct buffered_piece_collection
         traversed_rings.clear();
         buffer_overlay_visitor visitor;
         traverser::apply(offsetted_rings, offsetted_rings,
-                        m_robust_policy, m_turns, traversed_rings,
+                        m_intersection_strategy, m_robust_policy,
+                        m_turns, traversed_rings,
                         m_clusters, visitor);
     }
 
@@ -1382,7 +1402,7 @@ struct buffered_piece_collection
     template <typename GeometryOutput, typename OutputIterator>
     inline OutputIterator assign(OutputIterator out) const
     {
-        typedef detail::overlay::ring_properties<point_type> properties;
+        typedef detail::overlay::ring_properties<point_type, area_result_type> properties;
 
         std::map<ring_identifier, properties> selected;
 
@@ -1398,7 +1418,7 @@ struct buffered_piece_collection
             if (! it->has_intersections()
                 && ! it->is_untouched_outside_original)
             {
-                properties p = properties(*it);
+                properties p = properties(*it, m_area_strategy);
                 if (p.valid)
                 {
                     ring_identifier id(0, index, -1);
@@ -1414,7 +1434,7 @@ struct buffered_piece_collection
                 it != boost::end(traversed_rings);
                 ++it, ++index)
         {
-            properties p = properties(*it);
+            properties p = properties(*it, m_area_strategy);
             if (p.valid)
             {
                 ring_identifier id(2, index, -1);
@@ -1422,7 +1442,7 @@ struct buffered_piece_collection
             }
         }
 
-        detail::overlay::assign_parents(offsetted_rings, traversed_rings, selected, true);
+        detail::overlay::assign_parents(offsetted_rings, traversed_rings, selected, m_intersection_strategy, true);
         return detail::overlay::add_rings<GeometryOutput>(selected, offsetted_rings, traversed_rings, out);
     }
 

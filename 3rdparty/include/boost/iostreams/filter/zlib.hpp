@@ -110,16 +110,16 @@ const bool default_noheader                  = false;
 struct zlib_params {
 
     // Non-explicit constructor.
-    zlib_params( int level           = zlib::default_compression,
-                 int method          = zlib::deflated,
-                 int window_bits     = zlib::default_window_bits, 
-                 int mem_level       = zlib::default_mem_level, 
-                 int strategy        = zlib::default_strategy,
-                 bool noheader       = zlib::default_noheader,
-                 bool calculate_crc  = zlib::default_crc )
-        : level(level), method(method), window_bits(window_bits),
-          mem_level(mem_level), strategy(strategy),  
-          noheader(noheader), calculate_crc(calculate_crc)
+    zlib_params( int level_          = zlib::default_compression,
+                 int method_         = zlib::deflated,
+                 int window_bits_    = zlib::default_window_bits, 
+                 int mem_level_      = zlib::default_mem_level, 
+                 int strategy_       = zlib::default_strategy,
+                 bool noheader_      = zlib::default_noheader,
+                 bool calculate_crc_ = zlib::default_crc )
+        : level(level_), method(method_), window_bits(window_bits_),
+          mem_level(mem_level_), strategy(strategy_),  
+          noheader(noheader_), calculate_crc(calculate_crc_)
         { }
     int level;
     int method;
@@ -263,7 +263,7 @@ public:
     typedef typename base_type::char_type               char_type;
     typedef typename base_type::category                category;
     basic_zlib_compressor( const zlib_params& = zlib::default_compression, 
-                           int buffer_size = default_device_buffer_size );
+                           std::streamsize buffer_size = default_device_buffer_size );
     zlib::ulong crc() { return this->filter().crc(); }
     int total_in() {  return this->filter().total_in(); }
 };
@@ -287,9 +287,9 @@ public:
     typedef typename base_type::char_type               char_type;
     typedef typename base_type::category                category;
     basic_zlib_decompressor( int window_bits = zlib::default_window_bits,
-                             int buffer_size = default_device_buffer_size );
+                             std::streamsize buffer_size = default_device_buffer_size );
     basic_zlib_decompressor( const zlib_params& p,
-                             int buffer_size = default_device_buffer_size );
+                             std::streamsize buffer_size = default_device_buffer_size );
     zlib::ulong crc() { return this->filter().crc(); }
     int total_out() {  return this->filter().total_out(); }
     bool eof() { return this->filter().eof(); }
@@ -347,7 +347,7 @@ bool zlib_compressor_impl<Alloc>::filter
     int result = xdeflate(flush ? zlib::finish : zlib::no_flush);
     after(src_begin, dest_begin, true);
     zlib_error::check BOOST_PREVENT_MACRO_SUBSTITUTION(result);
-    return result != zlib::stream_end; 
+    return result != zlib::stream_end;
 }
 
 template<typename Alloc>
@@ -396,19 +396,19 @@ void zlib_decompressor_impl<Alloc>::close() {
 
 template<typename Alloc>
 basic_zlib_compressor<Alloc>::basic_zlib_compressor
-    (const zlib_params& p, int buffer_size) 
+    (const zlib_params& p, std::streamsize buffer_size) 
     : base_type(buffer_size, p) { }
 
 //------------------Implementation of zlib_decompressor-----------------------//
 
 template<typename Alloc>
 basic_zlib_decompressor<Alloc>::basic_zlib_decompressor
-    (int window_bits, int buffer_size) 
+    (int window_bits, std::streamsize buffer_size) 
     : base_type(buffer_size, window_bits) { }
 
 template<typename Alloc>
 basic_zlib_decompressor<Alloc>::basic_zlib_decompressor
-    (const zlib_params& p, int buffer_size) 
+    (const zlib_params& p, std::streamsize buffer_size) 
     : base_type(buffer_size, p) { }
 
 //----------------------------------------------------------------------------//

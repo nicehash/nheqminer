@@ -5,12 +5,15 @@
 
 //  See http://www.boost.org/libs/test for the library home page.
 //
+//
 //!@file
 //!@brief Included (vs. linked) version of Unit Test Framework
 // ***************************************************************************
 
 #ifndef BOOST_INCLUDED_UNIT_TEST_FRAMEWORK_HPP_071894GER
 #define BOOST_INCLUDED_UNIT_TEST_FRAMEWORK_HPP_071894GER
+
+#define BOOST_TEST_INCLUDED
 
 #include <boost/test/impl/compiler_log_formatter.ipp>
 #include <boost/test/impl/junit_log_formatter.ipp>
@@ -22,6 +25,7 @@
 #include <boost/test/impl/progress_monitor.ipp>
 #include <boost/test/impl/results_collector.ipp>
 #include <boost/test/impl/results_reporter.ipp>
+#include <boost/test/impl/test_framework_init_observer.ipp>
 #include <boost/test/impl/test_tools.ipp>
 #include <boost/test/impl/test_tree.ipp>
 #include <boost/test/impl/unit_test_log.ipp>
@@ -29,10 +33,8 @@
 #include <boost/test/impl/unit_test_monitor.ipp>
 #include <boost/test/impl/unit_test_parameters.ipp>
 #include <boost/test/impl/xml_log_formatter.ipp>
-#include <boost/test/impl/junit_log_formatter.ipp>
 #include <boost/test/impl/xml_report_formatter.ipp>
 
-#define BOOST_TEST_INCLUDED
 #include <boost/test/unit_test.hpp>
 
 #endif // BOOST_INCLUDED_UNIT_TEST_FRAMEWORK_HPP_071894GER

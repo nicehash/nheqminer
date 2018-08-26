@@ -59,7 +59,7 @@ pull_coroutine< T >::pull_coroutine( StackAllocator salloc, Fn && fn) :
 }
 
 template< typename T >
-pull_coroutine< T >::~pull_coroutine() noexcept {
+pull_coroutine< T >::~pull_coroutine() {
     if ( nullptr != cb_) {
         cb_->deallocate();
     }
@@ -128,7 +128,7 @@ pull_coroutine< T & >::pull_coroutine( StackAllocator salloc, Fn && fn) :
 }
 
 template< typename T >
-pull_coroutine< T & >::~pull_coroutine() noexcept {
+pull_coroutine< T & >::~pull_coroutine() {
     if ( nullptr != cb_) {
         cb_->deallocate();
     }
@@ -189,7 +189,7 @@ pull_coroutine< void >::pull_coroutine( StackAllocator salloc, Fn && fn) :
 }
 
 inline
-pull_coroutine< void >::~pull_coroutine() noexcept {
+pull_coroutine< void >::~pull_coroutine() {
     if ( nullptr != cb_) {
         cb_->deallocate();
     }

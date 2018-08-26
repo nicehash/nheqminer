@@ -16,6 +16,7 @@
 #pragma warning(push)
 #pragma warning(disable:4702)
 #pragma warning(disable:4127) // conditional expression is constant
+#pragma warning(disable:4146) // unary minus operator applied to unsigned type, result still unsigned
 #endif
 
 

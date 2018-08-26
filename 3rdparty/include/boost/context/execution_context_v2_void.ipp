@@ -7,17 +7,13 @@
 namespace detail {
 
 template< typename Ctx, typename Fn >
-transfer_t context_ontop_void( transfer_t t) {
-    auto tpl = static_cast< std::tuple< Fn > * >( t.data);
-    BOOST_ASSERT( nullptr != tpl);
-    typename std::decay< Fn >::type fn = std::forward< Fn >( std::get< 0 >( * tpl) );
-    Ctx ctx{ t.fctx };
-    // execute function
-    ctx = apply(
-            fn,
-            std::forward_as_tuple( std::move( ctx) ) );
-    return { exchange( ctx.fctx_, nullptr), nullptr };
-}
+transfer_t context_ontop_void( transfer_t);
+
+template< typename Ctx, typename StackAlloc, typename Fn, typename ... Params >
+fcontext_t context_create_void( StackAlloc, Fn &&, Params && ...);
+
+template< typename Ctx, typename StackAlloc, typename Fn, typename ... Params >
+fcontext_t context_create_void( preallocated, StackAlloc, Fn &&, Params && ...);
 
 template< typename Ctx, typename StackAlloc, typename Fn, typename ... Params >
 class record_void {
@@ -55,81 +51,22 @@ public:
     transfer_t run( transfer_t t) {
         Ctx from{ t.fctx };
         // invoke context-function
-        Ctx cc = apply(
-                fn_,
-                std::tuple_cat(
-                    params_,
-                    std::forward_as_tuple( std::move( from) ) ) );
+#if defined(BOOST_NO_CXX17_STD_APPLY)
+        Ctx cc = apply( fn_, std::tuple_cat( params_, std::forward_as_tuple( std::move( from) ) ) );
+#else
+        Ctx cc = std::apply( fn_, std::tuple_cat( params_, std::forward_as_tuple( std::move( from) ) ) );
+#endif
         return { exchange( cc.fctx_, nullptr), nullptr };
     }
 };
-
-template< typename Ctx, typename StackAlloc, typename Fn, typename ... Params >
-fcontext_t context_create_void( StackAlloc salloc, Fn && fn, Params && ... params) {
-    typedef record_void< Ctx, StackAlloc, Fn, Params ... >  record_t;
-
-    auto sctx = salloc.allocate();
-    // reserve space for control structure
-#if defined(BOOST_NO_CXX11_CONSTEXPR) || defined(BOOST_NO_CXX11_STD_ALIGN)
-    const std::size_t size = sctx.size - sizeof( record_t);
-    void * sp = static_cast< char * >( sctx.sp) - sizeof( record_t);
-#else
-    constexpr std::size_t func_alignment = 64; // alignof( record_t);
-    constexpr std::size_t func_size = sizeof( record_t);
-    // reserve space on stack
-    void * sp = static_cast< char * >( sctx.sp) - func_size - func_alignment;
-    // align sp pointer
-    std::size_t space = func_size + func_alignment;
-    sp = std::align( func_alignment, func_size, sp, space);
-    BOOST_ASSERT( nullptr != sp);
-    // calculate remaining size
-    const std::size_t size = sctx.size - ( static_cast< char * >( sctx.sp) - static_cast< char * >( sp) );
-#endif
-    // create fast-context
-    const fcontext_t fctx = make_fcontext( sp, size, & context_entry< record_t >);
-    BOOST_ASSERT( nullptr != fctx);
-    // placment new for control structure on context-stack
-    auto rec = ::new ( sp) record_t{
-            sctx, salloc, std::forward< Fn >( fn), std::forward< Params >( params) ... };
-    // transfer control structure to context-stack
-    return jump_fcontext( fctx, rec).fctx;
-}
-
-template< typename Ctx, typename StackAlloc, typename Fn, typename ... Params >
-fcontext_t context_create_void( preallocated palloc, StackAlloc salloc, Fn && fn, Params && ... params) {
-    typedef record_void< Ctx, StackAlloc, Fn, Params ... >  record_t;
-
-    // reserve space for control structure
-#if defined(BOOST_NO_CXX11_CONSTEXPR) || defined(BOOST_NO_CXX11_STD_ALIGN)
-    const std::size_t size = palloc.size - sizeof( record_t);
-    void * sp = static_cast< char * >( palloc.sp) - sizeof( record_t);
-#else
-    constexpr std::size_t func_alignment = 64; // alignof( record_t);
-    constexpr std::size_t func_size = sizeof( record_t);
-    // reserve space on stack
-    void * sp = static_cast< char * >( palloc.sp) - func_size - func_alignment;
-    // align sp pointer
-    std::size_t space = func_size + func_alignment;
-    sp = std::align( func_alignment, func_size, sp, space);
-    BOOST_ASSERT( nullptr != sp);
-    // calculate remaining size
-    const std::size_t size = palloc.size - ( static_cast< char * >( palloc.sp) - static_cast< char * >( sp) );
-#endif
-    // create fast-context
-    const fcontext_t fctx = make_fcontext( sp, size, & context_entry< record_t >);
-    BOOST_ASSERT( nullptr != fctx);
-    // placment new for control structure on context-stack
-    auto rec = ::new ( sp) record_t{
-            palloc.sctx, salloc, std::forward< Fn >( fn), std::forward< Params >( params) ... };
-    // transfer control structure to context-stack
-    return jump_fcontext( fctx, rec).fctx;
-}
 
 }
 
 template<>
 class execution_context< void > {
 private:
+    friend class ontop_error;
+
     template< typename Ctx, typename StackAlloc, typename Fn, typename ... Params >
     friend class detail::record_void;
 
@@ -143,7 +80,7 @@ private:
     }
 
 public:
-    constexpr execution_context() noexcept = default;
+    execution_context() noexcept = default;
 
 #if defined(BOOST_USE_SEGMENTED_STACKS)
     // segmented-stack requires to preserve the segments of the `current` context
@@ -228,17 +165,33 @@ public:
     execution_context operator()() {
         BOOST_ASSERT( nullptr != fctx_);
         detail::transfer_t t = detail::jump_fcontext( detail::exchange( fctx_, nullptr), nullptr);
+        if ( nullptr != t.data) {
+            std::exception_ptr * eptr = static_cast< std::exception_ptr * >( t.data);
+            try {
+                std::rethrow_exception( * eptr);
+            } catch (...) {
+                std::throw_with_nested( ontop_error{ t.fctx } );
+            }
+        }
         return execution_context( t.fctx);
     }
 
     template< typename Fn >
     execution_context operator()( exec_ontop_arg_t, Fn && fn) {
         BOOST_ASSERT( nullptr != fctx_);
-        std::tuple< Fn > p = std::forward_as_tuple( fn);
+        auto p = std::make_tuple( fn, std::exception_ptr{} );
         detail::transfer_t t = detail::ontop_fcontext(
                 detail::exchange( fctx_, nullptr),
                 & p,
                 detail::context_ontop_void< execution_context, Fn >);
+        if ( nullptr != t.data) {
+            std::exception_ptr * eptr = static_cast< std::exception_ptr * >( t.data);
+            try {
+                std::rethrow_exception( * eptr);
+            } catch (...) {
+                std::throw_with_nested( ontop_error{ t.fctx } );
+            }
+        }
         return execution_context( t.fctx);
     }
 
@@ -288,3 +241,83 @@ public:
         std::swap( fctx_, other.fctx_);
     }
 };
+
+namespace detail {
+
+template< typename Ctx, typename Fn >
+transfer_t context_ontop_void( transfer_t t) {
+    auto p = static_cast< std::tuple< Fn, std::exception_ptr > * >( t.data);
+    BOOST_ASSERT( nullptr != p);
+    typename std::decay< Fn >::type fn = std::forward< Fn >( std::get< 0 >( * p) );
+    try {
+        // execute function
+        fn();
+    } catch (...) {
+        std::get< 1 >( * p) = std::current_exception();
+        return { t.fctx, & std::get< 1 >( * p ) };
+    }
+    return { exchange( t.fctx, nullptr), nullptr };
+}
+
+template< typename Ctx, typename StackAlloc, typename Fn, typename ... Params >
+fcontext_t context_create_void( StackAlloc salloc, Fn && fn, Params && ... params) {
+    typedef record_void< Ctx, StackAlloc, Fn, Params ... >  record_t;
+
+    auto sctx = salloc.allocate();
+    // reserve space for control structure
+#if defined(BOOST_NO_CXX11_CONSTEXPR) || defined(BOOST_NO_CXX11_STD_ALIGN)
+    const std::size_t size = sctx.size - sizeof( record_t);
+    void * sp = static_cast< char * >( sctx.sp) - sizeof( record_t);
+#else
+    constexpr std::size_t func_alignment = 64; // alignof( record_t);
+    constexpr std::size_t func_size = sizeof( record_t);
+    // reserve space on stack
+    void * sp = static_cast< char * >( sctx.sp) - func_size - func_alignment;
+    // align sp pointer
+    std::size_t space = func_size + func_alignment;
+    sp = std::align( func_alignment, func_size, sp, space);
+    BOOST_ASSERT( nullptr != sp);
+    // calculate remaining size
+    const std::size_t size = sctx.size - ( static_cast< char * >( sctx.sp) - static_cast< char * >( sp) );
+#endif
+    // create fast-context
+    const fcontext_t fctx = make_fcontext( sp, size, & context_entry< record_t >);
+    BOOST_ASSERT( nullptr != fctx);
+    // placment new for control structure on context-stack
+    auto rec = ::new ( sp) record_t{
+            sctx, salloc, std::forward< Fn >( fn), std::forward< Params >( params) ... };
+    // transfer control structure to context-stack
+    return jump_fcontext( fctx, rec).fctx;
+}
+
+template< typename Ctx, typename StackAlloc, typename Fn, typename ... Params >
+fcontext_t context_create_void( preallocated palloc, StackAlloc salloc, Fn && fn, Params && ... params) {
+    typedef record_void< Ctx, StackAlloc, Fn, Params ... >  record_t;
+
+    // reserve space for control structure
+#if defined(BOOST_NO_CXX11_CONSTEXPR) || defined(BOOST_NO_CXX11_STD_ALIGN)
+    const std::size_t size = palloc.size - sizeof( record_t);
+    void * sp = static_cast< char * >( palloc.sp) - sizeof( record_t);
+#else
+    constexpr std::size_t func_alignment = 64; // alignof( record_t);
+    constexpr std::size_t func_size = sizeof( record_t);
+    // reserve space on stack
+    void * sp = static_cast< char * >( palloc.sp) - func_size - func_alignment;
+    // align sp pointer
+    std::size_t space = func_size + func_alignment;
+    sp = std::align( func_alignment, func_size, sp, space);
+    BOOST_ASSERT( nullptr != sp);
+    // calculate remaining size
+    const std::size_t size = palloc.size - ( static_cast< char * >( palloc.sp) - static_cast< char * >( sp) );
+#endif
+    // create fast-context
+    const fcontext_t fctx = make_fcontext( sp, size, & context_entry< record_t >);
+    BOOST_ASSERT( nullptr != fctx);
+    // placment new for control structure on context-stack
+    auto rec = ::new ( sp) record_t{
+            palloc.sctx, salloc, std::forward< Fn >( fn), std::forward< Params >( params) ... };
+    // transfer control structure to context-stack
+    return jump_fcontext( fctx, rec).fctx;
+}
+
+}

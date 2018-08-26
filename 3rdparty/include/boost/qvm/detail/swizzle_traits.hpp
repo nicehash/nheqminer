@@ -184,6 +184,28 @@ boost
                     return r;
                     }
                 };
+
+            template <class OriginalType,class SwizzleList>
+            class
+            sws_
+                {
+                sws_( sws_ const & );
+                sws_ & operator=( sws_ const & );
+                ~sws_();
+
+                BOOST_QVM_STATIC_ASSERT((validate_swizzle_list<SwizzleList,1>::value));
+
+                public:
+
+                template <class R>
+                BOOST_QVM_INLINE_TRIVIAL
+                operator R() const
+                    {
+                    R r;
+                    assign(r,*this);
+                    return r;
+                    }
+                };
             }
 
         template <class OriginalVector,class SwizzleList>
@@ -246,6 +268,43 @@ boost
                 }
             };
 
+        template <class OriginalScalar,class SwizzleList>
+        struct
+        vec_traits<qvm_detail::sws_<OriginalScalar,SwizzleList> >
+            {
+            typedef qvm_detail::sws_<OriginalScalar,SwizzleList> this_vector;
+            typedef OriginalScalar scalar_type;
+            static int const dim=qvm_detail::swizzle_list_length<SwizzleList>::value;
+
+            template <int I>
+            static
+            BOOST_QVM_INLINE_CRITICAL
+            scalar_type
+            read_element( this_vector const & x )
+                {
+                BOOST_QVM_STATIC_ASSERT(I>=0);
+                BOOST_QVM_STATIC_ASSERT(I<dim);
+                int const idx=qvm_detail::swizzle<SwizzleList,I>::value;
+                BOOST_QVM_STATIC_ASSERT(idx<1);
+                return idx==0?
+                    reinterpret_cast<OriginalScalar const &>(x) :
+                    qvm_detail::const_value<this_vector,idx>::value();
+                }
+
+            template <int I>
+            static
+            BOOST_QVM_INLINE_CRITICAL
+            scalar_type &
+            write_element( this_vector & x )
+                {
+                BOOST_QVM_STATIC_ASSERT(I>=0);
+                BOOST_QVM_STATIC_ASSERT(I<dim);
+                int const idx=qvm_detail::swizzle<SwizzleList,I>::value;
+                BOOST_QVM_STATIC_ASSERT(idx==0);
+                return reinterpret_cast<OriginalScalar &>(x);
+                }
+            };
+
         template <class OriginalVector,class SwizzleList,int D>
         struct
         deduce_vec<qvm_detail::sw_<OriginalVector,SwizzleList>,D>
@@ -258,6 +317,20 @@ boost
         deduce_vec2<qvm_detail::sw_<OriginalVector,SwizzleList>,qvm_detail::sw_<OriginalVector,SwizzleList>,D>
             {
             typedef vec<typename vec_traits<OriginalVector>::scalar_type,D> type;
+            };
+
+        template <class Scalar,class SwizzleList,int D>
+        struct
+        deduce_vec<qvm_detail::sws_<Scalar,SwizzleList>,D>
+            {
+            typedef vec<Scalar,D> type;
+            };
+
+        template <class Scalar,class SwizzleList,int D>
+        struct
+        deduce_vec2<qvm_detail::sws_<Scalar,SwizzleList>,qvm_detail::sws_<Scalar,SwizzleList>,D>
+            {
+            typedef vec<Scalar,D> type;
             };
         }
     }

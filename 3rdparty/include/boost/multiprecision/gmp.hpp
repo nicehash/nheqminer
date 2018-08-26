@@ -14,6 +14,16 @@
 #include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/functional/hash_fwd.hpp>
+//
+// Some includes we need from Boost.Math, since we rely on that library to provide these functions:
+//
+#include <boost/math/special_functions/asinh.hpp>
+#include <boost/math/special_functions/acosh.hpp>
+#include <boost/math/special_functions/atanh.hpp>
+#include <boost/math/special_functions/cbrt.hpp>
+#include <boost/math/special_functions/expm1.hpp>
+#include <boost/math/special_functions/gamma.hpp>
+
 #ifdef BOOST_MSVC
 #  pragma warning(push)
 #  pragma warning(disable:4127)
@@ -573,7 +583,7 @@ struct gmp_float<0> : public detail::gmp_float_imp<0>
    }
    unsigned precision()const BOOST_NOEXCEPT
    {
-      return static_cast<unsigned>(multiprecision::detail::digits2_2_10(mpf_get_prec(this->m_data)));
+      return static_cast<unsigned>(multiprecision::detail::digits2_2_10(static_cast<unsigned long>(mpf_get_prec(this->m_data))));
    }
    void precision(unsigned digits10) BOOST_NOEXCEPT
    {
@@ -855,7 +865,7 @@ inline void eval_convert_to(long* result, const gmp_float<digits10>& val) BOOST_
 {
    if(0 == mpf_fits_slong_p(val.data()))
    {
-      *result = (std::numeric_limits<unsigned long>::max)();
+      *result = (std::numeric_limits<long>::max)();
       *result *= mpf_sgn(val.data());
    }
    else

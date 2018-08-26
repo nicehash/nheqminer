@@ -43,16 +43,23 @@ namespace movelib {
 //!   ceil(sqrt(std::distance(first, last)))*2.
 //!
 //! <b>Caution</b>: Experimental implementation, not production-ready.
-template<class RandIt, class Compare>
+template<class RandIt, class RandRawIt, class Compare>
 void adaptive_sort( RandIt first, RandIt last, Compare comp
-               , typename iterator_traits<RandIt>::value_type* uninitialized = 0
-               , std::size_t uninitialized_len = 0)
+               , RandRawIt uninitialized
+               , std::size_t uninitialized_len)
 {
    typedef typename iterator_traits<RandIt>::size_type  size_type;
    typedef typename iterator_traits<RandIt>::value_type value_type;
 
-   ::boost::movelib::detail_adaptive::adaptive_xbuf<value_type> xbuf(uninitialized, uninitialized_len);
+   ::boost::movelib::detail_adaptive::adaptive_xbuf<value_type, RandRawIt> xbuf(uninitialized, uninitialized_len);
    ::boost::movelib::detail_adaptive::adaptive_sort_impl(first, size_type(last - first), comp, xbuf);
+}
+
+template<class RandIt, class Compare>
+void adaptive_sort( RandIt first, RandIt last, Compare comp)
+{
+   typedef typename iterator_traits<RandIt>::value_type value_type;
+   adaptive_sort(first, last, comp, (value_type*)0, 0u);
 }
 
 }  //namespace movelib {

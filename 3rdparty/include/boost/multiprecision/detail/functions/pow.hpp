@@ -208,11 +208,11 @@ void eval_exp(T& result, const T& x)
    if(type == (int)FP_NAN)
    {
       result = x;
+      errno = EDOM;
       return;
    }
    else if(type == (int)FP_INFINITE)
    {
-      result = x;
       if(isneg)
          result = ui_type(0u);
       else 
@@ -277,6 +277,17 @@ void eval_exp(T& result, const T& x)
       detail::pow_imp(result, get_constant_e<T>(), ll, mpl::true_());
       return;
    }
+   else if(exp_series.compare(x) == 0)
+   {
+      // We have a value that has no fractional part, but is too large to fit 
+      // in a long long, in this situation the code below will fail, so
+      // we're just going to assume that this will overflow:
+      if(isneg)
+         result = ui_type(0);
+      else
+         result = std::numeric_limits<number<T> >::has_infinity ? std::numeric_limits<number<T> >::infinity().backend() : (std::numeric_limits<number<T> >::max)().backend();
+      return;
+   }
 
    // The algorithm for exp has been taken from MPFUN.
    // exp(t) = [ (1 + r + r^2/2! + r^3/3! + r^4/4! ...)^p2 ] * 2^n
@@ -291,6 +302,16 @@ void eval_exp(T& result, const T& x)
    eval_divide(result, xx, get_constant_ln2<T>());
    exp_type n;
    eval_convert_to(&n, result);
+
+   if (n == (std::numeric_limits<exp_type>::max)())
+   {
+      // Exponent is too large to fit in our exponent type:
+      if (isneg)
+         result = ui_type(0);
+      else
+         result = std::numeric_limits<number<T> >::has_infinity ? std::numeric_limits<number<T> >::infinity().backend() : (std::numeric_limits<number<T> >::max)().backend();
+      return;
+   }
 
    // The scaling is 2^11 = 2048.
    const si_type p2 = static_cast<si_type>(si_type(1) << 11);
@@ -326,6 +347,29 @@ void eval_log(T& result, const T& arg)
    typedef typename T::exponent_type exp_type;
    typedef typename boost::multiprecision::detail::canonical<exp_type, T>::type canonical_exp_type;
    typedef typename mpl::front<typename T::float_types>::type fp_type;
+   int s = eval_signbit(arg);
+   switch(eval_fpclassify(arg))
+   {
+   case FP_NAN:
+      result = arg;
+      errno = EDOM;
+      return;
+   case FP_INFINITE:
+      if(s) break;
+      result = arg;
+      return;
+   case FP_ZERO:
+      result = std::numeric_limits<number<T> >::has_infinity ? std::numeric_limits<number<T> >::infinity().backend() : (std::numeric_limits<number<T> >::max)().backend();
+      result.negate();
+      errno = ERANGE;
+      return;
+   }
+   if(s)
+   {
+      result = std::numeric_limits<number<T> >::quiet_NaN().backend();
+      errno = EDOM;
+      return;
+   }
 
    exp_type e;
    T t;
@@ -405,6 +449,13 @@ void eval_log10(T& result, const T& arg)
    eval_divide(result, get_constant_log10<T>());
 }
 
+template <class R, class T>
+inline void eval_log2(R& result, const T& a)
+{
+   eval_log(result, a);
+   eval_divide(result, get_constant_ln2<R>());
+}
+
 template<typename T> 
 inline void eval_pow(T& result, const T& x, const T& a)
 {
@@ -420,9 +471,14 @@ inline void eval_pow(T& result, const T& x, const T& a)
       return;
    }
 
-   if(a.compare(si_type(1)) == 0)
+   if((a.compare(si_type(1)) == 0) || (x.compare(si_type(1)) == 0))
    {
       result = x;
+      return;
+   }
+   if(a.compare(si_type(0)) == 0)
+   {
+      result = si_type(1);
       return;
    }
 
@@ -430,9 +486,6 @@ inline void eval_pow(T& result, const T& x, const T& a)
 
    switch(type)
    {
-   case FP_INFINITE:
-      result = x;
-      return;
    case FP_ZERO:
       switch(eval_fpclassify(a))
       {
@@ -442,13 +495,58 @@ inline void eval_pow(T& result, const T& x, const T& a)
       case FP_NAN:
          result = a;
          break;
+      case FP_NORMAL:
+      {
+         // Need to check for a an odd integer as a special case:
+         try 
+         {
+            typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type i;
+            eval_convert_to(&i, a);
+            if(a.compare(i) == 0)
+            {
+               if(eval_signbit(a))
+               {
+                  if(i & 1)
+                  {
+                     result = std::numeric_limits<number<T> >::infinity().backend();
+                     if(eval_signbit(x))
+                        result.negate();
+                     errno = ERANGE;
+                  }
+                  else
+                  {
+                     result = std::numeric_limits<number<T> >::infinity().backend();
+                     errno = ERANGE;
+                  }
+               }
+               else if(i & 1)
+               {
+                  result = x;
+               }
+               else
+                  result = si_type(0);
+               return;
+            }
+         }
+         catch(const std::exception&)
+         {
+            // fallthrough..
+         }
+      }
       default:
-         result = x;
+         if(eval_signbit(a))
+         {
+            result = std::numeric_limits<number<T> >::infinity().backend();
+            errno = ERANGE;
+         }
+         else
+            result = x;
          break;
       }
       return;
    case FP_NAN:
       result = x;
+      errno = ERANGE;
       return;
    default: ;
    }
@@ -471,6 +569,16 @@ inline void eval_pow(T& result, const T& x, const T& a)
    }
    
    typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type an;
+   typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type max_an =
+      std::numeric_limits<typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type>::is_specialized ?
+      (std::numeric_limits<typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type>::max)() :
+      static_cast<typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type>(1) << (sizeof(typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type) * CHAR_BIT - 2);
+   typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type min_an = 
+      std::numeric_limits<typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type>::is_specialized ?
+      (std::numeric_limits<typename boost::multiprecision::detail::canonical<boost::intmax_t, T>::type>::min)() :
+      -min_an;
+
+
    T fa;
 #ifndef BOOST_NO_EXCEPTIONS
    try
@@ -514,8 +622,33 @@ inline void eval_pow(T& result, const T& x, const T& a)
          // conversion failed, just fall through, value is not an integer.
       }
 #endif
-      if(std::numeric_limits<number<T, et_on> >::has_quiet_NaN)
+      eval_floor(result, a);
+      // -1^INF is a special case in C99:
+      if((x.compare(si_type(-1)) == 0) && (eval_fpclassify(a) == FP_INFINITE))
+      {
+         result = si_type(1);
+      }
+      else if(a.compare(result) == 0)
+      {
+         // exponent is so large we have no fractional part:
+         if(x.compare(si_type(-1)) < 0)
+         {
+            result = std::numeric_limits<number<T, et_on> >::infinity().backend();
+         }
+         else
+         {
+            result = si_type(0);
+         }
+      }
+      else if(type == FP_INFINITE)
+      {
+         result = std::numeric_limits<number<T, et_on> >::infinity().backend();
+      }
+      else if(std::numeric_limits<number<T, et_on> >::has_quiet_NaN)
+      {
          result = std::numeric_limits<number<T, et_on> >::quiet_NaN().backend();
+         errno = EDOM;
+      }
       else
       {
          BOOST_THROW_EXCEPTION(std::domain_error("Result of pow is undefined or non-real and there is no NaN for this number type."));
@@ -527,7 +660,7 @@ inline void eval_pow(T& result, const T& x, const T& a)
 
    eval_subtract(da, a, an);
 
-   if((x.compare(fp_type(0.5)) >= 0) && (x.compare(fp_type(0.9)) < 0))
+   if((x.compare(fp_type(0.5)) >= 0) && (x.compare(fp_type(0.9)) < 0) && (an < max_an) && (an > min_an))
    {
       if(a.compare(fp_type(1e-5f)) <= 0)
       {
@@ -603,6 +736,33 @@ inline typename enable_if<is_arithmetic<A>, void>::type eval_pow(T& result, cons
    eval_pow(result, c, a);
 }
 
+template <class T>
+void eval_exp2(T& result, const T& arg)
+{
+   BOOST_STATIC_ASSERT_MSG(number_category<T>::value == number_kind_floating_point, "The log function is only valid for floating point types.");
+
+   // Check for pure-integer arguments which can be either signed or unsigned.
+   typename boost::multiprecision::detail::canonical<typename T::exponent_type, T>::type i;
+   T temp;
+   try {
+      eval_trunc(temp, arg);
+      eval_convert_to(&i, temp);
+      if(arg.compare(i) == 0)
+      {
+         temp = static_cast<typename mpl::front<typename T::unsigned_types>::type>(1u);
+         eval_ldexp(result, temp, i);
+         return;
+      }
+   }
+   catch(const boost::math::rounding_error&)
+   { /* Fallthrough */ }
+   catch(const std::runtime_error&)
+   { /* Fallthrough */ }
+
+   temp = static_cast<typename mpl::front<typename T::unsigned_types>::type>(2u);
+   eval_pow(result, temp, arg);
+}
+
 namespace detail{
 
    template <class T>
@@ -641,6 +801,8 @@ namespace detail{
       switch(eval_fpclassify(x))
       {
       case FP_NAN:
+         errno = EDOM;
+         // fallthrough...
       case FP_INFINITE:
          if(p_sinh)
             *p_sinh = x;
@@ -667,6 +829,8 @@ namespace detail{
          T e_px, e_mx;
          eval_exp(e_px, x);
          eval_divide(e_mx, ui_type(1), e_px);
+         if(eval_signbit(e_mx) != eval_signbit(e_px))
+            e_mx.negate();  // Handles lack of signed zero in some types
 
          if(p_sinh) 
          { 
@@ -714,6 +878,14 @@ inline void eval_tanh(T& result, const T& x)
    BOOST_STATIC_ASSERT_MSG(number_category<T>::value == number_kind_floating_point, "The tanh function is only valid for floating point types.");
   T c;
   detail::sinhcosh(x, &result, &c);
+  if((eval_fpclassify(result) == FP_INFINITE) && (eval_fpclassify(c) == FP_INFINITE))
+  {
+     bool s = eval_signbit(result) != eval_signbit(c);
+     result = static_cast<typename mpl::front<typename T::unsigned_types>::type>(1u);
+     if(s)
+        result.negate();
+     return;
+  }
   eval_divide(result, c);
 }
 

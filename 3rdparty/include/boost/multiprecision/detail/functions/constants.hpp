@@ -295,3 +295,20 @@ const T& get_constant_pi()
    return result;
 }
 
+template <class T>
+const T& get_constant_one_over_epsilon()
+{
+   static const bool is_init = false;
+   static T result;
+   if (is_init == false)
+   {
+      typedef typename mpl::front<typename T::unsigned_types>::type ui_type;
+      result = static_cast<ui_type>(1u);
+      eval_divide(result, std::numeric_limits<number<T> >::epsilon().backend());
+   }
+
+   constant_initializer<T, &get_constant_one_over_epsilon<T> >::do_nothing();
+
+   return result;
+}
+

@@ -239,14 +239,14 @@ T lgamma_imp(T z, const Policy& pol, const Lanczos& l, int* sign = 0)
    }
    else if (z < tools::root_epsilon<T>())
    {
-     if (0 == z)
-	      return policies::raise_pole_error<T>(function, "Evaluation of lgamma at %1%.", z, pol);
+      if (0 == z)
+         return policies::raise_pole_error<T>(function, "Evaluation of lgamma at %1%.", z, pol);
       if (fabs(z) < 1 / tools::max_value<T>())
          result = -log(fabs(z));
       else
          result = log(fabs(1 / z - constants::euler<T>()));
       if (z < 0)
-		sresult = -1;
+         sresult = -1;
    }
    else if(z < 15)
    {
@@ -391,8 +391,8 @@ T gamma_imp(T z, const Policy& pol, const lanczos::undefined_lanczos&)
    // Check if the argument of tgamma is identically zero.
    const bool is_at_zero = (z == 0);
 
-   if(is_at_zero)
-      return policies::raise_domain_error<T>(function, "Evaluation of tgamma at zero %1%.", z, pol);
+   if((is_at_zero) || ((boost::math::isinf)(z) && (z < 0)))
+      return policies::raise_domain_error<T>(function, "Evaluation of tgamma at %1%.", z, pol);
 
    const bool b_neg = (z < 0);
 
@@ -538,6 +538,10 @@ T lgamma_imp(T z, const Policy& pol, const lanczos::undefined_lanczos&, int* sig
 
    if(is_at_zero)
       return policies::raise_domain_error<T>(function, "Evaluation of lgamma at zero %1%.", z, pol);
+   if((boost::math::isnan)(z))
+      return policies::raise_domain_error<T>(function, "Evaluation of lgamma at %1%.", z, pol);
+   if((boost::math::isinf)(z))
+      return policies::raise_overflow_error<T>(function, 0, pol);
 
    const bool b_neg = (z < 0);
 

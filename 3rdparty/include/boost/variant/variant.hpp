@@ -71,10 +71,12 @@
 #include <boost/mpl/front.hpp>
 #include <boost/mpl/identity.hpp>
 #include <boost/mpl/if.hpp>
+#include <boost/mpl/insert_range.hpp>
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/is_sequence.hpp>
 #include <boost/mpl/iterator_range.hpp>
 #include <boost/mpl/iter_fold_if.hpp>
+#include <boost/mpl/list.hpp>
 #include <boost/mpl/logical.hpp>
 #include <boost/mpl/max_element.hpp>
 #include <boost/mpl/next.hpp>
@@ -386,7 +388,7 @@ public: // visitor interfaces
 
 #if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x0551)) || \
     BOOST_WORKAROUND(BOOST_MSVC, BOOST_TESTED_AT(1600))
-        operand; // suppresses warnings
+        (void)operand; // suppresses warnings
 #endif
 
         BOOST_VARIANT_AUX_RETURN_VOID;
@@ -1756,10 +1758,12 @@ public: // structors, cont.
 
     template <typename T>
     variant(const T& operand,
-        typename boost::enable_if<mpl::and_<
-            mpl::not_< boost::is_same<T, variant> >,
-            boost::detail::variant::is_variant_constructible_from<const T&, internal_types>
-        > >::type* = 0)
+        typename boost::enable_if<mpl::or_<
+            mpl::and_<
+                mpl::not_< boost::is_same<T, variant> >,
+                boost::detail::variant::is_variant_constructible_from<const T&, internal_types>
+            >, 
+            boost::is_same<T, boost::recursive_variant_> > >::type* = 0)
     {
         convert_construct(operand, 1L);
     }
@@ -1767,11 +1771,13 @@ public: // structors, cont.
     template <typename T>
     variant(
           T& operand
-        , typename boost::enable_if<mpl::and_<
-            mpl::not_< is_const<T> >,
-            mpl::not_< boost::is_same<T, variant> >,
-            boost::detail::variant::is_variant_constructible_from<T&, internal_types>
-        > >::type* = 0
+        , typename boost::enable_if<mpl::or_<
+            mpl::and_<
+                mpl::not_< is_const<T> >,
+                mpl::not_< boost::is_same<T, variant> >,
+                boost::detail::variant::is_variant_constructible_from<T&, internal_types>
+            >,
+            boost::is_same<T, boost::recursive_variant_> > >::type* = 0
         )
     {
         convert_construct(operand, 1L);
@@ -1780,12 +1786,14 @@ public: // structors, cont.
 #ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
     template <class T>
     variant(T&& operand,
-        typename boost::enable_if<mpl::and_<
-            boost::is_rvalue_reference<T&&>,
-            mpl::not_< boost::is_const<T> >,
-            mpl::not_< boost::is_same<T, variant> >,
-            boost::detail::variant::is_variant_constructible_from<T&&, internal_types>
-        > >::type* = 0)
+        typename boost::enable_if<mpl::or_<
+            mpl::and_<
+                boost::is_rvalue_reference<T&&>,
+                mpl::not_< boost::is_const<T> >,
+                mpl::not_< boost::is_same<T, variant> >,
+                boost::detail::variant::is_variant_constructible_from<T&&, internal_types>
+            >,
+            boost::is_same<T, boost::recursive_variant_> > >::type* = 0)
     {
         convert_construct( detail::variant::move(operand), 1L);
     }
@@ -2446,15 +2454,19 @@ struct make_variant_over
 private: // precondition assertions
 
     BOOST_STATIC_ASSERT(( ::boost::mpl::is_sequence<Types>::value ));
+    typedef typename boost::mpl::insert_range<
+      boost::mpl::list<>
+    , boost::mpl::end< boost::mpl::list<> >::type
+    , Types
+    >::type copied_sequence_t;
 
 public: // metafunction result
 
     typedef variant<
-          detail::variant::over_sequence< Types >
+          detail::variant::over_sequence<copied_sequence_t>
         > type;
 
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // function template swap

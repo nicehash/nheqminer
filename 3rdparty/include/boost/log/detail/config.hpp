@@ -144,6 +144,11 @@
 #define BOOST_LOG_NO_CXX11_DEFAULTED_NOEXCEPT_FUNCTIONS
 #endif
 
+#if defined(BOOST_NO_CXX11_DEFAULTED_FUNCTIONS) || (defined(BOOST_CLANG) && (((__clang_major__+0) == 3) && ((__clang_minor__+0) <= 1)))
+// Clang 3.1 cannot handle a defaulted constexpr constructor in some cases (presumably, if the class contains a member with a constexpr constructor)
+#define BOOST_LOG_NO_CXX11_DEFAULTED_CONSTEXPR_CONSTRUCTORS
+#endif
+
 #if defined(_MSC_VER)
 #   define BOOST_LOG_NO_VTABLE __declspec(novtable)
 #elif defined(__GNUC__)

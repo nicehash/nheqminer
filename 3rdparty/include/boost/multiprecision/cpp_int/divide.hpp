@@ -220,7 +220,7 @@ void divide_unsigned_helper(
       //
       double_limb_type carry = 0;
       t.resize(y.size() + shift + 1, y.size() + shift);
-      bool truncated_t = !CppInt1::variable && (t.size() != y.size() + shift + 1);
+      bool truncated_t = (t.size() != y.size() + shift + 1);
       typename CppInt1::limb_pointer pt = t.limbs();
       for(unsigned i = 0; i < shift; ++i)
          pt[i] = 0;

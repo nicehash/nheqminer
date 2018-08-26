@@ -326,7 +326,7 @@ inline void left_shift_byte(Int& result, double_limb_type s)
    if(rs != ors)
       pr[rs - 1] = 0u;
    std::size_t bytes = static_cast<std::size_t>(s / CHAR_BIT);
-   std::size_t len = std::min(ors * sizeof(limb_type), rs * sizeof(limb_type) - bytes);
+   std::size_t len = (std::min)(ors * sizeof(limb_type), rs * sizeof(limb_type) - bytes);
    if(bytes >= rs * sizeof(limb_type))
       result = static_cast<limb_type>(0u);
    else
@@ -411,14 +411,14 @@ inline void left_shift_generic(Int& result, double_limb_type s)
          ++i;
       }
    }
-   for(; ors > 1 + i; ++i)
+   for(; rs - i >= 2 + offset; ++i)
    {
-      pr[rs - 1 - i] = pr[ors - 1 - i] << shift;
-      pr[rs - 1 - i] |= pr[ors - 2 - i] >> (Int::limb_bits - shift);
+      pr[rs - 1 - i] = pr[rs - 1 - i - offset] << shift;
+      pr[rs - 1 - i] |= pr[rs - 2 - i - offset] >> (Int::limb_bits - shift);
    }
-   if(ors >= 1 + i)
+   if(rs - i >= 1 + offset)
    {
-      pr[rs - 1 - i] = pr[ors - 1 - i] << shift;
+      pr[rs - 1 - i] = pr[rs - 1 - i - offset] << shift;
       ++i;
    }
    for(; i < rs; ++i)

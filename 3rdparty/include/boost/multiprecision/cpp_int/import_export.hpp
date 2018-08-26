@@ -134,7 +134,7 @@ namespace boost {
             cpp_int_backend<MinBits, MaxBits, SignType, Checked, Allocator>& result = val.backend();
             result.resize(static_cast<unsigned>(limb_len), static_cast<unsigned>(limb_len));  // checked types may throw here if they're not large enough to hold the data!
             result.limbs()[result.size() - 1] = 0u;
-            std::memcpy(result.limbs(), i, std::min(byte_len, result.size() * sizeof(limb_type)));
+            std::memcpy(result.limbs(), i, (std::min)(byte_len, result.size() * sizeof(limb_type)));
             result.normalize(); // In case data has leading zeros.
             return val;
          }
@@ -150,7 +150,7 @@ namespace boost {
                ++limb_len;
             result.limbs()[0] = 0u;
             result.resize(static_cast<unsigned>(limb_len), static_cast<unsigned>(limb_len));  // checked types may throw here if they're not large enough to hold the data!
-            std::memcpy(result.limbs(), i, std::min(byte_len, result.size() * sizeof(result.limbs()[0])));
+            std::memcpy(result.limbs(), i, (std::min)(byte_len, result.size() * sizeof(result.limbs()[0])));
             result.normalize(); // In case data has leading zeros.
             return val;
          }
@@ -199,8 +199,8 @@ namespace boost {
          template <class Backend>
          inline boost::uintmax_t extract_bits(const Backend& val, unsigned location, unsigned count, const mpl::true_&)
          {
-            boost::uintmax_t result = *val.limbs();
-            boost::uintmax_t mask = count == std::numeric_limits<boost::uintmax_t>::digits ? ~static_cast<boost::uintmax_t>(0) : (static_cast<boost::uintmax_t>(1u) << count) - 1;
+            typename Backend::local_limb_type result = *val.limbs();
+            typename Backend::local_limb_type mask = count >= std::numeric_limits<typename Backend::local_limb_type>::digits ? ~static_cast<typename Backend::local_limb_type>(0) : (static_cast<typename Backend::local_limb_type>(1u) << count) - 1;
             return (result >> location) & mask;
          }
 

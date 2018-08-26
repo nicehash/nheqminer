@@ -7,8 +7,8 @@
 
 //  See library home page at http://www.boost.org/libs/system
 
-#ifndef BOOST_WINDOWS_ERROR_HPP
-#define BOOST_WINDOWS_ERROR_HPP
+#ifndef BOOST_SYSTEM_WINDOWS_ERROR_HPP
+#define BOOST_SYSTEM_WINDOWS_ERROR_HPP
 
 //  This header is effectively empty for compiles on operating systems where
 //  it is not applicable.
@@ -19,14 +19,16 @@
 
 #include <boost/system/error_code.hpp>
 
-// Neither MinGW or Cygwin versions of winerror.h work if used alone, so on
-// either of those platforms include the full windows.h
+//// Neither MinGW or Cygwin versions of winerror.h work if used alone, so on
+//// either of those platforms include the full windows.h
+//
+//#if defined(__MINGW32__) || defined(__CYGWIN__)
+//#include <windows.h>
+//#else
+//#include <winerror.h>
+//#endif
 
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-#include <windows.h>
-#else
-#include <winerror.h>
-#endif
+#include <boost/detail/winapi/error_codes.hpp>
 
 namespace boost
 {
@@ -45,59 +47,59 @@ namespace boost
       {
         success = 0,
         // These names and values are based on Windows winerror.h
-        invalid_function = ERROR_INVALID_FUNCTION,
-        file_not_found = ERROR_FILE_NOT_FOUND,
-        path_not_found = ERROR_PATH_NOT_FOUND,
-        too_many_open_files = ERROR_TOO_MANY_OPEN_FILES,
-        access_denied = ERROR_ACCESS_DENIED,
-        invalid_handle = ERROR_INVALID_HANDLE,
-        arena_trashed = ERROR_ARENA_TRASHED,
-        not_enough_memory = ERROR_NOT_ENOUGH_MEMORY,
-        invalid_block = ERROR_INVALID_BLOCK,
-        bad_environment = ERROR_BAD_ENVIRONMENT,
-        bad_format = ERROR_BAD_FORMAT,
-        invalid_access = ERROR_INVALID_ACCESS,
-        outofmemory = ERROR_OUTOFMEMORY,
-        invalid_drive = ERROR_INVALID_DRIVE,
-        current_directory = ERROR_CURRENT_DIRECTORY,
-        not_same_device = ERROR_NOT_SAME_DEVICE,
-        no_more_files = ERROR_NO_MORE_FILES,
-        write_protect = ERROR_WRITE_PROTECT,
-        bad_unit = ERROR_BAD_UNIT,
-        not_ready = ERROR_NOT_READY,
-        bad_command = ERROR_BAD_COMMAND,
-        crc = ERROR_CRC,
-        bad_length = ERROR_BAD_LENGTH,
-        seek = ERROR_SEEK,
-        not_dos_disk = ERROR_NOT_DOS_DISK,
-        sector_not_found = ERROR_SECTOR_NOT_FOUND,
-        out_of_paper = ERROR_OUT_OF_PAPER,
-        write_fault = ERROR_WRITE_FAULT,
-        read_fault = ERROR_READ_FAULT,
-        gen_failure = ERROR_GEN_FAILURE,
-        sharing_violation = ERROR_SHARING_VIOLATION,
-        lock_violation = ERROR_LOCK_VIOLATION,
-        wrong_disk = ERROR_WRONG_DISK,
-        sharing_buffer_exceeded = ERROR_SHARING_BUFFER_EXCEEDED,
-        handle_eof = ERROR_HANDLE_EOF,
-        handle_disk_full= ERROR_HANDLE_DISK_FULL,
-        rem_not_list = ERROR_REM_NOT_LIST,
-        dup_name = ERROR_DUP_NAME,
-        bad_net_path = ERROR_BAD_NETPATH,
-        network_busy = ERROR_NETWORK_BUSY,
+        invalid_function = boost::detail::winapi::ERROR_INVALID_FUNCTION_,
+        file_not_found = boost::detail::winapi::ERROR_FILE_NOT_FOUND_,
+        path_not_found = boost::detail::winapi::ERROR_PATH_NOT_FOUND_,
+        too_many_open_files = boost::detail::winapi::ERROR_TOO_MANY_OPEN_FILES_,
+        access_denied = boost::detail::winapi::ERROR_ACCESS_DENIED_,
+        invalid_handle = boost::detail::winapi::ERROR_INVALID_HANDLE_,
+        arena_trashed = boost::detail::winapi::ERROR_ARENA_TRASHED_,
+        not_enough_memory = boost::detail::winapi::ERROR_NOT_ENOUGH_MEMORY_,
+        invalid_block = boost::detail::winapi::ERROR_INVALID_BLOCK_,
+        bad_environment = boost::detail::winapi::ERROR_BAD_ENVIRONMENT_,
+        bad_format = boost::detail::winapi::ERROR_BAD_FORMAT_,
+        invalid_access = boost::detail::winapi::ERROR_INVALID_ACCESS_,
+        outofmemory = boost::detail::winapi::ERROR_OUTOFMEMORY_,
+        invalid_drive = boost::detail::winapi::ERROR_INVALID_DRIVE_,
+        current_directory = boost::detail::winapi::ERROR_CURRENT_DIRECTORY_,
+        not_same_device = boost::detail::winapi::ERROR_NOT_SAME_DEVICE_,
+        no_more_files = boost::detail::winapi::ERROR_NO_MORE_FILES_,
+        write_protect = boost::detail::winapi::ERROR_WRITE_PROTECT_,
+        bad_unit = boost::detail::winapi::ERROR_BAD_UNIT_,
+        not_ready = boost::detail::winapi::ERROR_NOT_READY_,
+        bad_command = boost::detail::winapi::ERROR_BAD_COMMAND_,
+        crc = boost::detail::winapi::ERROR_CRC_,
+        bad_length = boost::detail::winapi::ERROR_BAD_LENGTH_,
+        seek = boost::detail::winapi::ERROR_SEEK_,
+        not_dos_disk = boost::detail::winapi::ERROR_NOT_DOS_DISK_,
+        sector_not_found = boost::detail::winapi::ERROR_SECTOR_NOT_FOUND_,
+        out_of_paper = boost::detail::winapi::ERROR_OUT_OF_PAPER_,
+        write_fault = boost::detail::winapi::ERROR_WRITE_FAULT_,
+        read_fault = boost::detail::winapi::ERROR_READ_FAULT_,
+        gen_failure = boost::detail::winapi::ERROR_GEN_FAILURE_,
+        sharing_violation = boost::detail::winapi::ERROR_SHARING_VIOLATION_,
+        lock_violation = boost::detail::winapi::ERROR_LOCK_VIOLATION_,
+        wrong_disk = boost::detail::winapi::ERROR_WRONG_DISK_,
+        sharing_buffer_exceeded = boost::detail::winapi::ERROR_SHARING_BUFFER_EXCEEDED_,
+        handle_eof = boost::detail::winapi::ERROR_HANDLE_EOF_,
+        handle_disk_full= boost::detail::winapi::ERROR_HANDLE_DISK_FULL_,
+        rem_not_list = boost::detail::winapi::ERROR_REM_NOT_LIST_,
+        dup_name = boost::detail::winapi::ERROR_DUP_NAME_,
+        bad_net_path = boost::detail::winapi::ERROR_BAD_NETPATH_,
+        network_busy = boost::detail::winapi::ERROR_NETWORK_BUSY_,
         // ...
-        file_exists = ERROR_FILE_EXISTS,
-        cannot_make = ERROR_CANNOT_MAKE,
+        file_exists = boost::detail::winapi::ERROR_FILE_EXISTS_,
+        cannot_make = boost::detail::winapi::ERROR_CANNOT_MAKE_,
         // ...
-        broken_pipe = ERROR_BROKEN_PIPE,
-        open_failed = ERROR_OPEN_FAILED,
-        buffer_overflow = ERROR_BUFFER_OVERFLOW,
-        disk_full= ERROR_DISK_FULL,
+        broken_pipe = boost::detail::winapi::ERROR_BROKEN_PIPE_,
+        open_failed = boost::detail::winapi::ERROR_OPEN_FAILED_,
+        buffer_overflow = boost::detail::winapi::ERROR_BUFFER_OVERFLOW_,
+        disk_full= boost::detail::winapi::ERROR_DISK_FULL_,
         // ...
-        lock_failed = ERROR_LOCK_FAILED,
-        busy = ERROR_BUSY,
-        cancel_violation = ERROR_CANCEL_VIOLATION,
-        already_exists = ERROR_ALREADY_EXISTS
+        lock_failed = boost::detail::winapi::ERROR_LOCK_FAILED_,
+        busy = boost::detail::winapi::ERROR_BUSY_,
+        cancel_violation = boost::detail::winapi::ERROR_CANCEL_VIOLATION_,
+        already_exists = boost::detail::winapi::ERROR_ALREADY_EXISTS_
         // ...
 
         // TODO: add more Windows errors
@@ -123,4 +125,4 @@ namespace boost
 
 #endif  // BOOST_WINDOWS_API
 
-#endif  // BOOST_WINDOWS_ERROR_HPP
+#endif  // BOOST_SYSTEM_WINDOWS_ERROR_HPP

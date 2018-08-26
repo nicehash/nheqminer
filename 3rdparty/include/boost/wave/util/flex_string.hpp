@@ -1988,7 +1988,7 @@ public:
     flex_string& replace(size_type pos, size_type n1, const value_type* s)
     { return replace(pos, n1, s, traits_type::length(s)); }
     
-    // Replaces at most n1 chars of *this, starting with pos, with n2 occurences of c
+    // Replaces at most n1 chars of *this, starting with pos, with n2 occurrences of c
     // consolidated with
     // Replaces at most n1 chars of *this, starting with pos,
     // with at most n2 chars of str.

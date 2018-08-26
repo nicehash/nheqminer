@@ -6,7 +6,7 @@
 #ifndef UUID_44EB56F0A33711DEB31B41BB56D89593
 #define UUID_44EB56F0A33711DEB31B41BB56D89593
 
-#include <boost/qvm/inline.hpp>
+#include <boost/qvm/detail/vec_assign.hpp>
 #include <boost/qvm/assert.hpp>
 #include <boost/qvm/static_assert.hpp>
 

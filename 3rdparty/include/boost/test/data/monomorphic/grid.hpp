@@ -22,6 +22,8 @@
 #include <boost/test/data/monomorphic/fwd.hpp>
 #include <boost/test/data/monomorphic/sample_merge.hpp>
 
+#include <boost/mpl/identity.hpp>
+
 #include <boost/test/detail/suppress_warnings.hpp>
 
 //____________________________________________________________________________//

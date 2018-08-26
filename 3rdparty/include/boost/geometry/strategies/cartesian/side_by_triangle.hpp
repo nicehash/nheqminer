@@ -26,6 +26,9 @@
 #include <boost/geometry/arithmetic/determinant.hpp>
 #include <boost/geometry/core/access.hpp>
 #include <boost/geometry/util/select_coordinate_type.hpp>
+
+#include <boost/geometry/strategies/cartesian/disjoint_segment_box.hpp>
+#include <boost/geometry/strategies/cartesian/envelope_segment.hpp>
 #include <boost/geometry/strategies/side.hpp>
 
 #include <boost/geometry/algorithms/detail/relate/less.hpp>
@@ -66,6 +69,19 @@ class side_by_triangle
     };
 
 public :
+    typedef strategy::envelope::cartesian_segment<CalculationType> envelope_strategy_type;
+
+    static inline envelope_strategy_type get_envelope_strategy()
+    {
+        return envelope_strategy_type();
+    }
+
+    typedef strategy::disjoint::segment_box disjoint_strategy_type;
+
+    static inline disjoint_strategy_type get_disjoint_strategy()
+    {
+        return disjoint_strategy_type();
+    }
 
     // Template member function, because it is not always trivial
     // or convenient to explicitly mention the typenames in the

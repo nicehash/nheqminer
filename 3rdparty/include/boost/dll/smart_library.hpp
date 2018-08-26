@@ -95,7 +95,7 @@ public:
     //! \copydoc shared_library::shared_library(const boost::filesystem::path& lib_path, load_mode::type mode = load_mode::default_mode)
     smart_library(const boost::filesystem::path& lib_path, load_mode::type mode = load_mode::default_mode) {
         _lib.load(lib_path, mode);
-        _storage.load(lib_path, mode);
+        _storage.load(lib_path);
     }
 
     //! \copydoc shared_library::shared_library(const boost::filesystem::path& lib_path, boost::system::error_code& ec, load_mode::type mode = load_mode::default_mode)

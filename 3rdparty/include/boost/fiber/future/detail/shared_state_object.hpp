@@ -27,10 +27,11 @@ class shared_state_object : public shared_state< R > {
 public:
     typedef typename std::allocator_traits< Allocator >::template rebind_alloc< 
         shared_state_object
-    >                                           allocator_t;
+    >                                           allocator_type;
 
-    shared_state_object( allocator_t const& alloc) :
-        shared_state< R >(), alloc_( alloc) {
+    shared_state_object( allocator_type const& alloc) :
+        shared_state< R >{},
+        alloc_{ alloc } {
     }
 
 protected:
@@ -39,10 +40,10 @@ protected:
     }
 
 private:
-    allocator_t             alloc_;
+    allocator_type             alloc_;
 
-    static void destroy_( allocator_t const& alloc, shared_state_object * p) noexcept {
-        allocator_t a{ alloc };
+    static void destroy_( allocator_type const& alloc, shared_state_object * p) noexcept {
+        allocator_type a{ alloc };
         a.destroy( p);
         a.deallocate( p, 1);
     }

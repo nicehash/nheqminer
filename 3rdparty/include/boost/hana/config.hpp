@@ -2,7 +2,7 @@
 @file
 Defines configuration macros used throughout the library.
 
-@copyright Louis Dionne 2013-2016
+@copyright Louis Dionne 2013-2017
 Distributed under the Boost Software License, Version 1.0.
 (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
  */
@@ -71,7 +71,11 @@ Distributed under the Boost Software License, Version 1.0.
 // Check the compiler for general C++14 capabilities
 //////////////////////////////////////////////////////////////////////////////
 #if (__cplusplus < 201400)
-#   warning "Your compiler doesn't provide C++14 or higher capabilities. Try adding the compiler flag '-std=c++14' or '-std=c++1y'."
+#   if defined(_MSC_VER)
+#       pragma message("Warning: Your compiler doesn't provide C++14 or higher capabilities. Try adding the compiler flag '-std=c++14' or '-std=c++1y'.")
+#   else
+#       warning "Your compiler doesn't provide C++14 or higher capabilities. Try adding the compiler flag '-std=c++14' or '-std=c++1y'."
+#   endif
 #endif
 
 //////////////////////////////////////////////////////////////////////////////

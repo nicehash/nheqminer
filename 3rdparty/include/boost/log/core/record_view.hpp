@@ -110,7 +110,7 @@ public:
      * \post <tt>!*this == true</tt>
      */
     BOOST_CONSTEXPR record_view() BOOST_NOEXCEPT
-#if !defined(BOOST_LOG_NO_CXX11_DEFAULTED_NOEXCEPT_FUNCTIONS)
+#if !defined(BOOST_LOG_NO_CXX11_DEFAULTED_NOEXCEPT_FUNCTIONS) && !defined(BOOST_LOG_NO_CXX11_DEFAULTED_CONSTEXPR_CONSTRUCTORS)
         = default;
 #else
     {}

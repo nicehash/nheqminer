@@ -125,7 +125,7 @@ struct filter_factory
      */
     virtual filter on_custom_relation(attribute_name const& name, string_type const& rel, string_type const& arg)
     {
-        BOOST_LOG_THROW_DESCR_PARAMS(parse_error, "The custom attribute value relation \"" + boost::log::aux::to_narrow(arg) + "\" is not supported", (name));
+        BOOST_LOG_THROW_DESCR_PARAMS(parse_error, "The custom attribute value relation \"" + boost::log::aux::to_narrow(rel) + "\" is not supported", (name));
         BOOST_LOG_UNREACHABLE_RETURN(filter());
     }
 
@@ -208,7 +208,7 @@ public:
      */
     virtual filter on_custom_relation(attribute_name const& name, string_type const& rel, string_type const& arg)
     {
-        BOOST_LOG_THROW_DESCR_PARAMS(parse_error, "The custom attribute value relation \"" + boost::log::aux::to_narrow(arg) + "\" is not supported", (name));
+        BOOST_LOG_THROW_DESCR_PARAMS(parse_error, "The custom attribute value relation \"" + boost::log::aux::to_narrow(rel) + "\" is not supported", (name));
         BOOST_LOG_UNREACHABLE_RETURN(filter());
     }
 

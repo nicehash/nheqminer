@@ -92,6 +92,13 @@ namespace boost {
         basic_string_ref(const std::basic_string<charT, traits, Allocator>& str)
             : ptr_(str.data()), len_(str.length()) {}
 
+// #if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES) && !defined(BOOST_NO_CXX11_DELETED_FUNCTIONS)
+//         // Constructing a string_ref from a temporary string is a bad idea
+//         template<typename Allocator>
+//         basic_string_ref(      std::basic_string<charT, traits, Allocator>&&)
+//             = delete;
+// #endif
+
         BOOST_CONSTEXPR basic_string_ref(const charT* str, size_type len) BOOST_NOEXCEPT
             : ptr_(str), len_(len) {}
 
@@ -155,9 +162,7 @@ namespace boost {
         basic_string_ref substr(size_type pos, size_type n=npos) const {
             if ( pos > size())
                 BOOST_THROW_EXCEPTION( std::out_of_range ( "string_ref::substr" ) );
-            if ( n == npos || pos + n > size())
-                n = size () - pos;
-            return basic_string_ref ( data() + pos, n );
+            return basic_string_ref(data() + pos, (std::min)(size() - pos, n));
             }
 
         int compare(basic_string_ref x) const {
