@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2016
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nheqminer", "nheqminer.vcxproj", "{6FF7D209-05A3-4550-93CC-211D33503719}"
 	ProjectSection(ProjectDependencies) = postProject
-		{299E011B-5242-4EDA-B2F2-73C9B48F12FD} = {299E011B-5242-4EDA-B2F2-73C9B48F12FD}
 		{6C180164-4DBE-45D7-85E0-7BDFACF3FC7B} = {6C180164-4DBE-45D7-85E0-7BDFACF3FC7B}
 		{33C2B469-F025-4223-B9B6-E69D42FEA7D6} = {33C2B469-F025-4223-B9B6-E69D42FEA7D6}
+		{268B10AD-D845-498B-8663-AB8911CA2039} = {268B10AD-D845-498B-8663-AB8911CA2039}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cuda_tromp", "..\cuda_tromp\cuda_tromp.vcxproj", "{33C2B469-F025-4223-B9B6-E69D42FEA7D6}"
@@ -76,5 +76,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3DC2978F-44EC-4E99-8FD0-EB4AE5B8731C}
 	EndGlobalSection
 EndGlobal
