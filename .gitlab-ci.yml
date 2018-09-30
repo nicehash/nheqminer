@@ -12,14 +12,19 @@ build:linux:
   image: asherd/veruscoin-cross-compiler:pool-linux
   variables:
     DOCKER_DRIVER: overlay2
-    CXX: g++-8 
+    CXX: g++-8
     CC: gcc-8
   stage: build
   before_script:
   script:
   - mkdir build && cd build
-  - cmake -DUSE_CUDA_DJEZO=0 -DUSE_CPU_XENONCAT=0 .. 
+  - cmake -DUSE_CUDA_DJEZO=0 -DUSE_CPU_XENONCAT=0 ..
   - make -j$(nproc)
+  - mkdir -p build/nheqminer
+  - cp ../doc/Linux/Readme.txt build/nheqminer
+  - cp nheqminer build/nheqminer
+  - cd build
+  - chmod +x nheqminer/nheqminer
   - tar -czf nheqminer-Linux-v${VERSION}.tar.gz nheqminer
   - curl -F file=@nheqminer-Linux-v${VERSION}.tar.gz
       -F channels="$CPU_POOL_POST_CHANNEL"
@@ -27,12 +32,12 @@ build:linux:
       -H "${SLACK_BOT_AUTH}"
       "https://slack.com/api/files.upload"
   artifacts:
-    paths: ["build/nheqminer"]
+    paths: ["build/build/nheqminer"]
     expire_in: 1 week
 
 
 build:macos:
-  tags: ["Sierra"]
+  tags: ["High Sierra"]
   variables:
     CXX: g++-8
     CC: gcc-8
@@ -42,6 +47,7 @@ build:macos:
   - cmake -DUSE_CUDA_DJEZO=0 -DUSE_CPU_XENONCAT=0 ..
   - make -j$(sysctl -n hw.physicalcpu)
   - mkdir -p build/nheqminer
+  - cp ../doc/Mac/Readme.txt build/nheqminer
   - cp nheqminer build/nheqminer
   - cd build
   - DYLIBS=`otool -L nheqminer/nheqminer | grep "/usr/local" | awk -F' ' '{ print $1 }'`
