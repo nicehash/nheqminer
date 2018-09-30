@@ -54,6 +54,7 @@ Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, CUDA_DJEZO
     
 # Run instructions:
 
+```
 Parameters: 
 	-h		Print this help and quit
 	-l [location]	Stratum server:port
@@ -72,23 +73,24 @@ NVIDIA CUDA settings
 	-cb [blocks]	Number of blocks
 	-ct [tpb]	Number of threads per block
 Example: -cd 0 2 -cb 12 16 -ct 64 128
+```
 
 If run without parameters, miner will start mining with 75% of available logical CPU cores. Use parameter -h to learn about available parameters:
 
 Example to run benchmark on your CPU:
 
-        nheqminer -b
+`nheqminer -b`
         
 Example to mine on your CPU with your own BTC address and worker1 on NiceHash USA server:
 
-        nheqminer -l equihash.usa.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1
+`nheqminer -l equihash.usa.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1`
 
 Example to mine on your CPU with your own BTC address and worker1 on EU server, using 6 threads:
 
-        nheqminer -l equihash.eu.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1 -t 6
+`nheqminer -l equihash.eu.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1 -t 6`
 
-<i>Note: if you have a 4-core CPU with hyper threading enabled (total 8 threads) it is best to run with only 6 threads (experimental benchmarks shows that best results are achieved with 75% threads utilized)</i>
+*Note: if you have a 4-core CPU with hyper threading enabled (total 8 threads) it is best to run with only 6 threads (experimental benchmarks shows that best results are achieved with 75% threads utilized)*
 
 Example to mine on your CPU as well on your CUDA GPUs with your own BTC address and worker1 on EU server, using 6 CPU threads and 2 CUDA GPUs:
 
-        nheqminer -l equihash.eu.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1 -t 6 -cd 0 1
+`nheqminer -l equihash.eu.nicehash.com:3357 -u YOUR_BTC_ADDRESS_HERE.worker1 -t 6 -cd 0 1`
