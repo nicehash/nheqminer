@@ -1,4 +1,4 @@
-VerusCoin nheqminer v0.6.3-beta
+VerusCoin nheqminer v0.6.3a-beta
 Using VerusHash v0.3.13-beta
 
 This software needs to be run on a terminal. To find it, open the Applications folder, then open the Utilities folder and finally open the Terminal application. The terminal can also be found using spotlight and searching for “terminal”.
