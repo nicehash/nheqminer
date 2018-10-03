@@ -43,13 +43,12 @@ Example to run benchmark on your CPU:
 
 Example to mine on your CPU with your own VRSC address and worker1 on Stratum USA server:
 
-        ./nheqminer -v -l stratum+tcp://us-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1
+        ./nheqminer -v -l us-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1
 
 Example to mine on your CPU with your own VRSC address and worker1 on Stratum Asia server, using 6 threads:
 
-        ./nheqminer -v -l stratum+tcp://asia-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t 6
+        ./nheqminer -v -l asia-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t 6
 
 Example to mine on your CPU with your own VRSC address and worker1 on Stratum EU server, using all threads:
 
-        ./nheqminer -v -l stratum+tcp://veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t $(sysctl -n hw.physicalcpu)
-
+        ./nheqminer -v -l veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t $(sysctl -n hw.physicalcpu)

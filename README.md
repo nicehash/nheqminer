@@ -7,7 +7,7 @@
 
 Download and install:
 - [CUDA SDK](https://developer.nvidia.com/cuda-downloads) (if not needed remove **USE_CUDA_TROMP** and **USE_CUDA_DJEZO** from **nheqminer** Preprocessor definitions under Properties > C/C++ > Preprocessor)
-- Visual Studio 2013 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs
+- Visual Studio 2015 Community: https://www.visualstudio.com/en-us/news/releasenotes/vs2015-community-vs
 - [Visual Studio Update 5](https://www.microsoft.com/en-us/download/details.aspx?id=48129) installed
 - 64 bit version only
 
@@ -24,21 +24,14 @@ If you don't wan't to build with all solvlers you can go to **nheqminer Properti
 
 ## Linux
 Work in progress.
-Working solvers CPU_TROMP, CPU_XENONCAT, CUDA_TROMP, CUDA_DJEZO
-
+Working solvers CPU_TROMP, CPU_XENONCAT,CPU_VERUSHASH, 
 ### General instructions:
-  - Install CUDA SDK v8 (make sure you have cuda libraries in **LD_LIBRARY_PATH** and cuda toolkit bins in **PATH**)
-    - example on Ubuntu:
-    - LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64:/usr/local/cuda-8.0/lib64/stubs"
-    - PATH="$PATH:/usr/local/cuda-8.0/"
-    - PATH="$PATH:/usr/local/cuda-8.0/bin"
-
   - Use Boost 1.62+ (if it is not available from the repos you will have to download and build it yourself)
   - CMake v3.5 (if it is not available from the repos you will have to download and build it yourself)
   - Currently support only static building (CPU_XENONCAT, CUDA_DJEZO are enabled by default, check **CMakeLists.txt** in **nheqminer** root folder)
   - If not on Ubuntu make sure you have **fasm** installed and accessible in **PATH**
   - After that open the terminal and run the following commands:
-    - `git clone https://github.com/nicehash/nheqminer.git`
+    - `git clone https://github.com/veruscoin/nheqminer.git`
     - Generating asm object file:
       - **On Ubuntu**:
         - `cd nheqminer/cpu_xenoncat/asm_linux/`
@@ -90,13 +83,13 @@ Example to run benchmark on your CPU:
 
 Example to mine on your CPU with your own VRSC address and worker1 on Stratum USA server:
 
-        nheqminer -v -l stratum+tcp://us-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1
+        nheqminer -v -l us-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1
 
 Example to mine on your CPU with your own VRSC address and worker1 on Stratum Asia server, using 6 threads:
 
-        nheqminer -v -l stratum+tcp://asia-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t 6
+        nheqminer -v -l asia-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t 6
 
 Example to mine on your CPU with your own VRSC address and worker1 on Stratum EU server, using all threads:
 
-        nheqminer -v -l stratum+tcp://veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t $(sysctl -n hw.physicalcpu)
-
+        nheqminer -v -l veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t $(sysctl -n hw.physicalcpu)
+  
