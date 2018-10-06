@@ -77,6 +77,31 @@ Example: -cd 0 2 -cb 12 16 -ct 64 128
 
 To mine verus, use the -v flag to mine with the VerusHash algorithm. Use parameter -h to learn about available parameters:
 
+##Linux/MacOS
+Example to run benchmark on your CPU:
+
+        ./nheqminer -v -b
+
+Example to mine on your CPU with your own VRSC address and worker1 on Stratum USA server:
+
+        ./nheqminer -v -l us-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1
+
+Example to mine on your CPU with your own VRSC address and worker1 on Stratum Asia server
+
+        ./nheqminer -v -l asia-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 
+
+Example to mine on your CPU with your own VRSC address and worker1 on Stratum EU server using 2 threads:
+
+        ./nheqminer -v -l veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t 2
+To mine with all threads use:
+ 
+ `-t $(nproc)`
+ on Linux systems.
+ 
+ `-t $(sysctl -n hw.physicalcpu)` on Mac systems.
+ 
+##Windows
+
 Example to run benchmark on your CPU:
 
         nheqminer -v -b
@@ -89,7 +114,6 @@ Example to mine on your CPU with your own VRSC address and worker1 on Stratum As
 
         nheqminer -v -l asia-veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t 6
 
-Example to mine on your CPU with your own VRSC address and worker1 on Stratum EU server, using all threads:
+Example to mine on your CPU with your own VRSC address and worker1 on Stratum EU server, all threads
 
-        nheqminer -v -l veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t $(sysctl -n hw.physicalcpu)
-  
+        nheqminer -v -l veruscoin.miningpools.cloud:2052 -u YOUR_VRSC_ADDRESS_HERE.worker1 -t %NUMBER_OF_PROCESSORS%
