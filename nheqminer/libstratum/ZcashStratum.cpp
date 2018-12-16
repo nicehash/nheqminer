@@ -697,6 +697,7 @@ int benchmark_thread(int tid, ISolver *solver)
 	try
 	{
 		CBlock pblock;
+		pblock.nVersion = 0x10004;
 		CEquihashInput I{ pblock };
 		CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
 		ss << I;

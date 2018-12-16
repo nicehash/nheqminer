@@ -1,6 +1,17 @@
 #ifndef SPX_HARAKA_H
 #define SPX_HARAKA_H
 
+#include "immintrin.h"
+
+#define NUMROUNDS 5
+
+#ifdef _WIN32
+typedef unsigned long long u64;
+#else
+typedef unsigned long u64;
+#endif
+typedef __m128i u128;
+
 /* load constants */
 void load_constants_port();
 
@@ -17,6 +28,9 @@ void haraka512_perm(unsigned char *out, const unsigned char *in);
 
 /* Implementation of Haraka-512 */
 void haraka512_port(unsigned char *out, const unsigned char *in);
+
+/* Implementation of Haraka-512 */
+void haraka512_port_keyed(unsigned char *out, const unsigned char *in, const u128 *rc);
 
 /* Applies the 512-bit Haraka permutation to in, using zero key. */
 void haraka512_perm_zero(unsigned char *out, const unsigned char *in);

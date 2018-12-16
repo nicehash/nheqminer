@@ -152,7 +152,7 @@ static void haraka_S_absorb(unsigned char *s, unsigned int r,
                             unsigned char p)
 {
     unsigned long long i;
-    unsigned char t[16384]; // it's unused anyway
+    unsigned char t[r];
 
     while (mlen >= r) {
         // XOR block to state
@@ -246,6 +246,41 @@ void haraka512_perm(unsigned char *out, const unsigned char *in)
     memcpy(out, s, 64);
 }
 
+void haraka512_perm_keyed(unsigned char *out, const unsigned char *in, const u128 *_rc) 
+{
+    int i, j;
+    const unsigned char *rc;
+
+    unsigned char s[64], tmp[16];
+
+    memcpy(s, in, 16);
+    memcpy(s + 16, in + 16, 16);
+    memcpy(s + 32, in + 32, 16);
+    memcpy(s + 48, in + 48, 16);
+
+    for (i = 0; i < 5; ++i) {
+        // aes round(s)
+        for (j = 0; j < 2; ++j) {
+            aesenc(s, rc[4*2*i + 4*j]);
+            aesenc(s + 16, rc[4*2*i + 4*j + 1]);
+            aesenc(s + 32, rc[4*2*i + 4*j + 2]);
+            aesenc(s + 48, rc[4*2*i + 4*j + 3]);
+        }
+
+        // mixing
+        unpacklo32(tmp, s, s + 16);
+        unpackhi32(s, s, s + 16);
+        unpacklo32(s + 16, s + 32, s + 48);
+        unpackhi32(s + 32, s + 32, s + 48);
+        unpacklo32(s + 48, s, s + 32);
+        unpackhi32(s, s, s + 32);
+        unpackhi32(s + 32, s + 16, tmp);
+        unpacklo32(s + 16, s + 16, tmp);
+    }
+
+    memcpy(out, s, 64);
+}
+
 void haraka512_port(unsigned char *out, const unsigned char *in)
 {
     int i;
@@ -253,6 +288,25 @@ void haraka512_port(unsigned char *out, const unsigned char *in)
     unsigned char buf[64];
 
     haraka512_perm(buf, in);
+    /* Feed-forward */
+    for (i = 0; i < 64; i++) {
+        buf[i] = buf[i] ^ in[i];
+    }
+
+    /* Truncated */
+    memcpy(out,      buf + 8, 8);
+    memcpy(out + 8,  buf + 24, 8);
+    memcpy(out + 16, buf + 32, 8);
+    memcpy(out + 24, buf + 48, 8);
+}
+
+void haraka512_port_keyed(unsigned char *out, const unsigned char *in, const u128 *rc)
+{
+    int i;
+
+    unsigned char buf[64];
+
+    haraka512_perm_keyed(buf, in, rc);
     /* Feed-forward */
     for (i = 0; i < 64; i++) {
         buf[i] = buf[i] ^ in[i];

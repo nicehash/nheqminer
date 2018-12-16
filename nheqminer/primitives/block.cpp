@@ -31,8 +31,22 @@ uint256 CBlockHeader::GetVerusHash() const
 
 uint256 CBlockHeader::GetVerusV2Hash() const
 {
-    // no check for genesis block and use the optimized hash
-    return SerializeVerusHashV2(*this);
+    if (hashPrevBlock.IsNull())
+    {
+        // always use SHA256D for genesis block
+        return SerializeHash(*this);
+    }
+    else
+    {
+        if (nVersion > 4)
+        {
+            return SerializeVerusHashV2b(*this);
+        }
+        else
+        {
+            return SerializeVerusHash(*this);
+        }
+    }
 }
 
 void CBlockHeader::SetSHA256DHash()
