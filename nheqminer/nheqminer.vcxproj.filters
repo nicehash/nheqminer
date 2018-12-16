@@ -182,7 +182,13 @@
     <ClInclude Include="MinerFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="crypto\clhash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="crypto\haraka.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\verus_clhash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="crypto\verus_hash.h">
@@ -235,6 +241,9 @@
     <ClCompile Include="MinerFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="crypto\clhash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="crypto\haraka.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -248,6 +257,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="crypto\verus_hash.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\verus_clhash.cpp">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
   </ItemGroup>

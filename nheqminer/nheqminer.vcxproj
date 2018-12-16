@@ -115,8 +115,10 @@
     <ClInclude Include="compat\byteswap.h" />
     <ClInclude Include="compat\endian.h" />
     <ClInclude Include="crypto\common.h" />
+    <ClInclude Include="crypto\clhash.h" />
     <ClInclude Include="crypto\haraka.h" />
     <ClInclude Include="crypto\sha256.h" />
+    <ClInclude Include="crypto\verus_clhash.h" />
     <ClInclude Include="crypto\verus_hash.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="json\json_spirit.h" />
@@ -155,11 +157,13 @@
     <ClCompile Include="amount.cpp" />
     <ClCompile Include="api.cpp" />
     <ClCompile Include="arith_uint256.cpp" />
+    <ClCompile Include="crypto\clhash.c" />
     <ClCompile Include="crypto\haraka.c" />
     <ClCompile Include="crypto\haraka_portable.c" />
     <ClCompile Include="crypto\ripemd160.cpp" />
     <ClCompile Include="crypto\sha256.cpp" />
     <ClCompile Include="crypto\verus_hash.cpp" />
+    <ClCompile Include="crypto\verus_clhash.cpp" />
     <ClCompile Include="json\json_spirit_reader.cpp">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>

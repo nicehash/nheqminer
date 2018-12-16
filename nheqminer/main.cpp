@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
 
 	std::cout << std::endl;
 	std::cout << "\t==================== www.veruscoin.io ====================" << std::endl;
-	std::cout << "\tEquihash and VerusHash CPU&GPU Miner, v" STANDALONE_MINER_VERSION << std::endl;
+	std::cout << "\tEquihash and VerusHash (CPU) 1.0 and 2.0 Miner, v" STANDALONE_MINER_VERSION << std::endl;
 	std::cout << "\twith support for mining VRSC and other VerusHash coins." << std::endl << std::endl;
 	std::cout << "\tThanks to original Nicehash developers and Zcash developers" << std::endl;
 	std::cout << "\tfor providing base of the code." << std::endl << std::endl;
@@ -398,13 +398,14 @@ int main(int argc, char* argv[])
 			verus_hash = true;
 			std::cout << "Setting hash algorithm to VerusHash - ";
 			CVerusHash::init();
+			CVerusHashV2::init();
 			if (IsCPUVerusOptimized())
 			{
-				std::cout << "AES OPTIMIZED";
+				std::cout << "CPU HARDWARE OPTIMIZED";
 			}
 			else
 			{
-				std::cout << "NO AES DETECTED";
+				std::cout << "NO CPU SUPPORT DETECTED";
 			}
 			std::cout << std::endl;
 

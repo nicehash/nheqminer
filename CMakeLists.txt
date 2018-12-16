@@ -39,8 +39,8 @@ endif()
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
     # use native cpu features
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -fPIC")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=x86-64 -mpclmul -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -g -funroll-loops -fomit-frame-pointer -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=x86-64 -mpclmul -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -g -funroll-loops -fomit-frame-pointer -fPIC")
 
     # optimizations
     add_definitions(-O2)
@@ -91,9 +91,11 @@ set(SOURCE_FILES
     nheqminer/api.cpp
     nheqminer/arith_uint256.cpp
     nheqminer/crypto/sha256.cpp
+    nheqminer/crypto/clhash.c
     nheqminer/crypto/haraka.c
     nheqminer/crypto/haraka_portable.c
     nheqminer/crypto/verus_hash.cpp
+    nheqminer/crypto/verus_clhash.cpp
     nheqminer/json/json_spirit_reader.cpp
     nheqminer/json/json_spirit_value.cpp
     nheqminer/json/json_spirit_writer.cpp
@@ -108,10 +110,12 @@ set(SOURCE_FILES
     nheqminer/amount.h
     nheqminer/api.hpp
     nheqminer/arith_uint256.h
-    nheqminer/crypto/sha256.h
+    nheqminer/crypto/verus_clhash.h
     nheqminer/crypto/haraka.h
     nheqminer/crypto/haraka_portable.h
+    nheqminer/crypto/sha256.h
     nheqminer/crypto/verus_hash.h
+    nheqminer/crypto/verus_clhash.h
     nheqminer/hash.h
     nheqminer/json/json_spirit.h
     nheqminer/json/json_spirit_error_position.h

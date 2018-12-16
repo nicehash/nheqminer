@@ -14,11 +14,12 @@ bit output.
 
 void (*CVerusHash::haraka512Function)(unsigned char *out, const unsigned char *in);
 
-void CVerusHash::Hash(void *result, const void *data, size_t len)
+void CVerusHash::Hash(void *result, const void *data, size_t _len)
 {
     unsigned char buf[128];
     unsigned char *bufPtr = buf;
-    int pos = 0, nextOffset = 64;
+    int nextOffset = 64;
+    uint32_t pos = 0, len = _len;
     unsigned char *bufPtr2 = bufPtr + nextOffset;
     unsigned char *ptr = (unsigned char *)data;
 
@@ -58,14 +59,15 @@ void CVerusHash::init()
     }
 }
 
-CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
+CVerusHash &CVerusHash::Write(const unsigned char *data, size_t _len)
 {
     unsigned char *tmp;
+    uint32_t pos, len = _len;
 
     // digest up to 32 bytes at a time
-    for ( int pos = 0; pos < len; )
+    for ( pos = 0; pos < len; )
     {
-        int room = 32 - curPos;
+        uint32_t room = 32 - curPos;
 
         if (len - pos >= room)
         {
@@ -94,6 +96,8 @@ void verus_hash(void *result, const void *data, size_t len)
 }
 
 void (*CVerusHashV2::haraka512Function)(unsigned char *out, const unsigned char *in);
+void (*CVerusHashV2::haraka512KeyedFunction)(unsigned char *out, const unsigned char *in, const u128 *rc);
+void (*CVerusHashV2::haraka256Function)(unsigned char *out, const unsigned char *in);
 
 void CVerusHashV2::init()
 {
@@ -101,12 +105,16 @@ void CVerusHashV2::init()
     {
         load_constants();
         haraka512Function = &haraka512;
+        haraka512KeyedFunction = &haraka512_keyed;
+        haraka256Function = &haraka256;
     }
     else
     {
-        // load and tweak the haraka constants
+        // load the haraka constants
         load_constants_port();
         haraka512Function = &haraka512_port;
+        haraka512KeyedFunction = &haraka512_port_keyed;
+        haraka256Function = &haraka256_port;
     }
 }
 
