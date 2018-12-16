@@ -21,7 +21,7 @@
 void cpu_verushash::start(cpu_verushash& device_context) 
 {
 	device_context.pVHW = new CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
-	device_context.pVHW2b = new CVerusHashV2bWriter(SER_GETHASH, PROTOCOL_VERSION);
+ 	device_context.pVHW2b = new CVerusHashV2bWriter(SER_GETHASH, PROTOCOL_VERSION);
 }
 
 void cpu_verushash::stop(cpu_verushash& device_context) 
