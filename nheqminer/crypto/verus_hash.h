@@ -11,8 +11,6 @@ This provides the PoW hash function for Verus, enabling CPU mining.
 #include <cstring>
 #include <vector>
 
-#include <cpuid.h>
-
 #include "uint256.h"
 #include "crypto/verus_clhash.h"
 
@@ -21,6 +19,9 @@ extern "C"
 #include "crypto/haraka.h"
 #include "crypto/haraka_portable.h"
 }
+
+// verbose output when defined
+//#define VERUSHASHDEBUG 1
 
 class CVerusHash
 {
@@ -114,13 +115,13 @@ class CVerusHashV2
         template <typename T>
         void FillExtra(const T *_data)
         {
-            int len = sizeof(T);
             unsigned char *data = (unsigned char *)_data;
             int pos = curPos;
             int left = 32 - pos;
             do
             {
-                std::memcpy(curBuf + 32 + pos, data, left > len ? len : left);
+                int len = left > sizeof(T) ? sizeof(T) : left;
+                std::memcpy(curBuf + 32 + pos, data, len);
                 pos += len;
                 left -= len;
             } while (left > 0);
@@ -165,6 +166,12 @@ class CVerusHashV2
                 verusclhasher_seed = *((uint256 *)seedBytes32);
             }
             memcpy(verusclhasher_random_data_, verusclhasherrefresh, vclh.keySizeIn64BitWords << 3);
+
+#ifdef VERUSHASHDEBUG
+            uint256 *bhalf1 = (uint256 *)verusclhasher_random_data_;
+            uint256 *bhalf2 = bhalf1 + 1;
+            printf("New key: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
+#endif
             return (u128 *)verusclhasher_random_data_;
         }
 
@@ -179,11 +186,15 @@ class CVerusHashV2
 
         void Finalize2b(unsigned char hash[32])
         {
-            ClearExtra();
+            // fill buffer to the end with the beginning of it to prevent any foreknowledge of
+            // bits that may contain zero
+            FillExtra((u128 *)curBuf);
 
-            //uint256 *bhalf1 = (uint256 *)curBuf;
-            //uint256 *bhalf2 = bhalf1 + 1;
-            //printf("Curbuf: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
+#ifdef VERUSHASHDEBUG
+            uint256 *bhalf1 = (uint256 *)curBuf;
+            uint256 *bhalf2 = bhalf1 + 1;
+            printf("Curbuf: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
+#endif
 
             // gen new key with what is last in buffer
             GenNewCLKey(curBuf);
@@ -191,12 +202,16 @@ class CVerusHashV2
             // run verusclhash on the buffer
             uint64_t intermediate = vclh(curBuf);
 
-            //printf("intermediate %lx\n", intermediate);
-
             // fill buffer to the end with the result
             FillExtra(&intermediate);
 
-            //printf("Curbuf: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
+#ifdef VERUSHASHDEBUG
+            printf("intermediate %lx\n", intermediate);
+            printf("Curbuf: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
+            bhalf1 = (uint256 *)verusclhasher_random_data_;
+            bhalf2 = bhalf1 + 1;
+            printf("   Key: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
+#endif
 
             // get the final hash with a mutated dynamic key for each hash result
             (*haraka512KeyedFunction)(hash, curBuf, (u128 *)verusclhasher_random_data_ + IntermediateTo128Offset(intermediate));
@@ -216,16 +231,5 @@ class CVerusHashV2
 
 extern void verus_hash(void *result, const void *data, size_t len);
 extern void verus_hash_v2(void *result, const void *data, size_t len);
-
-inline bool IsCPUVerusOptimized()
-{
-    unsigned int eax,ebx,ecx,edx;
-
-    if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx))
-    {
-        return false;
-    }
-    return ((ecx & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
-};
 
 #endif

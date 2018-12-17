@@ -103,11 +103,11 @@ set(SOURCE_FILES
     nheqminer/api.cpp
     nheqminer/arith_uint256.cpp
     nheqminer/crypto/sha256.cpp
-    nheqminer/crypto/clhash.c
     nheqminer/crypto/haraka.c
     nheqminer/crypto/haraka_portable.c
     nheqminer/crypto/verus_hash.cpp
     nheqminer/crypto/verus_clhash.cpp
+    nheqminer/crypto/verus_clhash_portable.cpp
     nheqminer/json/json_spirit_reader.cpp
     nheqminer/json/json_spirit_value.cpp
     nheqminer/json/json_spirit_writer.cpp

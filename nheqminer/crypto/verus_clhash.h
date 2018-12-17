@@ -20,7 +20,7 @@
 #ifndef INCLUDE_VERUS_CLHASH_H
 #define INCLUDE_VERUS_CLHASH_H
 
-#include "clhash.h"
+#include <cpuid.h>
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -32,9 +32,11 @@ extern "C" {
 #endif
 
 enum {
-    // Verus Key size must include and be filled with an extra 8 * 128 bytes
-    // the excess over power of 2 will not get mutated
-    VERUSKEYSIZE=1024 * 8 + (8 * 128)
+    // Verus Key size must include the equivalent size of a Haraka key
+    // after the first part.
+    // Any excess over a power of 2 will not get mutated, and any excess over
+    // power of 2 + Haraka sized key will not be used
+    VERUSKEYSIZE=1024 * 8 + (40 * 16)
 };
 
 extern thread_local void *verusclhasher_random_data_;
@@ -42,7 +44,28 @@ extern thread_local void *verusclhasherrefresh;
 extern thread_local int64_t verusclhasher_keySizeInBytes;
 extern thread_local uint256 verusclhasher_seed;
 
+static int __cpuverusoptimized = 0x80;
+
+inline bool IsCPUVerusOptimized()
+{
+    if (__cpuverusoptimized & 0x80)
+    {
+        unsigned int eax,ebx,ecx,edx;
+
+        if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx))
+        {
+            __cpuverusoptimized = false;
+        }
+        else
+        {
+            __cpuverusoptimized = ((ecx & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
+        }
+    }
+    return __cpuverusoptimized;
+};
+
 uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMask);
+uint64_t verusclhash_port(void * random, const unsigned char buf[64], uint64_t keyMask);
 
 void *alloc_aligned_buffer(uint64_t bufSize);
 
@@ -74,7 +97,14 @@ struct verusclhasher {
     // align on 128 byte boundary at end
     verusclhasher(uint64_t keysize=VERUSKEYSIZE) : keySizeIn64BitWords((keysize >> 5) << 2)
     {
-        verusclhashfunction = &verusclhash;
+        if (IsCPUVerusOptimized())
+        {
+            verusclhashfunction = &verusclhash;
+        }
+        else
+        {
+            verusclhashfunction = &verusclhash_port;
+        }
 
         // align to 128 bits
         int64_t newKeySize = keySizeIn64BitWords << 3;

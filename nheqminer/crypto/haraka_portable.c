@@ -249,7 +249,6 @@ void haraka512_perm(unsigned char *out, const unsigned char *in)
 void haraka512_perm_keyed(unsigned char *out, const unsigned char *in, const u128 *_rc) 
 {
     int i, j;
-    const unsigned char *rc;
 
     unsigned char s[64], tmp[16];
 
@@ -261,10 +260,10 @@ void haraka512_perm_keyed(unsigned char *out, const unsigned char *in, const u12
     for (i = 0; i < 5; ++i) {
         // aes round(s)
         for (j = 0; j < 2; ++j) {
-            aesenc(s, rc[4*2*i + 4*j]);
-            aesenc(s + 16, rc[4*2*i + 4*j + 1]);
-            aesenc(s + 32, rc[4*2*i + 4*j + 2]);
-            aesenc(s + 48, rc[4*2*i + 4*j + 3]);
+            aesenc(s, (const unsigned char *)&rc[4*2*i + 4*j]);
+            aesenc(s + 16, (const unsigned char *)&rc[4*2*i + 4*j + 1]);
+            aesenc(s + 32, (const unsigned char *)&rc[4*2*i + 4*j + 2]);
+            aesenc(s + 48, (const unsigned char *)&rc[4*2*i + 4*j + 3]);
         }
 
         // mixing
