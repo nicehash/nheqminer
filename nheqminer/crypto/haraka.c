@@ -433,19 +433,19 @@ void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc
   s[2] = LOAD(in + 32);
   s[3] = LOAD(in + 48);
 
-  AES4_zero(s[0], s[1], s[2], s[3], 0);
+  AES4(s[0], s[1], s[2], s[3], 0);
   MIX4(s[0], s[1], s[2], s[3]);
 
-  AES4_zero(s[0], s[1], s[2], s[3], 8);
+  AES4(s[0], s[1], s[2], s[3], 8);
   MIX4(s[0], s[1], s[2], s[3]);
 
-  AES4_zero(s[0], s[1], s[2], s[3], 16);
+  AES4(s[0], s[1], s[2], s[3], 16);
   MIX4(s[0], s[1], s[2], s[3]);
 
-  AES4_zero(s[0], s[1], s[2], s[3], 24);
+  AES4(s[0], s[1], s[2], s[3], 24);
   MIX4(s[0], s[1], s[2], s[3]);
 
-  AES4_zero(s[0], s[1], s[2], s[3], 32);
+  AES4(s[0], s[1], s[2], s[3], 32);
   MIX4(s[0], s[1], s[2], s[3]);
 
   s[0] = _mm_xor_si128(s[0], LOAD(in));
