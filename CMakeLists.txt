@@ -50,8 +50,20 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -msse2")
 #    # optimizations
 #    add_definitions(-O2)
+
 endif()
 
+# MACOS
+if(APPLE)
+    if(CMAKE_COMPILER_IS_GNUCXX)
+        # use native cpu features
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -fPIC")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -fPIC")
+        include_directories(${nheqminer_SOURCE_DIR}/nheqminer/compat)
+        # optimizations
+        add_definitions(-O2)
+    endif()
+endif(APPLE)
 # Common
 include_directories(${nheqminer_SOURCE_DIR}/nheqminer)
 
