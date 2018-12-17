@@ -1,7 +1,7 @@
 stages:
 - build
 variables:
-  VERSION: 0.6.3a
+  VERSION: 0.6.4
   POST_MESSAGE: "Pipeline Trigger: ${CI_PIPELINE_SOURCE}\n
   Branch: ${CI_COMMIT_REF_NAME}\n
   Commit: ${CI_COMMIT_SHA}\n
@@ -9,11 +9,9 @@ variables:
   ${CI_COMMIT_MESSAGE}"
 
 build:linux:
-  image: asherd/veruscoin-cross-compiler:pool-linux
+  image: asherd/verus-builders:nheqminer
   variables:
     DOCKER_DRIVER: overlay2
-    CXX: g++-8
-    CC: gcc-8
   stage: build
   before_script:
   script:
@@ -39,8 +37,8 @@ build:linux:
 build:macos:
   tags: ["High Sierra"]
   variables:
-    CXX: g++-8
-    CC: gcc-8
+    CXX: g++-6
+    CC: gcc-6
   stage: build
   script:
   - mkdir build && cd build
