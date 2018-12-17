@@ -12,6 +12,27 @@ typedef unsigned long u64;
 #endif
 typedef __m128i u128;
 
+extern void aesenc(unsigned char *s, const unsigned char *rk);
+
+#define AES2_EMU(s0, s1, rci) \
+  aesenc((unsigned char *)&s0, (unsigned char *)&(rc[rci])); \
+  aesenc((unsigned char *)&s1, (unsigned char *)&(rc[rci + 1])); \
+  aesenc((unsigned char *)&s0, (unsigned char *)&(rc[rci + 2])); \
+  aesenc((unsigned char *)&s1, (unsigned char *)&(rc[rci + 3]));
+
+static inline void mix2_emu(__m128i *s0, __m128i *s1)
+{
+    __m128i tmp;
+    tmp = (*s0 & 0xffffffff) | ((*s1 & 0xffffffff) << 32) | ((*s0 & 0xffffffff00000000) << 32) | ((*s1 & 0xffffffff00000000) << 64);
+    *s1 = ((*s0 >> 64) & 0xffffffff) | (((*s1 >> 64) & 0xffffffff) << 32) | (((*s0 >> 64) & 0xffffffff00000000) << 32) | (((*s1 >> 64) & 0xffffffff00000000) << 64);
+    *s0 = tmp;
+}
+
+#define MIX2_EMU(s0, s1) \
+  tmp = _mm_unpacklo_epi32(s0, s1); \
+  s1 = _mm_unpackhi_epi32(s0, s1); \
+  s0 = tmp;
+
 /* load constants */
 void load_constants_port();
 

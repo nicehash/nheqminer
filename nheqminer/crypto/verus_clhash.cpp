@@ -33,16 +33,6 @@ thread_local void *verusclhasherrefresh;
 thread_local int64_t verusclhasher_keySizeInBytes;
 thread_local uint256 verusclhasher_seed;
 
-static uint64_t _mm_clmulepi64_si128_emu(__m128i a, __m128i b, int imm)
-{
-
-}
-
-static uint64_t _mm_mulhrs_epi16_emu(__m128i a, __m128i b)
-{
-
-}
-
 // multiply the length and the some key, no modulo
 static inline __m128i lazyLengthHash(uint64_t keylength, uint64_t length) {
     const __m128i lengthvector = _mm_set_epi64x(keylength,length);
@@ -70,12 +60,15 @@ static inline uint64_t precompReduction64( __m128i A) {
 // verus intermediate hash extra
 static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask)
 {
-    __m128i acc = _mm_setzero_si128();
+    __m128i const *pbuf;
 
-    __m128i const *pbuf = buf;
+    // divide key mask by 16 from bytes to __m128i
+    keyMask >>= 4;
 
-    // divide key mask by 32 from bytes to __m128i
-    keyMask >>= 5;
+    // the random buffer must have at least 32 16 byte dwords after the keymask to work with this
+    // algorithm. we take the value from the last element inside the keyMask + 2, as that will never
+    // be used to xor into the accumulator before it is hashed with other values first
+    __m128i acc = _mm_load_si128(randomsource + (keyMask + 2));
 
     for (int64_t i = 0; i < 32; i++)
     {
@@ -93,7 +86,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
             case 0:
             {
                 const __m128i temp1 = _mm_load_si128(prandex);
-                const __m128i temp2 = _mm_load_si128(pbuf + (((selector & 1) << 1) - 1));
+                const __m128i temp2 = _mm_load_si128(pbuf - (((selector & 1) << 1) - 1));
                 const __m128i add1 = _mm_xor_si128(temp1, temp2);
                 const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
                 acc = _mm_xor_si128(clprod1, acc);
@@ -130,7 +123,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                 const __m128i temp12 = _mm_load_si128(prandex);
                 _mm_store_si128(prandex, tempa2);
 
-                const __m128i temp22 = _mm_load_si128(pbuf + (((selector & 1) << 1) - 1));
+                const __m128i temp22 = _mm_load_si128(pbuf - (((selector & 1) << 1) - 1));
                 const __m128i add12 = _mm_xor_si128(temp12, temp22);
                 acc = _mm_xor_si128(add12, acc);
 
@@ -152,7 +145,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                 const __m128i temp12 = _mm_load_si128(prand);
                 _mm_store_si128(prand, tempa2);
 
-                const __m128i temp22 = _mm_load_si128(pbuf + (((selector & 1) << 1) - 1));
+                const __m128i temp22 = _mm_load_si128(pbuf - (((selector & 1) << 1) - 1));
                 const __m128i add12 = _mm_xor_si128(temp12, temp22);
                 const __m128i clprod12 = _mm_clmulepi64_si128(add12, add12, 0x10);
                 acc = _mm_xor_si128(clprod12, acc);
@@ -167,7 +160,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
             case 0x0c:
             {
                 const __m128i temp1 = _mm_load_si128(prand);
-                const __m128i temp2 = _mm_load_si128(pbuf + (((selector & 1) << 1) - 1));
+                const __m128i temp2 = _mm_load_si128(pbuf - (((selector & 1) << 1) - 1));
                 const __m128i add1 = _mm_xor_si128(temp1, temp2);
 
                 // cannot be zero here
@@ -212,7 +205,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                 const __m128i *rc = prand;
                 __m128i tmp;
 
-                __m128i temp1 = _mm_load_si128(pbuf + (((selector & 1) << 1) - 1));
+                __m128i temp1 = _mm_load_si128(pbuf - (((selector & 1) << 1) - 1));
                 __m128i temp2 = _mm_load_si128(pbuf);
 
                 AES2(temp1, temp2, 0);
@@ -239,7 +232,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
             case 0x14:
             {
                 // we'll just call this one the monkins loop, inspired by Chris
-                const __m128i *buftmp = pbuf + (((selector & 1) << 1) - 1);
+                const __m128i *buftmp = pbuf - (((selector & 1) << 1) - 1);
                 __m128i tmp; // used by MIX2
 
                 uint64_t rounds = selector >> 61; // loop randomly between 1 and 8 times
@@ -280,7 +273,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
             }
             case 0x18:
             {
-                const __m128i temp1 = _mm_load_si128(pbuf + (((selector & 1) << 1) - 1));
+                const __m128i temp1 = _mm_load_si128(pbuf - (((selector & 1) << 1) - 1));
                 const __m128i temp2 = _mm_load_si128(prand);
                 const __m128i add1 = _mm_xor_si128(temp1, temp2);
                 const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
