@@ -251,3 +251,4 @@ extern void verus_hash(void *result, const void *data, size_t len);
 extern void verus_hash_v2(void *result, const void *data, size_t len);
 
 #endif
+
