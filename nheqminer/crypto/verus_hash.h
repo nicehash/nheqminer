@@ -9,7 +9,7 @@ This provides the PoW hash function for Verus, enabling CPU mining.
 #define VERUS_HASH_H_
 
 // verbose output when defined
-//#define VERUSHASHDEBUG 1
+// #define VERUSHASHDEBUG 1
 
 #include <cstring>
 #include <vector>
