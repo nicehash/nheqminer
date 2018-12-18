@@ -80,8 +80,8 @@ void *alloc_aligned_buffer(uint64_t bufSize);
 
 // special high speed hasher for VerusHash 2.0
 struct verusclhasher {
-    int64_t keySizeIn64BitWords;
-    int64_t keyMask;
+    uint64_t keySizeIn64BitWords;
+    uint64_t keyMask;
     uint64_t (*verusclhashfunction)(void * random, const unsigned char buf[64], uint64_t keyMask);
 
     inline uint64_t keymask(uint64_t keysize)
@@ -107,7 +107,7 @@ struct verusclhasher {
         }
 
         // align to 128 bits
-        int64_t newKeySize = keySizeIn64BitWords << 3;
+        uint64_t newKeySize = keySizeIn64BitWords << 3;
         if (verusclhasher_random_data_ && newKeySize != verusclhasher_keySizeInBytes)
         {
             freehashkey();
@@ -119,6 +119,9 @@ struct verusclhasher {
             verusclhasher_keySizeInBytes = newKeySize;
             keyMask = keymask(newKeySize);
         }
+#ifdef VERUSHASHDEBUG
+        printf("New hasher, keyMask: %lx, newKeySize: %lx, keySizeIn64BitWords: %lx\n", keyMask, newKeySize, keySizeIn64BitWords);
+#endif
     }
 
     void freehashkey()
@@ -140,6 +143,10 @@ struct verusclhasher {
     inline void *gethashkey()
     {
         memcpy(verusclhasher_random_data_, verusclhasherrefresh, keyMask + 1);
+#ifdef VERUSHASHDEBUG
+        // in debug mode, ensure that what should be the same, is
+        assert(memcmp((unsigned char *)verusclhasher_random_data_ + (keyMask + 1), (unsigned char *)verusclhasherrefresh + (keyMask + 1), verusclhasher_keySizeInBytes - (keyMask + 1)) == 0);
+#endif
         return verusclhasher_random_data_;
     }
 
