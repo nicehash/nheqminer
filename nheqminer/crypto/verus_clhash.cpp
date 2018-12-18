@@ -164,7 +164,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                 const __m128i add1 = _mm_xor_si128(temp1, temp2);
 
                 // cannot be zero here
-                const int32_t divisor = _mm_cvtsi128_si32(acc);
+                const int32_t divisor = (uint32_t)selector;
 
                 acc = _mm_xor_si128(add1, acc);
 
@@ -236,7 +236,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                 __m128i tmp; // used by MIX2
 
                 uint64_t rounds = selector >> 61; // loop randomly between 1 and 8 times
-                __m128i *pkey = prand;
+                __m128i *rc = prand;
                 uint64_t aesround = 0;
                 __m128i onekey;
 
@@ -244,7 +244,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                 {
                     if (selector & (0x10000000 << rounds))
                     {
-                        onekey = _mm_load_si128(pkey++);
+                        onekey = _mm_load_si128(rc++);
                         const __m128i temp2 = _mm_load_si128(rounds & 1 ? pbuf : buftmp);
                         const __m128i add1 = _mm_xor_si128(onekey, temp2);
                         const __m128i clprod1 = _mm_clmulepi64_si128(add1, add1, 0x10);
@@ -252,10 +252,10 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                     }
                     else
                     {
-                        const __m128i *rc = pkey++; 
-                        onekey = _mm_load_si128(rc);
+                        onekey = _mm_load_si128(rc++);
                         __m128i temp2 = _mm_load_si128(rounds & 1 ? buftmp : pbuf);
-                        AES2(onekey, temp2, aesround++ << 2);
+                        const uint64_t roundidx = aesround++ << 2;
+                        AES2(onekey, temp2, roundidx);
                         MIX2(onekey, temp2);
                         acc = _mm_xor_si128(onekey, acc);
                         acc = _mm_xor_si128(temp2, acc);
@@ -324,6 +324,10 @@ uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMas
     acc = _mm_xor_si128(acc, lazyLengthHash(1024, 64));
     return precompReduction64(acc);
 }
+
+#ifdef __WIN32
+#define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
+#endif
 
 void *alloc_aligned_buffer(uint64_t bufSize)
 {
