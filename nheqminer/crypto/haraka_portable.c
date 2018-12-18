@@ -246,7 +246,7 @@ void haraka512_perm(unsigned char *out, const unsigned char *in)
     memcpy(out, s, 64);
 }
 
-void haraka512_perm_keyed(unsigned char *out, const unsigned char *in, const u128 *_rc) 
+void haraka512_perm_keyed(unsigned char *out, const unsigned char *in, const u128 *rc) 
 {
     int i, j;
 

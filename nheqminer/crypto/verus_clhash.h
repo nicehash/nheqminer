@@ -31,6 +31,11 @@
 extern "C" {
 #endif
 
+#ifdef __WIN32
+#define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
+typedef unsigned char u_char
+#endif
+
 enum {
     // Verus Key size must include the equivalent size of a Haraka key
     // after the first part.

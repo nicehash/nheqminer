@@ -744,7 +744,7 @@ void Solvers_doBenchmark(int hashes, const std::vector<ISolver *> &solvers, bool
 			BOOST_LOG_TRIVIAL(info) << "Benchmarking CPU worker (" << solver->getname() << ") " << solver->getdevinfo();
 		}
 		else if (solver->GetType() == SolverType::VERUS_CPU_OPT) {
-			BOOST_LOG_TRIVIAL(info) << "Benchmarking VerusHash optimized CPU worker (" << solver->getname() << ") " << solver->getdevinfo();
+			BOOST_LOG_TRIVIAL(info) << "Benchmarking VerusHash CPU worker (" << solver->getname() << ") " << solver->getdevinfo();
 		}
 		else if (solver->GetType() == SolverType::CUDA) {
 			BOOST_LOG_TRIVIAL(info) << "Benchmarking CUDA worker (" << solver->getname() << ") " << solver->getdevinfo();

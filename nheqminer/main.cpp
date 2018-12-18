@@ -560,7 +560,7 @@ int main(int argc, char* argv[])
 
 	if (verus_hash)
 	{
-		BOOST_LOG_TRIVIAL(info) << "Using AES: " << (use_aes ? "YES" : "NO");
+		BOOST_LOG_TRIVIAL(info) << "Using AES, AVX, and PCLMUL: " << (use_aes ? "YES" : "NO");
 	}
 	else
 	{
