@@ -9,7 +9,7 @@ This provides the PoW hash function for Verus, enabling CPU mining.
 #define VERUS_HASH_H_
 
 // verbose output when defined
-//#define VERUSHASHDEBUG 1
+// #define VERUSHASHDEBUG 1
 
 #include <cstring>
 #include <vector>
@@ -22,9 +22,6 @@ extern "C"
 #include "crypto/haraka.h"
 #include "crypto/haraka_portable.h"
 }
-
-// verbose output when defined
-//#define VERUSHASHDEBUG 1
 
 class CVerusHash
 {
@@ -217,13 +214,15 @@ class CVerusHashV2
             // get the final hash with a mutated dynamic key for each hash result
             (*haraka512KeyedFunction)(hash, curBuf, ((u128 *)verusclhasher_random_data_) + IntermediateTo128Offset(intermediate));
 
-            // TODO: remove
+            /*
+            // TEST BEGIN
             // test against the portable version
-            uint256 testHash1 = *(uint256 *)&hash, testHash2;
+            uint256 testHash1 = *(uint256 *)hash, testHash2;
             FillExtra((u128 *)curBuf);
-            uint64_t temp = vclh(curBuf);
+            u128 *hashKey = ((u128 *)vclh.gethashkey());
+            uint64_t temp = verusclhash_port(verusclhasher_random_data_, curBuf, vclh.keyMask);
             FillExtra(&temp);
-            haraka512_keyed((unsigned char *)&testHash2, curBuf, ((u128 *)vclh.gethashkey()) + IntermediateTo128Offset(intermediate));
+            haraka512_keyed((unsigned char *)&testHash2, curBuf, hashKey + IntermediateTo128Offset(intermediate));
             if (testHash1 == testHash2)
             {
                 printf("Portable version passed!");
@@ -232,6 +231,8 @@ class CVerusHashV2
             {
                 printf("Portable version failed! intermediate1: %lx, intermediate2: %lx\n", intermediate, temp);
             }
+            // END TEST
+            */
         }
 
         inline unsigned char *CurBuffer()
@@ -250,3 +251,4 @@ extern void verus_hash(void *result, const void *data, size_t len);
 extern void verus_hash_v2(void *result, const void *data, size_t len);
 
 #endif
+
