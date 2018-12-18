@@ -24,6 +24,10 @@
 #include <string.h>
 #include <x86intrin.h>
 
+#ifdef __WIN32
+#pragma warning (disable : 4146)
+#endif
+
 void clmul64(uint64_t a, uint64_t b, uint64_t* r)
 {
     uint8_t s = 4,i; //window size
@@ -302,7 +306,8 @@ static inline __m128i precompReduction64_si128_port( __m128i A) {
 }
 
 static inline uint64_t precompReduction64_port( __m128i A) {
-    return _mm_cvtsi128_si64(precompReduction64_si128_port(A));
+    __m128i tmp = precompReduction64_si128_port(A);
+    return _mm_cvtsi128_si64_emu(tmp);
 }
 
 // verus intermediate hash extra
@@ -569,6 +574,6 @@ uint64_t verusclhash_port(void * random, const unsigned char buf[64], uint64_t k
     const __m128i * string = (const __m128i *) buf;
 
     __m128i  acc = __verusclmulwithoutreduction64alignedrepeat_port(rs64, string, keyMask);
-    acc = _mm_xor_si128(acc, lazyLengthHash_port(1024, 64));
+    acc = _mm_xor_si128_emu(acc, lazyLengthHash_port(1024, 64));
     return precompReduction64_port(acc);
 }

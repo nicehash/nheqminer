@@ -9,7 +9,7 @@ This provides the PoW hash function for Verus, enabling CPU mining.
 #define VERUS_HASH_H_
 
 // verbose output when defined
-// #define VERUSHASHDEBUG 1
+//#define VERUSHASHDEBUG 1
 
 #include <cstring>
 #include <vector>
@@ -223,11 +223,7 @@ class CVerusHashV2
             uint64_t temp = verusclhash_port(verusclhasher_random_data_, curBuf, vclh.keyMask);
             FillExtra(&temp);
             haraka512_keyed((unsigned char *)&testHash2, curBuf, hashKey + IntermediateTo128Offset(intermediate));
-            if (testHash1 == testHash2)
-            {
-                printf("Portable version passed!");
-            }
-            else
+            if (testHash1 != testHash2)
             {
                 printf("Portable version failed! intermediate1: %lx, intermediate2: %lx\n", intermediate, temp);
             }
@@ -251,4 +247,3 @@ extern void verus_hash(void *result, const void *data, size_t len);
 extern void verus_hash_v2(void *result, const void *data, size_t len);
 
 #endif
-
