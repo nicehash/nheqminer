@@ -23,6 +23,9 @@ extern "C"
 #include "crypto/haraka_portable.h"
 }
 
+// verbose output when defined
+//#define VERUSHASHDEBUG 1
+
 class CVerusHash
 {
     public:
