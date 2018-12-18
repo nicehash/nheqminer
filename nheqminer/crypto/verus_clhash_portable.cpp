@@ -24,10 +24,6 @@
 #include <string.h>
 #include <x86intrin.h>
 
-#ifdef __WIN32
-#define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
-#endif
-
 void clmul64(uint64_t a, uint64_t b, uint64_t* r)
 {
     uint8_t s = 4,i; //window size
@@ -61,24 +57,65 @@ void clmul64(uint64_t a, uint64_t b, uint64_t* r)
     }
 }
 
-static u128 _mm_clmulepi64_si128_emu(const __m128i &a, const __m128i &b, int imm)
+u128 _mm_clmulepi64_si128_emu(const __m128i &a, const __m128i &b, int imm)
 {
     uint64_t result[2];
-    clmul64(*(uint64_t*)&a + (imm & 1), *(uint64_t*)&a + ((imm & 0x10) > 4), result);
+    clmul64(*((uint64_t*)&a + (imm & 1)), *((uint64_t*)&b + ((imm & 0x10) >> 4)), result);
+
+    /*
+    // TEST
+    const __m128i tmp1 = _mm_load_si128(&a);
+    const __m128i tmp2 = _mm_load_si128(&b);
+    imm = imm & 0x11;
+    const __m128i testresult = (imm == 0x10) ? _mm_clmulepi64_si128(tmp1, tmp2, 0x10) : ((imm == 0x01) ? _mm_clmulepi64_si128(tmp1, tmp2, 0x01) : ((imm == 0x00) ? _mm_clmulepi64_si128(tmp1, tmp2, 0x00) : _mm_clmulepi64_si128(tmp1, tmp2, 0x11)));
+    if (!memcmp(&testresult, &result, 16))
+    {
+        printf("_mm_clmulepi64_si128_emu: Portable version passed!\n");
+    }
+    else
+    {
+        printf("_mm_clmulepi64_si128_emu: Portable version failed! a: %lxh %lxl, b: %lxh %lxl, imm: %x, emu: %lxh %lxl, intrin: %lxh %lxl\n", 
+               *((uint64_t *)&a + 1), *(uint64_t *)&a,
+               *((uint64_t *)&b + 1), *(uint64_t *)&b,
+               imm,
+               *((uint64_t *)result + 1), *(uint64_t *)result,
+               *((uint64_t *)&testresult + 1), *(uint64_t *)&testresult);
+        return testresult;
+    }
+    */
+
     return *(__m128i *)result;
 }
 
-static u128 _mm_mulhrs_epi16_emu(__m128i _a, __m128i _b)
+u128 _mm_mulhrs_epi16_emu(__m128i _a, __m128i _b)
 {
-    uint16_t result[8];
-    uint16_t *a = (uint16_t*)&_a, *b = (uint16_t*)&_b;
-    for (int i = 0; i < 7; i ++)
+    int16_t result[8];
+    int16_t *a = (int16_t*)&_a, *b = (int16_t*)&_b;
+    for (int i = 0; i < 8; i ++)
     {
-        result[i] = (uint16_t)((uint32_t)((((int32_t)a[i] * (int32_t)b[i]) >> 14) + 1) >> 1);
+        result[i] = (int16_t)((((int32_t)(a[i]) * (int32_t)(b[i])) + 0x4000) >> 15);
     }
+
+    /*
+    const __m128i testresult = _mm_mulhrs_epi16(_a, _b);
+    if (!memcmp(&testresult, &result, 16))
+    {
+        printf("_mm_mulhrs_epi16_emu: Portable version passed!\n");
+    }
+    else
+    {
+        printf("_mm_mulhrs_epi16_emu: Portable version failed! a: %lxh %lxl, b: %lxh %lxl, emu: %lxh %lxl, intrin: %lxh %lxl\n", 
+               *((uint64_t *)&a + 1), *(uint64_t *)&a,
+               *((uint64_t *)&b + 1), *(uint64_t *)&b,
+               *((uint64_t *)result + 1), *(uint64_t *)result,
+               *((uint64_t *)&testresult + 1), *(uint64_t *)&testresult);
+    }
+    */
+
+    return *(__m128i *)result;
 }
 
-static inline u128 _mm_set_epi64x_emu(uint64_t hi, uint64_t lo)
+inline u128 _mm_set_epi64x_emu(uint64_t hi, uint64_t lo)
 {
     __m128i result;
     ((uint64_t *)&result)[0] = lo;
@@ -86,7 +123,7 @@ static inline u128 _mm_set_epi64x_emu(uint64_t hi, uint64_t lo)
     return result;
 }
 
-static inline u128 _mm_cvtsi64_si128_emu(uint64_t lo)
+inline u128 _mm_cvtsi64_si128_emu(uint64_t lo)
 {
     __m128i result;
     ((uint64_t *)&result)[0] = lo;
@@ -94,26 +131,39 @@ static inline u128 _mm_cvtsi64_si128_emu(uint64_t lo)
     return result;
 }
 
-static inline int64_t _mm_cvtsi128_si64_emu(__m128i &a)
+inline int64_t _mm_cvtsi128_si64_emu(__m128i &a)
 {
     return *(int64_t *)&a;
 }
 
-static inline int32_t _mm_cvtsi128_si32_emu(__m128i &a)
+inline int32_t _mm_cvtsi128_si32_emu(__m128i &a)
 {
     return *(int32_t *)&a;
 }
 
-static inline u128 _mm_cvtsi32_si128_emu(uint32_t lo)
+inline u128 _mm_cvtsi32_si128_emu(uint32_t lo)
 {
     __m128i result;
     ((uint32_t *)&result)[0] = lo;
     ((uint32_t *)&result)[1] = 0;
     ((uint64_t *)&result)[1] = 0;
+
+    /*
+    const __m128i testresult = _mm_cvtsi32_si128(lo);
+    if (!memcmp(&testresult, &result, 16))
+    {
+        printf("_mm_cvtsi32_si128_emu: Portable version passed!\n");
+    }
+    else
+    {
+        printf("_mm_cvtsi32_si128_emu: Portable version failed!\n");
+    }
+    */
+
     return result;
 }
 
-static u128 _mm_setr_epi8_emu(u_char c0, u_char c1, u_char c2, u_char c3, u_char c4, u_char c5, u_char c6, u_char c7, u_char c8, u_char c9, u_char c10, u_char c11, u_char c12, u_char c13, u_char c14, u_char c15)
+u128 _mm_setr_epi8_emu(u_char c0, u_char c1, u_char c2, u_char c3, u_char c4, u_char c5, u_char c6, u_char c7, u_char c8, u_char c9, u_char c10, u_char c11, u_char c12, u_char c13, u_char c14, u_char c15)
 {
     __m128i result;
     ((uint8_t *)&result)[0] = c0;
@@ -132,14 +182,56 @@ static u128 _mm_setr_epi8_emu(u_char c0, u_char c1, u_char c2, u_char c3, u_char
     ((uint8_t *)&result)[13] = c13;
     ((uint8_t *)&result)[14] = c14;
     ((uint8_t *)&result)[15] = c15;
+
+    /*
+    const __m128i testresult = _mm_setr_epi8(c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15);
+    if (!memcmp(&testresult, &result, 16))
+    {
+        printf("_mm_setr_epi8_emu: Portable version passed!\n");
+    }
+    else
+    {
+        printf("_mm_setr_epi8_emu: Portable version failed!\n");
+    }
+    */
+
     return result;
 }
 
-static inline __m128i _mm_srli_si128_emu(__m128i a, int imm8)
+inline __m128i _mm_srli_si128_emu(__m128i a, int imm8)
 {
+    unsigned char result[16];
     uint8_t shift = imm8 & 0xff;
-    shift = shift > 15 ? 128 : shift << 3;
-    return a >> shift;
+    if (shift > 15) shift = 16;
+
+    int i;
+    for (i = 0; i < (16 - shift); i++)
+    {
+        result[i] = ((unsigned char *)&a)[shift + i];
+    }
+    for ( ; i < 16; i++)
+    {
+        result[i] = 0;
+    }
+
+    /*
+    const __m128i tmp1 = _mm_load_si128(&a);
+    __m128i testresult = _mm_srli_si128(tmp1, imm8);
+    if (!memcmp(&testresult, result, 16))
+    {
+        printf("_mm_srli_si128_emu: Portable version passed!\n");
+    }
+    else
+    {
+        printf("_mm_srli_si128_emu: Portable version failed! val: %lx%lx imm: %x emu: %lx%lx, intrin: %lx%lx\n", 
+               *((uint64_t *)&a + 1), *(uint64_t *)&a,
+               imm8,
+               *((uint64_t *)result + 1), *(uint64_t *)result,
+               *((uint64_t *)&testresult + 1), *(uint64_t *)&testresult);
+    }
+    */
+
+    return *(__m128i *)result;
 }
 
 inline __m128i _mm_xor_si128_emu(__m128i a, __m128i b)
@@ -152,7 +244,7 @@ inline __m128i _mm_load_si128_emu(const void *p)
     return *(__m128i *)p;
 }
 
-inline __m128i _mm_store_si128_emu(void *p, __m128i val)
+inline void _mm_store_si128_emu(void *p, __m128i val)
 {
     *(__m128i *)p = val;
 }
@@ -164,13 +256,28 @@ __m128i _mm_shuffle_epi8_emu(__m128i a, __m128i b)
     {
         if (((uint8_t *)&b)[i] & 0x80)
         {
-            ((uint8_t *)&result)[i] = ((uint8_t *)&a)[((uint8_t *)&b)[i] & 0xf];
+            ((uint8_t *)&result)[i] = 0;
         }
         else
         {
-            ((uint8_t *)&result)[i] = 0;
+            ((uint8_t *)&result)[i] = ((uint8_t *)&a)[((uint8_t *)&b)[i] & 0xf];
         }
     }
+
+    /*
+    const __m128i tmp1 = _mm_load_si128(&a);
+    const __m128i tmp2 = _mm_load_si128(&b);
+    __m128i testresult = _mm_shuffle_epi8(tmp1, tmp2);
+    if (!memcmp(&testresult, &result, 16))
+    {
+        printf("_mm_shuffle_epi8_emu: Portable version passed!\n");
+    }
+    else
+    {
+        printf("_mm_shuffle_epi8_emu: Portable version failed!\n");
+    }
+    */
+
     return result;
 }
 
@@ -465,4 +572,3 @@ uint64_t verusclhash_port(void * random, const unsigned char buf[64], uint64_t k
     acc = _mm_xor_si128(acc, lazyLengthHash_port(1024, 64));
     return precompReduction64_port(acc);
 }
-
