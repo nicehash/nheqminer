@@ -33,6 +33,8 @@ thread_local void *verusclhasherrefresh;
 thread_local int64_t verusclhasher_keySizeInBytes;
 thread_local uint256 verusclhasher_seed;
 
+int __cpuverusoptimized = 0x80;
+
 // multiply the length and the some key, no modulo
 static inline __m128i lazyLengthHash(uint64_t keylength, uint64_t length) {
     const __m128i lengthvector = _mm_set_epi64x(keylength,length);
