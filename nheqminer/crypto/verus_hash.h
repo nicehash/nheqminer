@@ -113,7 +113,7 @@ class CVerusHashV2
         }
 
         template <typename T>
-        void FillExtra(const T *_data)
+        inline void FillExtra(const T *_data)
         {
             unsigned char *data = (unsigned char *)_data;
             int pos = curPos;

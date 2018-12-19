@@ -120,7 +120,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 
 		// fill buffer to the end with the result and final hash
 		vh.FillExtra(&intermediate);
-		vh.ExtraHashKeyed((unsigned char *)&curHash, hashKey + vh.IntermediateTo128Offset(intermediate));
+		(*vh.haraka512KeyedFunction)((unsigned char *)&curHash, curBuf, hashKey + vh.IntermediateTo128Offset(intermediate));
 
 		if (UintToArith256(curHash) > target)
 			continue;
