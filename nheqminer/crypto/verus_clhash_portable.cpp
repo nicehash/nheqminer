@@ -410,7 +410,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat_port(__m128i *randoms
                 _mm_store_si128_emu(prandex, tempb2);
                 break;
             }
-            case 0x0c:
+            case 0xc:
             {
                 const __m128i temp1 = _mm_load_si128_emu(prand);
                 const __m128i temp2 = _mm_load_si128_emu(pbuf - (((selector & 1) << 1) - 1));

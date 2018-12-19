@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <string.h>
 #include <x86intrin.h>
+#include "../../cpu_verushash/cpu_verushash.hpp"
 
 #ifdef __WIN32
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
@@ -32,6 +33,8 @@ thread_local void *verusclhasher_random_data_;
 thread_local void *verusclhasherrefresh;
 thread_local int64_t verusclhasher_keySizeInBytes;
 thread_local uint256 verusclhasher_seed;
+
+int __cpuverusoptimized = 0x80;
 
 // multiply the length and the some key, no modulo
 static inline __m128i lazyLengthHash(uint64_t keylength, uint64_t length) {
@@ -157,7 +160,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                 _mm_store_si128(prandex, tempb2);
                 break;
             }
-            case 0x0c:
+            case 0xc:
             {
                 const __m128i temp1 = _mm_load_si128(prand);
                 const __m128i temp2 = _mm_load_si128(pbuf - (((selector & 1) << 1) - 1));
@@ -323,6 +326,64 @@ uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMas
     __m128i  acc = __verusclmulwithoutreduction64alignedrepeat(rs64, string, keyMask);
     acc = _mm_xor_si128(acc, lazyLengthHash(1024, 64));
     return precompReduction64(acc);
+}
+
+void cpu_verushash::solve_verus_v2(CBlockHeader &bh, 
+	arith_uint256 &target,
+	std::function<bool()> cancelf,
+	std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
+	std::function<void(void)> hashdonef,
+	cpu_verushash &device_context)
+{
+	CVerusHashV2bWriter &vhw = *(device_context.pVHW2b);
+	CVerusHashV2 &vh = vhw.GetState();
+	uint256 curHash;
+	std::vector<unsigned char> solution = std::vector<unsigned char>(1344);
+	bh.nSolution = solution;
+
+	// prepare the hash state
+	vhw.Reset();
+	vhw << bh;
+
+	int64_t intermediate, *extraPtr = vhw.xI64p();
+	unsigned char *curBuf = vh.CurBuffer();
+
+	// generate a new key for this block
+	vh.GenNewCLKey(curBuf);
+
+	// loop the requested number of times or until canceled. determine if we 
+	// found a winner, and send all winners found as solutions. count only one hash. 
+	// hashrate is determined by multiplying hash by VERUSHASHES_PER_SOLVE, with VerusHash, only
+	// hashrate and sharerate are valid, solutionrate will equal sharerate
+	for (int64_t i = 0; i < VERUSHASHES_PER_SOLVE; i++)
+	{
+		*extraPtr = i;
+
+		// prepare the buffer
+		vh.FillExtra((u128 *)curBuf);
+
+		// refresh the key and get a reference
+		u128 *hashKey = (u128 *)vh.vclh.gethashkey();
+
+		// run verusclhash on the buffer
+		intermediate = vh.vclh(curBuf);
+
+		// fill buffer to the end with the result and final hash
+		vh.FillExtra(&intermediate);
+		(*vh.haraka512KeyedFunction)((unsigned char *)&curHash, curBuf, hashKey + vh.IntermediateTo128Offset(intermediate));
+
+		if (UintToArith256(curHash) > target)
+			continue;
+
+		int extraSpace = (solution.size() % 32) + 15;
+		assert(solution.size() > 32);
+		*((int64_t *)&(solution.data()[solution.size() - extraSpace])) = i;
+
+		solutionf(std::vector<uint32_t>(0), solution.size(), solution.data());
+		if (cancelf()) return;
+	}
+
+	hashdonef();
 }
 
 #ifdef __WIN32

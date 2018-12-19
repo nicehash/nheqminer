@@ -49,7 +49,7 @@ extern thread_local void *verusclhasherrefresh;
 extern thread_local int64_t verusclhasher_keySizeInBytes;
 extern thread_local uint256 verusclhasher_seed;
 
-static int __cpuverusoptimized = 0x80;
+extern int __cpuverusoptimized;
 
 inline bool IsCPUVerusOptimized()
 {
@@ -67,6 +67,11 @@ inline bool IsCPUVerusOptimized()
         }
     }
     return __cpuverusoptimized;
+};
+
+inline void ForceCPUVerusOptimized(bool trueorfalse)
+{
+    __cpuverusoptimized = trueorfalse;
 };
 
 uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMask);
