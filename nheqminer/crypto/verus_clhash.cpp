@@ -386,6 +386,37 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 	hashdonef();
 }
 
+void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc) {
+  u128 s[4], tmp;
+
+  s[0] = LOAD(in);
+  s[1] = LOAD(in + 16);
+  s[2] = LOAD(in + 32);
+  s[3] = LOAD(in + 48);
+
+  AES4(s[0], s[1], s[2], s[3], 0);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4(s[0], s[1], s[2], s[3], 8);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4(s[0], s[1], s[2], s[3], 16);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4(s[0], s[1], s[2], s[3], 24);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4(s[0], s[1], s[2], s[3], 32);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  s[0] = _mm_xor_si128(s[0], LOAD(in));
+  s[1] = _mm_xor_si128(s[1], LOAD(in + 16));
+  s[2] = _mm_xor_si128(s[2], LOAD(in + 32));
+  s[3] = _mm_xor_si128(s[3], LOAD(in + 48));
+
+  TRUNCSTORE(out, s[0], s[1], s[2], s[3]);
+}
+
 #ifdef __WIN32
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
 #endif
