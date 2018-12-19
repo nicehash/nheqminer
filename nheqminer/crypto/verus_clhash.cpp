@@ -20,6 +20,8 @@
 
 #include "verus_hash.h"
 
+#include <boost/thread.hpp>
+
 #include <assert.h>
 #include <string.h>
 #include <x86intrin.h>
@@ -29,10 +31,8 @@
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
 #endif
 
-thread_local void *verusclhasher_random_data_;
-thread_local void *verusclhasherrefresh;
-thread_local int64_t verusclhasher_keySizeInBytes;
-thread_local uint256 verusclhasher_seed;
+boost::thread_specific_ptr<unsigned char> verusclhasher_key;
+boost::thread_specific_ptr<verusclhash_descr> verusclhasher_descr;
 
 int __cpuverusoptimized = 0x80;
 
@@ -337,8 +337,11 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 {
 	CVerusHashV2bWriter &vhw = *(device_context.pVHW2b);
 	CVerusHashV2 &vh = vhw.GetState();
+    verusclhasher &vclh = vh.vclh;
 	uint256 curHash;
+
 	std::vector<unsigned char> solution = std::vector<unsigned char>(1344);
+    solution[0] = VERUSHHASH_SOLUTION_VERSION; // earliest VerusHash 2.0 solution version
 	bh.nSolution = solution;
 
 	// prepare the hash state
@@ -349,7 +352,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 	unsigned char *curBuf = vh.CurBuffer();
 
 	// generate a new key for this block
-	vh.GenNewCLKey(curBuf);
+	u128 *hashKey = vh.GenNewCLKey(curBuf);
 
 	// loop the requested number of times or until canceled. determine if we 
 	// found a winner, and send all winners found as solutions. count only one hash. 
@@ -362,18 +365,19 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 		// prepare the buffer
 		vh.FillExtra((u128 *)curBuf);
 
-		// refresh the key and get a reference
-		u128 *hashKey = (u128 *)vh.vclh.gethashkey();
-
 		// run verusclhash on the buffer
-		intermediate = vh.vclh(curBuf);
+		intermediate = vclh(curBuf, hashKey);
 
 		// fill buffer to the end with the result and final hash
 		vh.FillExtra(&intermediate);
 		(*vh.haraka512KeyedFunction)((unsigned char *)&curHash, curBuf, hashKey + vh.IntermediateTo128Offset(intermediate));
 
 		if (UintToArith256(curHash) > target)
+        {
+            // refresh the key
+            memcpy(hashKey, vclh.gethasherrefresh(), vclh.keyrefreshsize());
 			continue;
+        }
 
 		int extraSpace = (solution.size() % 32) + 15;
 		assert(solution.size() > 32);
@@ -381,6 +385,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 
 		solutionf(std::vector<uint32_t>(0), solution.size(), solution.data());
 		if (cancelf()) return;
+        memcpy(hashKey, vclh.gethasherrefresh(), vclh.keyrefreshsize());
 	}
 
 	hashdonef();

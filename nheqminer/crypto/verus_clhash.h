@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
+#include <boost/thread.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,13 +42,18 @@ enum {
     // after the first part.
     // Any excess over a power of 2 will not get mutated, and any excess over
     // power of 2 + Haraka sized key will not be used
-    VERUSKEYSIZE=1024 * 8 + (40 * 16)
+    VERUSKEYSIZE=1024 * 8 + (40 * 16),
+    VERUSHHASH_SOLUTION_VERSION = 1
 };
 
-extern thread_local void *verusclhasher_random_data_;
-extern thread_local void *verusclhasherrefresh;
-extern thread_local int64_t verusclhasher_keySizeInBytes;
-extern thread_local uint256 verusclhasher_seed;
+struct verusclhash_descr
+{
+    uint256 seed;
+    uint32_t keySizeInBytes;
+};
+
+extern boost::thread_specific_ptr<unsigned char> verusclhasher_key;
+extern boost::thread_specific_ptr<verusclhash_descr> verusclhasher_descr;
 
 extern int __cpuverusoptimized;
 
@@ -90,7 +96,7 @@ void *alloc_aligned_buffer(uint64_t bufSize);
 
 // special high speed hasher for VerusHash 2.0
 struct verusclhasher {
-    uint64_t keySizeIn64BitWords;
+    uint64_t keySizeInBytes;
     uint64_t keyMask;
     uint64_t (*verusclhashfunction)(void * random, const unsigned char buf[64], uint64_t keyMask);
 
@@ -105,7 +111,7 @@ struct verusclhasher {
     }
 
     // align on 128 byte boundary at end
-    verusclhasher(uint64_t keysize=VERUSKEYSIZE) : keySizeIn64BitWords((keysize >> 5) << 2)
+    verusclhasher(uint64_t keysize=VERUSKEYSIZE) : keySizeInBytes((keysize >> 4) << 4)
     {
         if (IsCPUVerusOptimized())
         {
@@ -117,51 +123,77 @@ struct verusclhasher {
         }
 
         // align to 128 bits
-        uint64_t newKeySize = keySizeIn64BitWords << 3;
-        if (verusclhasher_random_data_ && newKeySize != verusclhasher_keySizeInBytes)
+        if (verusclhasher_key.get() && keySizeInBytes != verusclhasher_descr.get()->keySizeInBytes)
         {
-            freehashkey();
+            verusclhasher_key.reset();
+            verusclhasher_descr.reset();
         }
-        // get buffer space for 2 keys
-        if (verusclhasher_random_data_ || (verusclhasher_random_data_ = alloc_aligned_buffer(newKeySize << 1)))
+        // get buffer space for mutating and refresh keys
+        void *key = NULL;
+        if (!(key = verusclhasher_key.get()) && 
+            (verusclhasher_key.reset((unsigned char *)alloc_aligned_buffer(keySizeInBytes << 1)), key = verusclhasher_key.get()))
         {
-            verusclhasherrefresh = ((char *)verusclhasher_random_data_) + newKeySize;
-            verusclhasher_keySizeInBytes = newKeySize;
-            keyMask = keymask(newKeySize);
+            verusclhash_descr *pdesc;
+            if (verusclhasher_descr.reset(new verusclhash_descr()), pdesc = verusclhasher_descr.get())
+            {
+                pdesc->keySizeInBytes = keySizeInBytes;
+            }
+            else
+            {
+                verusclhasher_key.reset();
+                key = NULL;
+            }
+        }
+        if (key)
+        {
+            keyMask = keymask(keySizeInBytes);
+        }
+        else
+        {
+            keyMask = 0;
+            keySizeInBytes = 0;
         }
 #ifdef VERUSHASHDEBUG
-        printf("New hasher, keyMask: %lx, newKeySize: %lx, keySizeIn64BitWords: %lx\n", keyMask, newKeySize, keySizeIn64BitWords);
+        printf("New hasher, keyMask: %lx, newKeySize: %lx\n", keyMask, keySizeInBytes);
 #endif
-    }
-
-    void freehashkey()
-    {
-        // no chance for double free
-        if (verusclhasher_random_data_)
-        {
-            std::free((void *)verusclhasher_random_data_);
-            verusclhasher_random_data_ = NULL;
-            verusclhasherrefresh = NULL;
-        }
-        verusclhasher_keySizeInBytes = 0;
-        keySizeIn64BitWords = 0;
-        keyMask = 0;
     }
 
     // this prepares a key for hashing and mutation by copying it from the original key for this block
     // WARNING!! this does not check for NULL ptr, so make sure the buffer is allocated
     inline void *gethashkey()
     {
-        memcpy(verusclhasher_random_data_, verusclhasherrefresh, keyMask + 1);
+        unsigned char *ret = verusclhasher_key.get();
+        verusclhash_descr *pdesc = verusclhasher_descr.get();
+        memcpy(ret, ret + pdesc->keySizeInBytes, keyMask + 1);
 #ifdef VERUSHASHDEBUG
         // in debug mode, ensure that what should be the same, is
-        assert(memcmp((unsigned char *)verusclhasher_random_data_ + (keyMask + 1), (unsigned char *)verusclhasherrefresh + (keyMask + 1), verusclhasher_keySizeInBytes - (keyMask + 1)) == 0);
+        assert(memcmp(ret + (keyMask + 1), ret + (pdesc->keySizeInBytes + keyMask + 1), verusclhasher_keySizeInBytes - (keyMask + 1)) == 0);
 #endif
-        return verusclhasher_random_data_;
+        return ret;
+    }
+
+    inline void *gethasherrefresh()
+    {
+        verusclhash_descr *pdesc = verusclhasher_descr.get();
+        return verusclhasher_key.get() + verusclhasher_descr.get()->keySizeInBytes;
+    }
+
+    inline verusclhash_descr *gethasherdescription()
+    {
+        return verusclhasher_descr.get();
+    }
+
+    inline uint64_t keyrefreshsize()
+    {
+        return keyMask + 1;
     }
 
     inline uint64_t operator()(const unsigned char buf[64]) const {
-        return (*verusclhashfunction)(verusclhasher_random_data_, buf, keyMask);
+        return (*verusclhashfunction)(verusclhasher_key.get(), buf, keyMask);
+    }
+
+    inline uint64_t operator()(const unsigned char buf[64], void *key) const {
+        return (*verusclhashfunction)(key, buf, keyMask);
     }
 };
 
