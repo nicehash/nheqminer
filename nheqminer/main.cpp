@@ -396,39 +396,6 @@ int main(int argc, char* argv[])
 		case 'v':
 		{
 			verus_hash = true;
-			std::cout << "Setting hash algorithm to VerusHash - ";
-			CVerusHash::init();
-			CVerusHashV2::init();
-			if (IsCPUVerusOptimized())
-			{
-				std::cout << "CPU HARDWARE OPTIMIZED";
-			}
-			else
-			{
-				std::cout << "NO CPU SUPPORT DETECTED";
-			}
-			std::cout << std::endl;
-
-			// set to Verus Hash for Verus Coin
-			switch (argv[i][2])
-			{
-				case 'm':
-				{
-					// change the magic number for hashing
-					try
-					{
-						ASSETCHAINS_MAGIC = std::atoi(argv[++i]);
-						std::cout << "\t* Magic number for chain set to " << ASSETCHAINS_MAGIC << std::endl;
-					}
-					catch (...)
-					{
-						std::cout << "\t* -vm must be followed by the 32 bit magic number of the chain to mine, default is Verus Coin" << std::endl;
-						std::cout << "\t* miner terminating..." << std::endl;
-						return 1;
-					}
-					break;
-				}
-			}
 			break;
 		}
 
@@ -524,8 +491,9 @@ int main(int argc, char* argv[])
 		CBlockHeader::SetVerusHash();
 	}
 
-	if (force_cpu_ext >= 0)
+	if (force_cpu_ext > 0)
 	{
+		ForceCPUVerusOptimized(true);
 		switch (force_cpu_ext)
 		{
 		case 1:
@@ -538,8 +506,30 @@ int main(int argc, char* argv[])
 			break;
 		}
 	}
+	else if (force_cpu_ext == 0)
+	{
+		ForceCPUVerusOptimized(false);
+	}
 	else
+	{
 		detect_AVX_and_AVX2();
+	}
+
+	if (verus_hash)
+	{
+		std::cout << "Setting hash algorithm to VerusHash - ";
+		CVerusHash::init();
+		CVerusHashV2::init();
+		if (IsCPUVerusOptimized())
+		{
+			std::cout << "CPU HARDWARE OPTIMIZED";
+		}
+		else
+		{
+			std::cout << "NO CPU SUPPORT DETECTED";
+		}
+		std::cout << std::endl;
+	}
 
 	// init_logging init START
     std::cout << "Setting log level to " << log_level << std::endl;
@@ -560,7 +550,7 @@ int main(int argc, char* argv[])
 
 	if (verus_hash)
 	{
-		BOOST_LOG_TRIVIAL(info) << "Using AES, AVX, and PCLMUL: " << (use_aes ? "YES" : "NO");
+		BOOST_LOG_TRIVIAL(info) << "Using AES, AVX, and PCLMUL: " << (IsCPUVerusOptimized() ? "YES" : "NO");
 	}
 	else
 	{

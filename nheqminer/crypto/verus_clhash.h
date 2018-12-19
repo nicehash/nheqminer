@@ -69,6 +69,11 @@ inline bool IsCPUVerusOptimized()
     return __cpuverusoptimized;
 };
 
+inline void ForceCPUVerusOptimized(bool trueorfalse)
+{
+    __cpuverusoptimized = trueorfalse;
+};
+
 uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMask);
 uint64_t verusclhash_port(void * random, const unsigned char buf[64], uint64_t keyMask);
 

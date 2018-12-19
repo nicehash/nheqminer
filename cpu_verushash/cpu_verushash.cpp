@@ -96,9 +96,10 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 	vhw << bh;
 
 	int64_t intermediate, *extraPtr = vhw.xI64p();
+	unsigned char *curBuf = vh.CurBuffer();
 
 	// generate a new key for this block
-	vh.GenNewCLKey(vh.CurBuffer());
+	vh.GenNewCLKey(curBuf);
 
 	// loop the requested number of times or until canceled. determine if we 
 	// found a winner, and send all winners found as solutions. count only one hash. 
@@ -109,13 +110,13 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 		*extraPtr = i;
 
 		// prepare the buffer
-		vh.ClearExtra();
+		vh.FillExtra((u128 *)curBuf);
 
 		// refresh the key and get a reference
 		u128 *hashKey = (u128 *)vh.vclh.gethashkey();
 
 		// run verusclhash on the buffer
-		intermediate = vh.vclh(vh.CurBuffer());
+		intermediate = vh.vclh(curBuf);
 
 		// fill buffer to the end with the result and final hash
 		vh.FillExtra(&intermediate);
