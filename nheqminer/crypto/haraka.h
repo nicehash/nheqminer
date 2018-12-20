@@ -104,10 +104,10 @@ extern u128 rc[40];
   s1 = _mm_unpacklo_epi32(s1, tmp);
 
 #define TRUNCSTORE(out, s0, s1, s2, s3) \
-  *(u64*)(out) = (u64)(s0)[1]; \
-  *(u64*)(out + 8) = (u64)(s1)[1]; \
-  *(u64*)(out + 16) = (u64)(s2)[0]; \
-  *(u64*)(out + 24) = (u64)(s3)[0];
+  *(u64*)(out) = *(((u64*)&s0 + 1)); \
+  *(u64*)(out + 8) = *(((u64*)&s1 + 1)); \
+  *(u64*)(out + 16) = *(((u64*)&s2 + 0)); \
+  *(u64*)(out + 24) = *(((u64*)&s3 + 0));
 
 void load_constants();
 void test_implementations();
