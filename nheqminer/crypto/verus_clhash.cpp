@@ -352,7 +352,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 {
 	CVerusHashV2bWriter &vhw = *(device_context.pVHW2b);
 	CVerusHashV2 &vh = vhw.GetState();
-    verusclhasher &vclh = vh.vclh;
+  verusclhasher &vclh = vh.vclh;
 	uint256 curHash;
     void *hasherrefresh = vclh.gethasherrefresh();
     int keyrefreshsize = vclh.keyrefreshsize();
