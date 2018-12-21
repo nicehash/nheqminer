@@ -20,6 +20,8 @@
 
 #include "verus_hash.h"
 
+#include <boost/thread.hpp>
+
 #include <assert.h>
 #include <string.h>
 #include <x86intrin.h>
@@ -29,10 +31,25 @@
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
 #endif
 
-thread_local void *verusclhasher_random_data_;
-thread_local void *verusclhasherrefresh;
-thread_local int64_t verusclhasher_keySizeInBytes;
-thread_local uint256 verusclhasher_seed;
+thread_local thread_specific_ptr verusclhasher_key;
+thread_local thread_specific_ptr verusclhasher_descr;
+
+#ifdef _WIN32
+// attempt to workaround horrible mingw/gcc destructor bug on Windows, which passes garbage in the this pointer
+// we use the opportunity of control here to clean up all of our tls variables. we could keep a list, but this is a quick hack
+thread_specific_ptr::~thread_specific_ptr() {
+    if (verusclhasher_key.ptr)
+    {
+        verusclhasher_key.reset();
+    }
+    if (verusclhasher_descr.ptr)
+    {
+        verusclhasher_descr.reset();
+    }
+}
+#endif
+
+int __cpuverusoptimized = 0x80;
 
 int __cpuverusoptimized = 0x80;
 
@@ -337,8 +354,11 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 {
 	CVerusHashV2bWriter &vhw = *(device_context.pVHW2b);
 	CVerusHashV2 &vh = vhw.GetState();
+  verusclhasher &vclh = vh.vclh;
 	uint256 curHash;
+
 	std::vector<unsigned char> solution = std::vector<unsigned char>(1344);
+    solution[0] = VERUSHHASH_SOLUTION_VERSION; // earliest VerusHash 2.0 solution version
 	bh.nSolution = solution;
 
 	// prepare the hash state
@@ -349,7 +369,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 	unsigned char *curBuf = vh.CurBuffer();
 
 	// generate a new key for this block
-	vh.GenNewCLKey(curBuf);
+	u128 *hashKey = vh.GenNewCLKey(curBuf);
 
 	// loop the requested number of times or until canceled. determine if we 
 	// found a winner, and send all winners found as solutions. count only one hash. 
@@ -362,18 +382,19 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 		// prepare the buffer
 		vh.FillExtra((u128 *)curBuf);
 
-		// refresh the key and get a reference
-		u128 *hashKey = (u128 *)vh.vclh.gethashkey();
-
 		// run verusclhash on the buffer
-		intermediate = vh.vclh(curBuf);
+		intermediate = vclh(curBuf, hashKey);
 
 		// fill buffer to the end with the result and final hash
 		vh.FillExtra(&intermediate);
 		(*vh.haraka512KeyedFunction)((unsigned char *)&curHash, curBuf, hashKey + vh.IntermediateTo128Offset(intermediate));
 
 		if (UintToArith256(curHash) > target)
-			continue;
+    {
+        // refresh the key
+        memcpy(hashKey, vclh.gethasherrefresh(), vclh.keyrefreshsize());
+			  continue;
+    }
 
 		int extraSpace = (solution.size() % 32) + 15;
 		assert(solution.size() > 32);
@@ -381,9 +402,41 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 
 		solutionf(std::vector<uint32_t>(0), solution.size(), solution.data());
 		if (cancelf()) return;
+    memcpy(hashKey, vclh.gethasherrefresh(), vclh.keyrefreshsize());
 	}
 
 	hashdonef();
+}
+
+void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc) {
+  u128 s[4], tmp;
+
+  s[0] = LOAD(in);
+  s[1] = LOAD(in + 16);
+  s[2] = LOAD(in + 32);
+  s[3] = LOAD(in + 48);
+
+  AES4(s[0], s[1], s[2], s[3], 0);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4(s[0], s[1], s[2], s[3], 8);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4(s[0], s[1], s[2], s[3], 16);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4(s[0], s[1], s[2], s[3], 24);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4(s[0], s[1], s[2], s[3], 32);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  s[0] = _mm_xor_si128(s[0], LOAD(in));
+  s[1] = _mm_xor_si128(s[1], LOAD(in + 16));
+  s[2] = _mm_xor_si128(s[2], LOAD(in + 32));
+  s[3] = _mm_xor_si128(s[3], LOAD(in + 48));
+
+  TRUNCSTORE(out, s[0], s[1], s[2], s[3]);
 }
 
 #ifdef __WIN32

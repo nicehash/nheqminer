@@ -86,7 +86,7 @@ class CVerusHashV2
 
         CVerusHashV2() : vclh() {
             // we must have allocated key space, or can't run
-            if (verusclhasher_keySizeInBytes == 0)
+            if (!verusclhasher_key.get())
             {
                 printf("ERROR: failed to allocate hash buffer - terminating\n");
                 assert(false);
@@ -101,6 +101,7 @@ class CVerusHashV2
             result = buf2;
             curPos = 0;
             std::fill(buf1, buf1 + sizeof(buf1), 0);
+            return *this;
         }
 
         inline int64_t *ExtraI64Ptr() { return (int64_t *)(curBuf + 32); }
@@ -141,15 +142,17 @@ class CVerusHashV2
         }
 
         // chains Haraka256 from 32 bytes to fill the key
-        u128 *GenNewCLKey(unsigned char *seedBytes32)
+        static u128 *GenNewCLKey(unsigned char *seedBytes32)
         {
+            unsigned char *key = (unsigned char *)verusclhasher_key.get();
+            verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
             // skip keygen if it is the current key
-            if (verusclhasher_seed != *((uint256 *)seedBytes32))
+            if (pdesc->seed != *((uint256 *)seedBytes32))
             {
                 // generate a new key by chain hashing with Haraka256 from the last curbuf
-                int n256blks = verusclhasher_keySizeInBytes >> 5;
-                int nbytesExtra = verusclhasher_keySizeInBytes & 0x1f;
-                unsigned char *pkey = (unsigned char *)verusclhasherrefresh;
+                int n256blks = pdesc->keySizeInBytes >> 5;
+                int nbytesExtra = pdesc->keySizeInBytes & 0x1f;
+                unsigned char *pkey = key + pdesc->keySizeInBytes;
                 unsigned char *psrc = seedBytes32;
                 for (int i = 0; i < n256blks; i++)
                 {
@@ -163,16 +166,10 @@ class CVerusHashV2
                     (*haraka256Function)(buf, psrc);
                     memcpy(pkey, buf, nbytesExtra);
                 }
-                verusclhasher_seed = *((uint256 *)seedBytes32);
+                pdesc->seed = *((uint256 *)seedBytes32);
             }
-            memcpy(verusclhasher_random_data_, verusclhasherrefresh, vclh.keySizeIn64BitWords << 3);
-
-#ifdef VERUSHASHDEBUG
-            uint256 *bhalf1 = (uint256 *)verusclhasher_random_data_;
-            uint256 *bhalf2 = bhalf1 + ((vclh.keyMask + 1) >> 5);
-            printf("New key: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
-#endif
-            return (u128 *)verusclhasher_random_data_;
+            memcpy(key, key + pdesc->keySizeInBytes, pdesc->keySizeInBytes);
+            return (u128 *)key;
         }
 
         inline uint64_t IntermediateTo128Offset(uint64_t intermediate)
@@ -195,10 +192,10 @@ class CVerusHashV2
 #endif
 
             // gen new key with what is last in buffer
-            GenNewCLKey(curBuf);
+            u128 *key = GenNewCLKey(curBuf);
 
             // run verusclhash on the buffer
-            uint64_t intermediate = vclh(curBuf);
+            uint64_t intermediate = vclh(curBuf, key);
 
             // fill buffer to the end with the result
             FillExtra(&intermediate);
@@ -206,13 +203,13 @@ class CVerusHashV2
 #ifdef VERUSHASHDEBUG
             printf("intermediate %lx\n", intermediate);
             printf("Curbuf: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
-            bhalf1 = (uint256 *)verusclhasher_random_data_;
+            bhalf1 = (uint256 *)key;
             bhalf2 = bhalf1 + ((vclh.keyMask + 1) >> 5);
             printf("   Key: %s%s\n", bhalf1->GetHex().c_str(), bhalf2->GetHex().c_str());
 #endif
 
             // get the final hash with a mutated dynamic key for each hash result
-            (*haraka512KeyedFunction)(hash, curBuf, ((u128 *)verusclhasher_random_data_) + IntermediateTo128Offset(intermediate));
+            (*haraka512KeyedFunction)(hash, curBuf, key + IntermediateTo128Offset(intermediate));
 
             /*
             // TEST BEGIN
@@ -220,7 +217,7 @@ class CVerusHashV2
             uint256 testHash1 = *(uint256 *)hash, testHash2;
             FillExtra((u128 *)curBuf);
             u128 *hashKey = ((u128 *)vclh.gethashkey());
-            uint64_t temp = verusclhash_port(verusclhasher_random_data_, curBuf, vclh.keyMask);
+            uint64_t temp = verusclhash_port(key, curBuf, vclh.keyMask);
             FillExtra(&temp);
             haraka512_keyed((unsigned char *)&testHash2, curBuf, hashKey + IntermediateTo128Offset(intermediate));
             if (testHash1 != testHash2)
