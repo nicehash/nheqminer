@@ -354,6 +354,8 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 	CVerusHashV2 &vh = vhw.GetState();
     verusclhasher &vclh = vh.vclh;
 	uint256 curHash;
+    void *hasherrefresh = vclh.gethasherrefresh();
+    int keyrefreshsize = vclh.keyrefreshsize();
 
 	std::vector<unsigned char> solution = std::vector<unsigned char>(1344);
     solution[0] = VERUSHHASH_SOLUTION_VERSION; // earliest VerusHash 2.0 solution version
@@ -390,7 +392,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 		if (UintToArith256(curHash) > target)
         {
             // refresh the key
-            memcpy(hashKey, vclh.gethasherrefresh(), vclh.keyrefreshsize());
+            memcpy(hashKey, hasherrefresh, keyrefreshsize);
 			continue;
         }
 
@@ -400,7 +402,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 
 		solutionf(std::vector<uint32_t>(0), solution.size(), solution.data());
 		if (cancelf()) return;
-        memcpy(hashKey, vclh.gethasherrefresh(), vclh.keyrefreshsize());
+        memcpy(hashKey, hasherrefresh, keyrefreshsize);
 	}
 
 	hashdonef();
