@@ -51,8 +51,6 @@ thread_specific_ptr::~thread_specific_ptr() {
 
 int __cpuverusoptimized = 0x80;
 
-int __cpuverusoptimized = 0x80;
-
 // multiply the length and the some key, no modulo
 static inline __m128i lazyLengthHash(uint64_t keylength, uint64_t length) {
     const __m128i lengthvector = _mm_set_epi64x(keylength,length);
@@ -356,6 +354,8 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 	CVerusHashV2 &vh = vhw.GetState();
   verusclhasher &vclh = vh.vclh;
 	uint256 curHash;
+    void *hasherrefresh = vclh.gethasherrefresh();
+    int keyrefreshsize = vclh.keyrefreshsize();
 
 	std::vector<unsigned char> solution = std::vector<unsigned char>(1344);
     solution[0] = VERUSHHASH_SOLUTION_VERSION; // earliest VerusHash 2.0 solution version
@@ -390,11 +390,11 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 		(*vh.haraka512KeyedFunction)((unsigned char *)&curHash, curBuf, hashKey + vh.IntermediateTo128Offset(intermediate));
 
 		if (UintToArith256(curHash) > target)
-    {
-        // refresh the key
-        memcpy(hashKey, vclh.gethasherrefresh(), vclh.keyrefreshsize());
-			  continue;
-    }
+        {
+            // refresh the key
+            memcpy(hashKey, hasherrefresh, keyrefreshsize);
+			continue;
+        }
 
 		int extraSpace = (solution.size() % 32) + 15;
 		assert(solution.size() > 32);
@@ -402,7 +402,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 
 		solutionf(std::vector<uint32_t>(0), solution.size(), solution.data());
 		if (cancelf()) return;
-    memcpy(hashKey, vclh.gethasherrefresh(), vclh.keyrefreshsize());
+        memcpy(hashKey, hasherrefresh, keyrefreshsize);
 	}
 
 	hashdonef();
