@@ -38,7 +38,7 @@ extern "C" {
 
 #ifdef _WIN32
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
-typedef unsigned char u_char
+typedef unsigned char u_char;
 #endif
 
 enum {
