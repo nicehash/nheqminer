@@ -147,32 +147,32 @@ void tweak_constants(const unsigned char *pk_seed, const unsigned char *sk_seed,
     memcpy(rc, buf, 40*16);    
 }
 
-static void haraka_S_absorb(unsigned char *s, unsigned int r,
+static void haraka_S_absorb(unsigned char *s, 
                             const unsigned char *m, unsigned long long mlen,
                             unsigned char p)
 {
     unsigned long long i;
-    unsigned char t[r];
+    unsigned char t[32];
 
-    while (mlen >= r) {
+    while (mlen >= 32) {
         // XOR block to state
-        for (i = 0; i < r; ++i) {
+        for (i = 0; i < 32; ++i) {
             s[i] ^= m[i];
         }
         haraka512_perm(s, s);
-        mlen -= r;
-        m += r;
+        mlen -= 32;
+        m += 32;
     }
 
-    for (i = 0; i < r; ++i) {
+    for (i = 0; i < 32; ++i) {
         t[i] = 0;
     }
     for (i = 0; i < mlen; ++i) {
         t[i] = m[i];
     }
     t[i] = p;
-    t[r - 1] |= 128;
-    for (i = 0; i < r; ++i) {
+    t[32 - 1] |= 128;
+    for (i = 0; i < 32; ++i) {
         s[i] ^= t[i];
     }
 }
@@ -199,7 +199,7 @@ void haraka_S(unsigned char *out, unsigned long long outlen,
     for (i = 0; i < 64; i++) {
         s[i] = 0;
     }
-    haraka_S_absorb(s, 32, in, inlen, 0x1F);
+    haraka_S_absorb(s, in, inlen, 0x1F);
 
     haraka_S_squeezeblocks(out, outlen / 32, s, 32);
     out += (outlen / 32) * 32;

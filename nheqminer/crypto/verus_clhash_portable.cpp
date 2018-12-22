@@ -22,13 +22,17 @@
 
 #include <assert.h>
 #include <string.h>
-#include <x86intrin.h>
+
 #ifdef __APPLE__
 #include <sys/types.h>
-#endif
-#ifdef __WIN32
+#endif// APPLE
+
+#ifdef _WIN32
 #pragma warning (disable : 4146)
-#endif
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif //WIN32
 
 void clmul64(uint64_t a, uint64_t b, uint64_t* r)
 {
