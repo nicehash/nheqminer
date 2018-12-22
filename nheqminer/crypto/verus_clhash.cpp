@@ -338,34 +338,6 @@ uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMas
     return precompReduction64(acc);
 }
 
-inline void haraka256_local(unsigned char *out, const unsigned char *in) {
-  __m128i s[2], tmp;
-
-  s[0] = LOAD(in);
-  s[1] = LOAD(in + 16);
-
-  AES2(s[0], s[1], 0);
-  MIX2(s[0], s[1]);
-
-  AES2(s[0], s[1], 4);
-  MIX2(s[0], s[1]);
-
-  AES2(s[0], s[1], 8);
-  MIX2(s[0], s[1]);
-
-  AES2(s[0], s[1], 12);
-  MIX2(s[0], s[1]);
-
-  AES2(s[0], s[1], 16);
-  MIX2(s[0], s[1]);
-
-  s[0] = _mm_xor_si128(s[0], LOAD(in));
-  s[1] = _mm_xor_si128(s[1], LOAD(in + 16));
-
-  STORE(out, s[0]);
-  STORE(out + 16, s[1]);
-}
-
 inline void haraka512_keyed_local(unsigned char *out, const unsigned char *in, const u128 *rc) {
   u128 s[4], tmp;
 
@@ -438,7 +410,7 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
         unsigned char *psrc = curBuf;
         for (int i = 0; i < n256blks; i++)
         {
-            haraka256_local(pkey, psrc);
+            haraka256(pkey, psrc);
             psrc = pkey;
             pkey += 32;
         }
