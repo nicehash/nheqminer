@@ -241,9 +241,6 @@
     <ClCompile Include="MinerFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\clhash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="crypto\haraka.c">
       <Filter>Source Files</Filter>
     </ClCompile>
