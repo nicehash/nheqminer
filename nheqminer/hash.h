@@ -248,7 +248,7 @@ public:
     CVerusHashV2bWriter(int nTypeIn, int nVersionIn, uint64_t keysize=VERUSKEYSIZE) : 
         nType(nTypeIn), nVersion(nVersionIn), state() {}
 
-    void Reset() { state.Reset(); }
+    inline void Reset() { state.Reset(); }
 
     CVerusHashV2bWriter& write(const char *pch, size_t size) {
         state.Write((const unsigned char*)pch, size);
