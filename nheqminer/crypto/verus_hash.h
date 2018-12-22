@@ -95,7 +95,7 @@ class CVerusHashV2
 
         CVerusHashV2 &Write(const unsigned char *data, size_t len);
 
-        CVerusHashV2 &Reset()
+        inline CVerusHashV2 &Reset()
         {
             curBuf = buf1;
             result = buf2;
@@ -235,7 +235,7 @@ class CVerusHashV2
 
     private:
         // only buf1, the first source, needs to be zero initialized
-        alignas(16) unsigned char buf1[64] = {0}, buf2[64];
+        alignas(32) unsigned char buf1[64] = {0}, buf2[64];
         unsigned char *curBuf = buf1, *result = buf2;
         size_t curPos = 0;
 };
