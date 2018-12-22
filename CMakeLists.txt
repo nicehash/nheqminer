@@ -39,11 +39,11 @@ endif()
 # LINUX
 if(CMAKE_COMPILER_IS_GNUCXX)
     # use native cpu features
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=x86-64 -mpclmul -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -g -funroll-loops -fomit-frame-pointer -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=x86-64 -mpclmul -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -g -funroll-loops -fomit-frame-pointer -fPIC")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=x86-64 -mpclmul -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -g -fomit-frame-pointer -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=x86-64 -mpclmul -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -g -fomit-frame-pointer -fPIC")
 
     # optimizations
-    add_definitions(-O2)
+    add_definitions(-Ofast)
 
 #    # use
 #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -msse2")
@@ -61,7 +61,7 @@ if(APPLE)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -fPIC")
         include_directories(${nheqminer_SOURCE_DIR}/nheqminer/compat)
         # optimizations
-        add_definitions(-O3)
+        add_definitions(-Ofast)
     endif()
 endif(APPLE)
 # Common

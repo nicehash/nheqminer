@@ -344,34 +344,6 @@ uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMas
     return precompReduction64(acc);
 }
 
-inline void haraka256_local(unsigned char *out, const unsigned char *in) {
-  __m128i s[2], tmp;
-
-  s[0] = LOAD(in);
-  s[1] = LOAD(in + 16);
-
-  AES2(s[0], s[1], 0);
-  MIX2(s[0], s[1]);
-
-  AES2(s[0], s[1], 4);
-  MIX2(s[0], s[1]);
-
-  AES2(s[0], s[1], 8);
-  MIX2(s[0], s[1]);
-
-  AES2(s[0], s[1], 12);
-  MIX2(s[0], s[1]);
-
-  AES2(s[0], s[1], 16);
-  MIX2(s[0], s[1]);
-
-  s[0] = _mm_xor_si128(s[0], LOAD(in));
-  s[1] = _mm_xor_si128(s[1], LOAD(in + 16));
-
-  STORE(out, s[0]);
-  STORE(out + 16, s[1]);
-}
-
 inline void haraka512_keyed_local(unsigned char *out, const unsigned char *in, const u128 *rc) {
   u128 s[4], tmp;
 
@@ -413,11 +385,16 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
 	CVerusHashV2bWriter &vhw = *(device_context.pVHW2b);
 	CVerusHashV2 &vh = vhw.GetState();
     verusclhasher &vclh = vh.vclh;
+
 	alignas(32) uint256 curHash, curTarget = ArithToUint256(target);
+
+    const uint64_t *compResult = (uint64_t *)&curHash;
+    const uint64_t *compTarget = (uint64_t *)&curTarget;
+
     u128 *hashKey = (u128 *)verusclhasher_key.get();
     verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
     void *hasherrefresh = ((unsigned char *)hashKey) + pdesc->keySizeInBytes;
-    int keyrefreshsize = vclh.keyrefreshsize(); // number of 256 bit blocks
+    const int keyrefreshsize = vclh.keyrefreshsize(); // number of 256 bit blocks
 
 	bh.nSolution = std::vector<unsigned char>(1344);
 	bh.nSolution[0] = VERUSHHASH_SOLUTION_VERSION; // earliest VerusHash 2.0 solution version
@@ -426,7 +403,7 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
 	vhw.Reset();
 	vhw << bh;
 
-	int64_t intermediate, *extraPtr = vhw.xI64p();
+	int64_t *extraPtr = vhw.xI64p();
 	unsigned char *curBuf = vh.CurBuffer();
 
     // skip keygen if it is the current key
@@ -439,13 +416,18 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
         unsigned char *psrc = curBuf;
         for (int i = 0; i < n256blks; i++)
         {
-            haraka256_local(pkey, psrc);
+            haraka256(pkey, psrc);
             psrc = pkey;
             pkey += 32;
         }
         pdesc->seed = *((uint256 *)curBuf);
         memcpy(hasherrefresh, hashKey, pdesc->keySizeInBytes);
     }
+
+    const __m128i shuf1 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0);
+    const __m128i fill1 = _mm_shuffle_epi8(_mm_load_si128((u128 *)curBuf), shuf1);
+    const __m128i shuf2 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0);
+    unsigned char ch = curBuf[0];
 
 	// loop the requested number of times or until canceled. determine if we 
 	// found a winner, and send all winners found as solutions. count only one hash. 
@@ -456,25 +438,18 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
 		*extraPtr = i;
 
 		// prepare the buffer
-        const __m128i shuf1 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0);
-        __m128i fill1 = _mm_shuffle_epi8(_mm_load_si128((u128 *)curBuf), shuf1);
         _mm_store_si128((u128 *)(&curBuf[32 + 16]), fill1);
-        curBuf[32 + 15] = curBuf[0];
+        curBuf[32 + 15] = ch;
 
 		// run verusclhash on the buffer
-		intermediate = vclh(curBuf, hashKey);
+		const uint64_t intermediate = vclh(curBuf, hashKey);
 
 		// fill buffer to the end with the result and final hash
-        const __m128i shuf2 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0);
         __m128i fill2 = _mm_shuffle_epi8(_mm_loadl_epi64((u128 *)&intermediate), shuf2);
         _mm_store_si128((u128 *)(&curBuf[32 + 16]), fill2);
         curBuf[32 + 15] = *((unsigned char *)&intermediate);
 
 		haraka512_keyed_local((unsigned char *)&curHash, curBuf, hashKey + vh.IntermediateTo128Offset(intermediate));
-
-        // compare to target (works only on LE)
-        uint64_t *compResult = (uint64_t *)&curHash;
-        uint64_t *compTarget = (uint64_t *)&curTarget;
 
         if (compResult[3] > compTarget[3] || (compResult[3] == compTarget[3] && compResult[2] > compTarget[2]) ||
             (compResult[3] == compTarget[3] && compResult[2] == compTarget[2] && compResult[1] > compTarget[1]) ||
@@ -496,7 +471,6 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
         // refresh the key
         memcpy(hashKey, hasherrefresh, keyrefreshsize);
 	}
-
 	hashdonef();
 }
 
