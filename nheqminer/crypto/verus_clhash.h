@@ -131,8 +131,8 @@ struct verusclhasher {
         return i ? (((uint64_t)1) << i) - 1 : 0;
     }
 
-    // align on 128 byte boundary at end
-    verusclhasher(uint64_t keysize=VERUSKEYSIZE) : keySizeInBytes((keysize >> 4) << 4)
+    // align on 256 bit boundary at end
+    verusclhasher(uint64_t keysize=VERUSKEYSIZE) : keySizeInBytes((keysize >> 5) << 5)
     {
         if (IsCPUVerusOptimized())
         {
@@ -143,7 +143,7 @@ struct verusclhasher {
             verusclhashfunction = &verusclhash_port;
         }
 
-        // align to 128 bits
+        // if we changed, change it
         if (verusclhasher_key.get() && keySizeInBytes != ((verusclhash_descr *)verusclhasher_descr.get())->keySizeInBytes)
         {
             verusclhasher_key.reset();
