@@ -24,30 +24,36 @@
 
 #include <assert.h>
 #include <string.h>
+
+#ifndef _WIN32
 #include <x86intrin.h>
+#else
+#include <intrin.h>
+#endif // !WIN32
+
 #include "../../cpu_verushash/cpu_verushash.hpp"
 
-#ifdef __WIN32
+#ifdef _WIN32
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
 #endif
 
 thread_local thread_specific_ptr verusclhasher_key;
 thread_local thread_specific_ptr verusclhasher_descr;
 
-#ifdef _WIN32
+//#ifdef _WIN32
 // attempt to workaround horrible mingw/gcc destructor bug on Windows, which passes garbage in the this pointer
 // we use the opportunity of control here to clean up all of our tls variables. we could keep a list, but this is a quick hack
-thread_specific_ptr::~thread_specific_ptr() {
-    if (verusclhasher_key.ptr)
-    {
-        verusclhasher_key.reset();
-    }
-    if (verusclhasher_descr.ptr)
-    {
-        verusclhasher_descr.reset();
-    }
-}
-#endif
+//thread_specific_ptr::~thread_specific_ptr() {
+//    if (verusclhasher_key.ptr)
+//    {
+//        verusclhasher_key.reset();
+//    }
+//    if (verusclhasher_descr.ptr)
+ //   {
+ //       verusclhasher_descr.reset();
+ //   }
+//}
+//#endif
 
 int __cpuverusoptimized = 0x80;
 
@@ -235,8 +241,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                 AES2(temp1, temp2, 8);
                 MIX2(temp1, temp2);
 
-                acc = _mm_xor_si128(temp1, acc);
-                acc = _mm_xor_si128(temp2, acc);
+                acc = _mm_xor_si128(temp2, _mm_xor_si128(temp1, acc));
 
                 const __m128i tempa1 = _mm_load_si128(prand);
                 const __m128i tempa2 = _mm_mulhrs_epi16(acc, tempa1);
@@ -255,7 +260,7 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
 
                 uint64_t rounds = selector >> 61; // loop randomly between 1 and 8 times
                 __m128i *rc = prand;
-                uint64_t aesround = 0;
+                uint64_t aesroundoffset = 0;
                 __m128i onekey;
 
                 do
@@ -272,8 +277,8 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
                     {
                         onekey = _mm_load_si128(rc++);
                         __m128i temp2 = _mm_load_si128(rounds & 1 ? buftmp : pbuf);
-                        const uint64_t roundidx = aesround++ << 2;
-                        AES2(onekey, temp2, roundidx);
+                        AES2(onekey, temp2, aesroundoffset);
+                        aesroundoffset += 4;
                         MIX2(onekey, temp2);
                         acc = _mm_xor_si128(onekey, acc);
                         acc = _mm_xor_si128(temp2, acc);
@@ -334,81 +339,12 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
 // hashes 64 bytes only by doing a carryless multiplication and reduction of the repeated 64 byte sequence 16 times, 
 // returning a 64 bit hash value
 uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMask) {
-    const unsigned int  m = 128;// we process the data in chunks of 16 cache lines
-    __m128i * rs64 = (__m128i *)random;
-    const __m128i * string = (const __m128i *) buf;
-
-    __m128i  acc = __verusclmulwithoutreduction64alignedrepeat(rs64, string, keyMask);
+    __m128i  acc = __verusclmulwithoutreduction64alignedrepeat((__m128i *)random, (const __m128i *)buf, keyMask);
     acc = _mm_xor_si128(acc, lazyLengthHash(1024, 64));
     return precompReduction64(acc);
 }
 
-void cpu_verushash::solve_verus_v2(CBlockHeader &bh, 
-	arith_uint256 &target,
-	std::function<bool()> cancelf,
-	std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
-	std::function<void(void)> hashdonef,
-	cpu_verushash &device_context)
-{
-	CVerusHashV2bWriter &vhw = *(device_context.pVHW2b);
-	CVerusHashV2 &vh = vhw.GetState();
-  verusclhasher &vclh = vh.vclh;
-	uint256 curHash;
-    void *hasherrefresh = vclh.gethasherrefresh();
-    int keyrefreshsize = vclh.keyrefreshsize();
-
-	std::vector<unsigned char> solution = std::vector<unsigned char>(1344);
-    solution[0] = VERUSHHASH_SOLUTION_VERSION; // earliest VerusHash 2.0 solution version
-	bh.nSolution = solution;
-
-	// prepare the hash state
-	vhw.Reset();
-	vhw << bh;
-
-	int64_t intermediate, *extraPtr = vhw.xI64p();
-	unsigned char *curBuf = vh.CurBuffer();
-
-	// generate a new key for this block
-	u128 *hashKey = vh.GenNewCLKey(curBuf);
-
-	// loop the requested number of times or until canceled. determine if we 
-	// found a winner, and send all winners found as solutions. count only one hash. 
-	// hashrate is determined by multiplying hash by VERUSHASHES_PER_SOLVE, with VerusHash, only
-	// hashrate and sharerate are valid, solutionrate will equal sharerate
-	for (int64_t i = 0; i < VERUSHASHES_PER_SOLVE; i++)
-	{
-		*extraPtr = i;
-
-		// prepare the buffer
-		vh.FillExtra((u128 *)curBuf);
-
-		// run verusclhash on the buffer
-		intermediate = vclh(curBuf, hashKey);
-
-		// fill buffer to the end with the result and final hash
-		vh.FillExtra(&intermediate);
-		(*vh.haraka512KeyedFunction)((unsigned char *)&curHash, curBuf, hashKey + vh.IntermediateTo128Offset(intermediate));
-
-		if (UintToArith256(curHash) > target)
-        {
-            // refresh the key
-            memcpy(hashKey, hasherrefresh, keyrefreshsize);
-			continue;
-        }
-
-		int extraSpace = (solution.size() % 32) + 15;
-		assert(solution.size() > 32);
-		*((int64_t *)&(solution.data()[solution.size() - extraSpace])) = i;
-
-		solutionf(std::vector<uint32_t>(0), solution.size(), solution.data());
-		if (cancelf()) return;
-        memcpy(hashKey, hasherrefresh, keyrefreshsize);
-	}
-
-	hashdonef();
-}
-
-void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc) {
+inline void haraka512_keyed_local(unsigned char *out, const unsigned char *in, const u128 *rc) {
   u128 s[4], tmp;
 
   s[0] = LOAD(in);
@@ -439,6 +375,105 @@ void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc
   TRUNCSTORE(out, s[0], s[1], s[2], s[3]);
 }
 
+void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh, 
+	arith_uint256 &target,
+	std::function<bool()> cancelf,
+	std::function<void(const std::vector<uint32_t>&, size_t, const unsigned char*)> solutionf,
+	std::function<void(void)> hashdonef,
+	cpu_verushash &device_context)
+{
+	CVerusHashV2bWriter &vhw = *(device_context.pVHW2b);
+	CVerusHashV2 &vh = vhw.GetState();
+    verusclhasher &vclh = vh.vclh;
+
+	alignas(32) uint256 curHash, curTarget = ArithToUint256(target);
+
+    const uint64_t *compResult = (uint64_t *)&curHash;
+    const uint64_t *compTarget = (uint64_t *)&curTarget;
+
+    u128 *hashKey = (u128 *)verusclhasher_key.get();
+    verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
+    void *hasherrefresh = ((unsigned char *)hashKey) + pdesc->keySizeInBytes;
+    const int keyrefreshsize = vclh.keyrefreshsize(); // number of 256 bit blocks
+
+	bh.nSolution = std::vector<unsigned char>(1344);
+	bh.nSolution[0] = VERUSHHASH_SOLUTION_VERSION; // earliest VerusHash 2.0 solution version
+
+	// prepare the hash state
+	vhw.Reset();
+	vhw << bh;
+
+	int64_t *extraPtr = vhw.xI64p();
+	unsigned char *curBuf = vh.CurBuffer();
+
+    // skip keygen if it is the current key
+    if (pdesc->seed != *((uint256 *)curBuf))
+    {
+        // generate a new key by chain hashing with Haraka256 from the last curbuf
+        // assume 256 bit boundary
+        int n256blks = pdesc->keySizeInBytes >> 5;
+        unsigned char *pkey = ((unsigned char *)hashKey);
+        unsigned char *psrc = curBuf;
+        for (int i = 0; i < n256blks; i++)
+        {
+            haraka256(pkey, psrc);
+            psrc = pkey;
+            pkey += 32;
+        }
+        pdesc->seed = *((uint256 *)curBuf);
+        memcpy(hasherrefresh, hashKey, pdesc->keySizeInBytes);
+    }
+
+    const __m128i shuf1 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0);
+    const __m128i fill1 = _mm_shuffle_epi8(_mm_load_si128((u128 *)curBuf), shuf1);
+    const __m128i shuf2 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0);
+    unsigned char ch = curBuf[0];
+
+	// loop the requested number of times or until canceled. determine if we 
+	// found a winner, and send all winners found as solutions. count only one hash. 
+	// hashrate is determined by multiplying hash by VERUSHASHES_PER_SOLVE, with VerusHash, only
+	// hashrate and sharerate are valid, solutionrate will equal sharerate
+	for (int64_t i = 0; i < VERUSHASHES_PER_SOLVE; i++)
+	{
+		*extraPtr = i;
+
+		// prepare the buffer
+        _mm_store_si128((u128 *)(&curBuf[32 + 16]), fill1);
+        curBuf[32 + 15] = ch;
+
+		// run verusclhash on the buffer
+		const uint64_t intermediate = vclh(curBuf, hashKey);
+
+		// fill buffer to the end with the result and final hash
+        __m128i fill2 = _mm_shuffle_epi8(_mm_loadl_epi64((u128 *)&intermediate), shuf2);
+        _mm_store_si128((u128 *)(&curBuf[32 + 16]), fill2);
+        curBuf[32 + 15] = *((unsigned char *)&intermediate);
+
+		haraka512_keyed_local((unsigned char *)&curHash, curBuf, hashKey + vh.IntermediateTo128Offset(intermediate));
+
+        if (compResult[3] > compTarget[3] || (compResult[3] == compTarget[3] && compResult[2] > compTarget[2]) ||
+            (compResult[3] == compTarget[3] && compResult[2] == compTarget[2] && compResult[1] > compTarget[1]) ||
+            (compResult[3] == compTarget[3] && compResult[2] == compTarget[2] && compResult[1] == compTarget[1] && compResult[0] > compTarget[0]))
+        {
+            // refresh the key
+            memcpy(hashKey, hasherrefresh, keyrefreshsize);
+			continue;
+        }
+
+        std::vector<unsigned char> solution = bh.nSolution;
+		int extraSpace = (solution.size() % 32) + 15;
+		assert(solution.size() > 32);
+		*((int64_t *)&(solution.data()[solution.size() - extraSpace])) = i;
+
+		solutionf(std::vector<uint32_t>(0), solution.size(), solution.data());
+		if (cancelf()) return;
+
+        // refresh the key
+        memcpy(hashKey, hasherrefresh, keyrefreshsize);
+	}
+	hashdonef();
+}
+
 #ifdef __WIN32
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
 #endif
@@ -446,7 +481,7 @@ void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc
 void *alloc_aligned_buffer(uint64_t bufSize)
 {
     void *answer = NULL;
-    if (posix_memalign(&answer, sizeof(__m128i), bufSize))
+    if (posix_memalign(&answer, sizeof(__m256i), bufSize))
     {
         return NULL;
     }

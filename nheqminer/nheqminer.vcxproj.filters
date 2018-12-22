@@ -241,9 +241,6 @@
     <ClCompile Include="MinerFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\clhash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="crypto\haraka.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -260,6 +257,9 @@
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
     <ClCompile Include="crypto\verus_clhash.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\verus_clhash_portable.cpp">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
   </ItemGroup>

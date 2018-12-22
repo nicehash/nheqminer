@@ -22,13 +22,17 @@
 
 #include <assert.h>
 #include <string.h>
-#include <x86intrin.h>
+
 #ifdef __APPLE__
 #include <sys/types.h>
-#endif
-#ifdef __WIN32
+#endif// APPLE
+
+#ifdef _WIN32
 #pragma warning (disable : 4146)
-#endif
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif //WIN32
 
 void clmul64(uint64_t a, uint64_t b, uint64_t* r)
 {
@@ -242,7 +246,14 @@ inline __m128i _mm_srli_si128_emu(__m128i a, int imm8)
 
 inline __m128i _mm_xor_si128_emu(__m128i a, __m128i b)
 {
+#ifdef _WIN32
+    uint64_t result[2];
+    result[0] = *(uint64_t *)&a ^ *(uint64_t *)&b;
+    result[1] = *((uint64_t *)&a + 1) ^ *((uint64_t *)&b + 1);
+    return *(__m128i *)result;
+#else
     return a ^ b;
+#endif
 }
 
 inline __m128i _mm_load_si128_emu(const void *p)

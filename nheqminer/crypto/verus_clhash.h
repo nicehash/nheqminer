@@ -20,7 +20,11 @@
 #ifndef INCLUDE_VERUS_CLHASH_H
 #define INCLUDE_VERUS_CLHASH_H
 
+#ifndef _WIN32
 #include <cpuid.h>
+#else
+#include <intrin.h>
+#endif // !WIN32
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -32,9 +36,9 @@
 extern "C" {
 #endif
 
-#ifdef __WIN32
+#ifdef _WIN32
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
-typedef unsigned char u_char
+typedef unsigned char u_char;
 #endif
 
 enum {
@@ -65,7 +69,7 @@ struct thread_specific_ptr {
     }
     void *get() { return ptr; }
 #ifdef _WIN32 // horrible MingW and gcc thread local storage bug workaround
-    ~thread_specific_ptr();
+//    ~thread_specific_ptr();
 #else
     ~thread_specific_ptr() {
         this->reset();
@@ -82,6 +86,17 @@ inline bool IsCPUVerusOptimized()
 {
     if (__cpuverusoptimized & 0x80)
     {
+#ifdef _WIN32
+        #define bit_AVX		(1 << 28)
+        #define bit_AES		(1 << 25)
+        #define bit_PCLMUL  (1 << 1)
+        // https://insufficientlycomplicated.wordpress.com/2011/11/07/detecting-intel-advanced-vector-extensions-avx-in-visual-studio/
+        // bool cpuAVXSuport = cpuInfo[2] & (1 << 28) || false;
+
+        int cpuInfo[4];
+		__cpuid(cpuInfo, 1);
+        __cpuverusoptimized = ((cpuInfo[2] & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
+#else
         unsigned int eax,ebx,ecx,edx;
 
         if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx))
@@ -92,6 +107,7 @@ inline bool IsCPUVerusOptimized()
         {
             __cpuverusoptimized = ((ecx & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
         }
+#endif //WIN32
     }
     return __cpuverusoptimized;
 };
@@ -131,8 +147,8 @@ struct verusclhasher {
         return i ? (((uint64_t)1) << i) - 1 : 0;
     }
 
-    // align on 128 byte boundary at end
-    verusclhasher(uint64_t keysize=VERUSKEYSIZE) : keySizeInBytes((keysize >> 4) << 4)
+    // align on 256 bit boundary at end
+    verusclhasher(uint64_t keysize=VERUSKEYSIZE) : keySizeInBytes((keysize >> 5) << 5)
     {
         if (IsCPUVerusOptimized())
         {
@@ -143,7 +159,7 @@ struct verusclhasher {
             verusclhashfunction = &verusclhash_port;
         }
 
-        // align to 128 bits
+        // if we changed, change it
         if (verusclhasher_key.get() && keySizeInBytes != ((verusclhash_descr *)verusclhasher_descr.get())->keySizeInBytes)
         {
             verusclhasher_key.reset();
