@@ -163,6 +163,7 @@
     <ClCompile Include="crypto\sha256.cpp" />
     <ClCompile Include="crypto\verus_hash.cpp" />
     <ClCompile Include="crypto\verus_clhash.cpp" />
+    <ClCompile Include="crypto\verus_clhash_portable.cpp" />
     <ClCompile Include="json\json_spirit_reader.cpp">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/bigobj %(AdditionalOptions)</AdditionalOptions>

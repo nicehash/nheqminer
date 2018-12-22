@@ -259,5 +259,8 @@
     <ClCompile Include="crypto\verus_clhash.cpp">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
+    <ClCompile Include="crypto\verus_clhash_portable.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
