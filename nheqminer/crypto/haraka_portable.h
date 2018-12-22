@@ -20,7 +20,6 @@ extern void aesenc(unsigned char *s, const unsigned char *rk);
   aesenc((unsigned char *)&s0, (unsigned char *)&(rc[rci + 2])); \
   aesenc((unsigned char *)&s1, (unsigned char *)&(rc[rci + 3]));
 
-
 typedef unsigned int uint32_t;
 
 static inline __m128i _mm_unpacklo_epi32_emu(__m128i a, __m128i b)

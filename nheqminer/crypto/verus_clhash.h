@@ -38,7 +38,7 @@ extern "C" {
 
 #ifdef _WIN32
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
-typedef unsigned char u_char;
+typedef unsigned char u_char
 #endif
 
 enum {
@@ -84,7 +84,6 @@ extern int __cpuverusoptimized;
 
 inline bool IsCPUVerusOptimized()
 {
-
     if (__cpuverusoptimized & 0x80)
     {
 #ifdef _WIN32
@@ -99,6 +98,7 @@ inline bool IsCPUVerusOptimized()
         __cpuverusoptimized = ((cpuInfo[2] & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
 #else
         unsigned int eax,ebx,ecx,edx;
+
         if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx))
         {
             __cpuverusoptimized = false;
@@ -107,7 +107,7 @@ inline bool IsCPUVerusOptimized()
         {
             __cpuverusoptimized = ((ecx & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
         }
-#endif
+#endif //WIN32
     }
     return __cpuverusoptimized;
 };
@@ -167,7 +167,7 @@ struct verusclhasher {
         }
         // get buffer space for mutating and refresh keys
         void *key = NULL;
-        if (!(key = verusclhasher_key.get()) &&
+        if (!(key = verusclhasher_key.get()) && 
             (verusclhasher_key.reset((unsigned char *)alloc_aligned_buffer(keySizeInBytes << 1)), key = verusclhasher_key.get()))
         {
             verusclhash_descr *pdesc;
