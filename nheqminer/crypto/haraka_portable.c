@@ -171,7 +171,7 @@ static void haraka_S_absorb(unsigned char *s,
         t[i] = m[i];
     }
     t[i] = p;
-    t[r - 1] |= 128;
+    t[32 - 1] |= 128;
     for (i = 0; i < 32; ++i) {
         s[i] ^= t[i];
     }
