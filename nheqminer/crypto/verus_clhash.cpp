@@ -24,7 +24,13 @@
 
 #include <assert.h>
 #include <string.h>
+
+#ifndef _WIN32
 #include <x86intrin.h>
+#else
+#include <intrin.h>
+#endif // !WIN32
+
 #include "../../cpu_verushash/cpu_verushash.hpp"
 
 #ifdef __WIN32
