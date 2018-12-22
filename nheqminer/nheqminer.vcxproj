@@ -157,7 +157,6 @@
     <ClCompile Include="amount.cpp" />
     <ClCompile Include="api.cpp" />
     <ClCompile Include="arith_uint256.cpp" />
-    <ClCompile Include="crypto\clhash.c" />
     <ClCompile Include="crypto\haraka.c" />
     <ClCompile Include="crypto\haraka_portable.c" />
     <ClCompile Include="crypto\ripemd160.cpp" />
