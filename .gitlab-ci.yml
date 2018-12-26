@@ -37,8 +37,8 @@ build:linux:
 build:macos:
   tags: ["High Sierra"]
   variables:
-    CXX: g++-6
-    CC: gcc-6
+    CXX: g++-8
+    CC: gcc-8
   stage: build
   script:
   - mkdir build && cd build
