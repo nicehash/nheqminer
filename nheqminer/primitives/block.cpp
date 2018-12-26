@@ -56,7 +56,7 @@ void CBlockHeader::SetSHA256DHash()
 
 void CBlockHeader::SetVerusHash()
 {
-    CBlockHeader::hashFunction = &CBlockHeader::GetVerusHash;
+    CBlockHeader::hashFunction = &CBlockHeader::GetVerusV2Hash;
 }
 
 // returns false if unable to fast calculate the VerusPOSHash from the header. it can still be calculated from the block
