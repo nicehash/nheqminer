@@ -24,30 +24,36 @@
 
 #include <assert.h>
 #include <string.h>
+
+#ifndef _WIN32
 #include <x86intrin.h>
+#else
+#include <intrin.h>
+#endif // !WIN32
+
 #include "../../cpu_verushash/cpu_verushash.hpp"
 
-#ifdef __WIN32
+#ifdef _WIN32
 #define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ?0 :errno)
 #endif
 
 thread_local thread_specific_ptr verusclhasher_key;
 thread_local thread_specific_ptr verusclhasher_descr;
 
-#ifdef _WIN32
+//#ifdef _WIN32
 // attempt to workaround horrible mingw/gcc destructor bug on Windows, which passes garbage in the this pointer
 // we use the opportunity of control here to clean up all of our tls variables. we could keep a list, but this is a quick hack
-thread_specific_ptr::~thread_specific_ptr() {
-    if (verusclhasher_key.ptr)
-    {
-        verusclhasher_key.reset();
-    }
-    if (verusclhasher_descr.ptr)
-    {
-        verusclhasher_descr.reset();
-    }
-}
-#endif
+//thread_specific_ptr::~thread_specific_ptr() {
+//    if (verusclhasher_key.ptr)
+//    {
+//        verusclhasher_key.reset();
+//    }
+//    if (verusclhasher_descr.ptr)
+ //   {
+ //       verusclhasher_descr.reset();
+ //   }
+//}
+//#endif
 
 int __cpuverusoptimized = 0x80;
 

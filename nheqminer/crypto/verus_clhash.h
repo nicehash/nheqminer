@@ -69,7 +69,7 @@ struct thread_specific_ptr {
     }
     void *get() { return ptr; }
 #ifdef _WIN32 // horrible MingW and gcc thread local storage bug workaround
-    ~thread_specific_ptr();
+//    ~thread_specific_ptr();
 #else
     ~thread_specific_ptr() {
         this->reset();

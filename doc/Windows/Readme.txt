@@ -1,5 +1,5 @@
-VerusCoin nheqminer v0.6.3a-beta
-Using VerusHash v0.3.13-beta
+VerusCoin nheqminer v0.7.0-rc3
+Using VerusHash v2.0
 
 This software needs to be run on a terminal. From the start menu, type cmd and press enter to open a command prompt.
 
