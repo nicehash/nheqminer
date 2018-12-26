@@ -152,7 +152,7 @@ class CVerusHashV2
                 // generate a new key by chain hashing with Haraka256 from the last curbuf
                 int n256blks = pdesc->keySizeInBytes >> 5;
                 int nbytesExtra = pdesc->keySizeInBytes & 0x1f;
-                unsigned char *pkey = key + pdesc->keySizeInBytes;
+                unsigned char *pkey = key;
                 unsigned char *psrc = seedBytes32;
                 for (int i = 0; i < n256blks; i++)
                 {
@@ -168,7 +168,10 @@ class CVerusHashV2
                 }
                 pdesc->seed = *((uint256 *)seedBytes32);
             }
-            memcpy(key, key + pdesc->keySizeInBytes, pdesc->keySizeInBytes);
+
+            int refreshsize = verusclhasher::keymask(pdesc->keySizeInBytes) + 1;
+            memcpy(key + pdesc->keySizeInBytes, key, refreshsize);
+            memset((unsigned char *)key + (pdesc->keySizeInBytes + refreshsize), 0, pdesc->keySizeInBytes - refreshsize);
             return (u128 *)key;
         }
 

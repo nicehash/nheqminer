@@ -117,8 +117,8 @@ inline void ForceCPUVerusOptimized(bool trueorfalse)
     __cpuverusoptimized = trueorfalse;
 };
 
-uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMask);
-uint64_t verusclhash_port(void * random, const unsigned char buf[64], uint64_t keyMask);
+uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMask, __m128i **pMoveScratch);
+uint64_t verusclhash_port(void * random, const unsigned char buf[64], uint64_t keyMask, __m128i **pMoveScratch);
 
 void *alloc_aligned_buffer(uint64_t bufSize);
 
@@ -135,9 +135,9 @@ void *alloc_aligned_buffer(uint64_t bufSize);
 struct verusclhasher {
     uint64_t keySizeInBytes;
     uint64_t keyMask;
-    uint64_t (*verusclhashfunction)(void * random, const unsigned char buf[64], uint64_t keyMask);
+    uint64_t (*verusclhashfunction)(void * random, const unsigned char buf[64], uint64_t keyMask, __m128i **pMoveScratch);
 
-    inline uint64_t keymask(uint64_t keysize)
+    static inline uint64_t keymask(uint64_t keysize)
     {
         int i = 0;
         while (keysize >>= 1)
@@ -195,13 +195,41 @@ struct verusclhasher {
 #endif
     }
 
+    inline void *gethasherrefresh()
+    {
+        verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
+        return (unsigned char *)verusclhasher_key.get() + pdesc->keySizeInBytes;
+    }
+
+    // returns a per thread, writeable scratch pad that has enough space to hold a pointer for each
+    // mutated entry in the refresh hash
+    inline __m128i **getpmovescratch(void *hasherrefresh)
+    {
+        return (__m128i **)((unsigned char *)hasherrefresh + keyrefreshsize());
+    }
+
+    inline verusclhash_descr *gethasherdescription() const
+    {
+        return (verusclhash_descr *)verusclhasher_descr.get();
+    }
+
+    inline uint64_t keyrefreshsize() const
+    {
+        return keyMask + 1;
+    }
+
     // this prepares a key for hashing and mutation by copying it from the original key for this block
     // WARNING!! this does not check for NULL ptr, so make sure the buffer is allocated
     inline void *gethashkey()
     {
         unsigned char *ret = (unsigned char *)verusclhasher_key.get();
         verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
-        memcpy(ret, ret + pdesc->keySizeInBytes, keyMask + 1);
+        __m128i **ppfixup = getpmovescratch(ret + pdesc->keySizeInBytes); // past the part to refresh from
+        for (__m128i *pfixup = *ppfixup++; pfixup; pfixup = *ppfixup++)
+        {
+            *pfixup = *(pfixup + (pdesc->keySizeInBytes >> 4)); // we hope the compiler cancels this operation out before add
+        }
+        //memcpy(ret, ret + pdesc->keySizeInBytes, keyMask + 1);
 #ifdef VERUSHASHDEBUG
         // in debug mode, ensure that what should be the same, is
         assert(memcmp(ret + (keyMask + 1), ret + (pdesc->keySizeInBytes + keyMask + 1), verusclhasher_keySizeInBytes - (keyMask + 1)) == 0);
@@ -209,28 +237,19 @@ struct verusclhasher {
         return ret;
     }
 
-    inline void *gethasherrefresh()
-    {
-        verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
-        return (unsigned char *)verusclhasher_key.get() + pdesc->keySizeInBytes;
-    }
-
-    inline verusclhash_descr *gethasherdescription()
-    {
-        return (verusclhash_descr *)verusclhasher_descr.get();
-    }
-
-    inline uint64_t keyrefreshsize()
-    {
-        return keyMask + 1;
-    }
-
     inline uint64_t operator()(const unsigned char buf[64]) const {
-        return (*verusclhashfunction)(verusclhasher_key.get(), buf, keyMask);
+        unsigned char *pkey = (unsigned char *)verusclhasher_key.get();
+        verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
+        return (*verusclhashfunction)(pkey, buf, keyMask, (__m128i **)(pkey + (pdesc->keySizeInBytes + keyrefreshsize())));
     }
 
-    inline uint64_t operator()(const unsigned char buf[64], void *key) const {
-        return (*verusclhashfunction)(key, buf, keyMask);
+    inline uint64_t operator()(const unsigned char buf[64], void *pkey) const {
+        verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
+        return (*verusclhashfunction)(pkey, buf, keyMask, (__m128i **)((unsigned char *)pkey + (pdesc->keySizeInBytes + keyrefreshsize())));
+    }
+
+    inline uint64_t operator()(const unsigned char buf[64], void *pkey, __m128i **pMoveScratch) const {
+        return (*verusclhashfunction)((unsigned char *)pkey, buf, keyMask, pMoveScratch);
     }
 };
 

@@ -76,7 +76,7 @@ static inline uint64_t precompReduction64( __m128i A) {
 }
 
 // verus intermediate hash extra
-static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask)
+static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask, __m128i **pMoveScratch)
 {
     __m128i const *pbuf;
 
@@ -95,6 +95,9 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
         // get two random locations in the key, which will be mutated and swapped
         __m128i *prand = randomsource + ((selector >> 5) & keyMask);
         __m128i *prandex = randomsource + ((selector >> 32) & keyMask);
+
+        *pMoveScratch++ = prand;
+        *pMoveScratch++ = prandex;        
 
         // select random start and order of pbuf processing
         pbuf = buf + (selector & 3);
@@ -332,8 +335,8 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource
 
 // hashes 64 bytes only by doing a carryless multiplication and reduction of the repeated 64 byte sequence 16 times, 
 // returning a 64 bit hash value
-uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMask) {
-    __m128i  acc = __verusclmulwithoutreduction64alignedrepeat((__m128i *)random, (const __m128i *)buf, keyMask);
+uint64_t verusclhash(void * random, const unsigned char buf[64], uint64_t keyMask, __m128i **pMoveScratch) {
+    __m128i  acc = __verusclmulwithoutreduction64alignedrepeat((__m128i *)random, (const __m128i *)buf, keyMask, pMoveScratch);
     acc = _mm_xor_si128(acc, lazyLengthHash(1024, 64));
     return precompReduction64(acc);
 }
@@ -369,6 +372,17 @@ inline void haraka512_keyed_local(unsigned char *out, const unsigned char *in, c
   TRUNCSTORE(out, s[0], s[1], s[2], s[3]);
 }
 
+inline void fixupkey(__m128i **pMoveScratch, verusclhash_descr *pdesc)
+{
+    __m128i **ppfixup = pMoveScratch;
+    uint64_t size = pdesc->keySizeInBytes;
+    for (unsigned char *pfixup = (unsigned char *)*ppfixup++; pfixup; pfixup = (unsigned char *)*ppfixup++)
+    {
+        const __m128i fixup = _mm_load_si128((__m128i *)(pfixup + size));
+        _mm_store_si128((__m128i *)pfixup, fixup);
+    }
+}
+
 void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh, 
 	arith_uint256 &target,
 	std::function<bool()> cancelf,
@@ -388,6 +402,7 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
     u128 *hashKey = (u128 *)verusclhasher_key.get();
     verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
     void *hasherrefresh = ((unsigned char *)hashKey) + pdesc->keySizeInBytes;
+	__m128i **pMoveScratch = vclh.getpmovescratch(hasherrefresh);
     const int keyrefreshsize = vclh.keyrefreshsize(); // number of 256 bit blocks
 
 	bh.nSolution = std::vector<unsigned char>(1344);
@@ -415,7 +430,8 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
             pkey += 32;
         }
         pdesc->seed = *((uint256 *)curBuf);
-        memcpy(hasherrefresh, hashKey, pdesc->keySizeInBytes);
+        memcpy(hasherrefresh, hashKey, keyrefreshsize);
+        memset((unsigned char *)hasherrefresh + keyrefreshsize, 0, pdesc->keySizeInBytes - keyrefreshsize);
     }
 
     const __m128i shuf1 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0);
@@ -436,7 +452,7 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
         curBuf[32 + 15] = ch;
 
 		// run verusclhash on the buffer
-		const uint64_t intermediate = vclh(curBuf, hashKey);
+		const uint64_t intermediate = vclh(curBuf, hashKey, pMoveScratch);
 
 		// fill buffer to the end with the result and final hash
         __m128i fill2 = _mm_shuffle_epi8(_mm_loadl_epi64((u128 *)&intermediate), shuf2);
@@ -450,7 +466,8 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
             (compResult[3] == compTarget[3] && compResult[2] == compTarget[2] && compResult[1] == compTarget[1] && compResult[0] > compTarget[0]))
         {
             // refresh the key
-            memcpy(hashKey, hasherrefresh, keyrefreshsize);
+            fixupkey(pMoveScratch, pdesc);
+            //memcpy(hashKey, hasherrefresh, keyrefreshsize);
 			continue;
         }
 
@@ -463,7 +480,8 @@ void cpu_verushash::solve_verus_v2_opt(CBlockHeader &bh,
 		if (cancelf()) return;
 
         // refresh the key
-        memcpy(hashKey, hasherrefresh, keyrefreshsize);
+        fixupkey(pMoveScratch, pdesc);
+        //memcpy(hashKey, hasherrefresh, keyrefreshsize);
 	}
 	hashdonef();
 }

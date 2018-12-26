@@ -97,6 +97,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
     verusclhasher &vclh = vh.vclh;
 	uint256 curHash;
     void *hasherrefresh = vclh.gethasherrefresh();
+	__m128i **pMoveScratch = vclh.getpmovescratch(hasherrefresh);
     int keyrefreshsize = vclh.keyrefreshsize();
 
 	std::vector<unsigned char> solution = std::vector<unsigned char>(1344);
@@ -125,7 +126,7 @@ void cpu_verushash::solve_verus_v2(CBlockHeader &bh,
 		vh.FillExtra((u128 *)curBuf);
 
 		// run verusclhash on the buffer
-		intermediate = vclh(curBuf, hashKey);
+		intermediate = vclh(curBuf, hashKey, pMoveScratch);
 
 		// fill buffer to the end with the result and final hash
 		vh.FillExtra(&intermediate);

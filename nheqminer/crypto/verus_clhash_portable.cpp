@@ -324,7 +324,7 @@ static inline uint64_t precompReduction64_port( __m128i A) {
 }
 
 // verus intermediate hash extra
-static __m128i __verusclmulwithoutreduction64alignedrepeat_port(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask)
+static __m128i __verusclmulwithoutreduction64alignedrepeat_port(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask, __m128i **pMoveScratch)
 {
     __m128i const *pbuf;
 
@@ -343,6 +343,9 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat_port(__m128i *randoms
         // get two random locations in the key, which will be mutated and swapped
         __m128i *prand = randomsource + ((selector >> 5) & keyMask);
         __m128i *prandex = randomsource + ((selector >> 32) & keyMask);
+
+        *pMoveScratch++ = prand;
+        *pMoveScratch++ = prandex;
 
         // select random start and order of pbuf processing
         pbuf = buf + (selector & 3);
@@ -581,12 +584,11 @@ static __m128i __verusclmulwithoutreduction64alignedrepeat_port(__m128i *randoms
 
 // hashes 64 bytes only by doing a carryless multiplication and reduction of the repeated 64 byte sequence 16 times, 
 // returning a 64 bit hash value
-uint64_t verusclhash_port(void * random, const unsigned char buf[64], uint64_t keyMask) {
-    const unsigned int  m = 128;// we process the data in chunks of 16 cache lines
+uint64_t verusclhash_port(void * random, const unsigned char buf[64], uint64_t keyMask, __m128i **pMoveScratch) {
     __m128i * rs64 = (__m128i *)random;
     const __m128i * string = (const __m128i *) buf;
 
-    __m128i  acc = __verusclmulwithoutreduction64alignedrepeat_port(rs64, string, keyMask);
+    __m128i  acc = __verusclmulwithoutreduction64alignedrepeat_port(rs64, string, keyMask, pMoveScratch);
     acc = _mm_xor_si128_emu(acc, lazyLengthHash_port(1024, 64));
     return precompReduction64_port(acc);
 }
