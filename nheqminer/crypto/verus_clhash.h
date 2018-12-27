@@ -225,15 +225,16 @@ struct verusclhasher {
         unsigned char *ret = (unsigned char *)verusclhasher_key.get();
         verusclhash_descr *pdesc = (verusclhash_descr *)verusclhasher_descr.get();
         __m128i **ppfixup = getpmovescratch(ret + pdesc->keySizeInBytes); // past the part to refresh from
-        for (__m128i *pfixup = *ppfixup++; pfixup; pfixup = *ppfixup++)
+        for (__m128i *pfixup = *ppfixup; pfixup; pfixup = *++ppfixup)
         {
             *pfixup = *(pfixup + (pdesc->keySizeInBytes >> 4)); // we hope the compiler cancels this operation out before add
         }
-        //memcpy(ret, ret + pdesc->keySizeInBytes, keyMask + 1);
-#ifdef VERUSHASHDEBUG
-        // in debug mode, ensure that what should be the same, is
-        assert(memcmp(ret + (keyMask + 1), ret + (pdesc->keySizeInBytes + keyMask + 1), verusclhasher_keySizeInBytes - (keyMask + 1)) == 0);
-#endif
+        /*
+        if (memcmp(ret, ret + pdesc->keySizeInBytes, keyMask + 1))
+        {
+            printf("Mismatch in refresh data:\n %p: %s, %p: %s\n", ret, (*(uint256 *)ret).GetHex().c_str(), ret + pdesc->keySizeInBytes, (*(uint256 *)(ret + pdesc->keySizeInBytes)).GetHex().c_str());
+        }
+        */
         return ret;
     }
 

@@ -287,7 +287,7 @@ __inline int msver(void) {
 
 int main(int argc, char* argv[])
 {
-#if defined(WIN32) && defined(NDEBUG)
+#if defined(_WIN32) && defined(NDEBUG)
 	system(""); // windows 10 colored console
 #endif
 
